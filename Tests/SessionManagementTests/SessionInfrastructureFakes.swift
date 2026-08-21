@@ -1,0 +1,70 @@
+import DiagnosticsAPI
+import Foundation
+import GlossaryAPI
+import LoggingAPI
+import PersistenceAPI
+import SettingsAPI
+import TranscriptAPI
+
+actor FakeGlossaryService: GlossaryService {
+    private var entries: [GlossaryEntry]
+
+    init(entries: [GlossaryEntry]) { self.entries = entries }
+
+    func snapshot() -> GlossarySnapshot {
+        GlossarySnapshot(revision: 1, entries: entries)
+    }
+
+    func replace(with entries: [GlossaryEntry]) { self.entries = entries }
+    func upsert(_ entry: GlossaryEntry) { entries.append(entry) }
+    func remove(id: UUID) { entries.removeAll { $0.id == id } }
+    func restoreDefaults() { entries = DefaultGlossary.entries }
+}
+
+actor FakeTranscriptStore: TranscriptStore {
+    private let failAppend: Bool
+    private var begun: [TranscriptSession] = []
+    private var appendAttempts = 0
+    private var appended: [TranscriptEntry] = []
+    private var finished: [TranscriptSession] = []
+
+    init(failAppend: Bool) { self.failAppend = failAppend }
+
+    func begin(_ session: TranscriptSession) { begun.append(session) }
+
+    func append(_ entry: TranscriptEntry, to _: UUID) throws {
+        appendAttempts += 1
+        if failAppend { throw SessionPipelineFakeError.storage }
+        appended.append(entry)
+    }
+
+    func finish(_ session: TranscriptSession) { finished.append(session) }
+    func recentSessions(limit _: Int) -> [StoredSessionSummary] { [] }
+
+    func begunSessions() -> [TranscriptSession] { begun }
+    func attemptedAppendCount() -> Int { appendAttempts }
+    func persistedEntries() -> [TranscriptEntry] { appended }
+    func finishedSessions() -> [TranscriptSession] { finished }
+}
+
+actor FakeSettingsStore: SettingsStore {
+    private var settings = AppSettings.defaults
+
+    func load() -> AppSettings { settings }
+    func save(_ settings: AppSettings) { self.settings = settings }
+}
+
+struct NoopAppLogger: AppLogger {
+    func write(_: LogRecord) {}
+}
+
+actor FakeDiagnosticsRecorder: DiagnosticsRecorder {
+    private var events: [DiagnosticEvent] = []
+
+    func record(_ event: DiagnosticEvent) { events.append(event) }
+    func recent(limit: Int) -> [DiagnosticEvent] { Array(events.suffix(limit)) }
+
+    func export() throws -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("diagnostics.json")
+    }
+}
