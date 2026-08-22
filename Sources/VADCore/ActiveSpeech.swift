@@ -4,8 +4,17 @@ struct ActiveSpeech {
     let sequenceNumber: UInt64
     let startedAt: Duration
     private(set) var samples: [Float]
-    private(set) var trailingSilenceSampleCount = 0
+    private(set) var rawTrailingSilenceSampleCount = 0
     private(set) var voicedSampleCount: Int
+    private var endpointPause = EndpointPauseTracker()
+
+    var endpointPauseSampleCount: Int {
+        endpointPause.silenceSampleCount
+    }
+
+    var endpointPauseStartedAtSampleCount: Int? {
+        endpointPause.startedAtSampleCount
+    }
 
     init(
         sequenceNumber: UInt64,
@@ -19,13 +28,19 @@ struct ActiveSpeech {
         self.voicedSampleCount = voicedSampleCount
     }
 
-    mutating func append(_ newSamples: [Float], isSpeech: Bool) {
+    mutating func append(_ newSamples: [Float], rawSpeech: Bool) {
+        let precedingSampleCount = samples.count
         samples.append(contentsOf: newSamples)
-        trailingSilenceSampleCount =
-            isSpeech
+        rawTrailingSilenceSampleCount =
+            rawSpeech
             ? 0
-            : trailingSilenceSampleCount + newSamples.count
-        if isSpeech {
+            : rawTrailingSilenceSampleCount + newSamples.count
+        endpointPause.observe(
+            rawSpeech: rawSpeech,
+            sampleCount: newSamples.count,
+            precedingSampleCount: precedingSampleCount
+        )
+        if rawSpeech {
             voicedSampleCount += newSamples.count
         }
     }
@@ -35,7 +50,10 @@ struct ActiveSpeech {
         reason: SpeechSegmentEndReason,
         trailingSamplesToKeep: Int
     ) -> SpeechSegment {
-        let removableSilence = max(0, trailingSilenceSampleCount - trailingSamplesToKeep)
+        let removableSilence = max(
+            0,
+            rawTrailingSilenceSampleCount - trailingSamplesToKeep
+        )
         let retainedSamples = Array(samples.dropLast(removableSilence))
         return SpeechSegment(
             sequenceNumber: sequenceNumber,

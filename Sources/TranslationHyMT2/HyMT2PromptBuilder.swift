@@ -19,6 +19,7 @@ enum HyMT2PromptBuilder {
         if strict {
             sections.append(strictRules)
         }
+        sections.append(pronounRule)
         let recentContext = context.suffix(maximumContextEntries)
         if !recentContext.isEmpty {
             sections.append(backgroundSection(Array(recentContext)))
@@ -36,6 +37,13 @@ enum HyMT2PromptBuilder {
         "Preserve negation, names, and all numbers.",
         "Render Scripture chapter-and-verse references in conventional English numeric form",
         "(for example, John 3:16). Use required reference terms or an accepted grammatical variant.",
+    ].joined(separator: " ")
+
+    private static let pronounRule = [
+        "Spoken Mandarin tā may be transcribed as 他 or 她 even when the audio is ambiguous.",
+        "Use an English gendered pronoun only when explicit current or background evidence",
+        "identifies the same human referent; never infer gender from a name, occupation, or stereotype.",
+        "When no explicit evidence resolves it, use natural singular they instead of inventing gender.",
     ].joined(separator: " ")
 
     private static func backgroundSection(

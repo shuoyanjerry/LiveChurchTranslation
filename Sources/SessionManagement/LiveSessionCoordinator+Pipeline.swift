@@ -86,6 +86,8 @@ extension LiveSessionCoordinator {
         do {
             let entry = try await translate(segment, sessionID: sessionID)
             try await completeRecovery(record, translatedEntry: entry)
+        } catch let ignored as IgnoredUtterance {
+            await discardFiltered(record, reason: ignored.message)
         } catch let failure as UtteranceProcessingFailure {
             preserve(segment, after: failure, recoveryID: record.id)
         } catch {
@@ -97,21 +99,6 @@ extension LiveSessionCoordinator {
                     pendingEntry: nil
                 ),
                 recoveryID: record.id
-            )
-        }
-    }
-
-    private func completeRecovery(
-        _ record: PendingUtteranceRecord,
-        translatedEntry: TranscriptEntry
-    ) async throws {
-        do {
-            try await dependencies.recoveryStore.markCompleted(record.id)
-        } catch {
-            throw UtteranceProcessingFailure(
-                stage: .persistence,
-                message: error.localizedDescription,
-                pendingEntry: translatedEntry
             )
         }
     }
@@ -129,31 +116,6 @@ extension LiveSessionCoordinator {
         state.append(entry)
         publish(.transcriptAppended(entry))
         return entry
-    }
-
-    private func preserve(
-        _ segment: SpeechSegment,
-        after failure: UtteranceProcessingFailure,
-        recoveryID: PendingUtteranceID? = nil
-    ) {
-        let issue = LiveSessionIssue(
-            stage: failure.stage,
-            utteranceSequence: segment.sequenceNumber,
-            message: failure.message,
-            isRecoverable: true
-        )
-        pendingUtterances.append(
-            PendingUtterance(
-                segment: segment,
-                issue: issue,
-                translatedEntry: failure.pendingEntry,
-                recoveryID: recoveryID
-            )
-        )
-        state.record(issue)
-        publishState()
-        publish(.recoverableError(issue.message))
-        sessionFinalizer.logRecoverable(failure)
     }
 
     private func transitionWhileActive(to phase: LiveSessionPhase, message: String) {

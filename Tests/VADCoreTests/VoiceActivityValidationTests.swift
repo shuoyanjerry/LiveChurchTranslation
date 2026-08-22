@@ -65,4 +65,59 @@ import VADAPI
             Issue.record("Unexpected error: \(error)")
         }
     }
+
+    @Test func rejectsPreferredMaximumShorterThanPreRoll() {
+        do {
+            _ = try AdaptiveEnergyVoiceActivityDetector(
+                configuration: .init(preferredMaximumSegment: .milliseconds(200))
+            )
+            Issue.record("Expected invalid preferred maximum")
+        } catch let error as VoiceActivityError {
+            #expect(
+                error
+                    == .invalidConfiguration(
+                        parameter: "preferredMaximumSegment"
+                    )
+            )
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test func rejectsNegativeMaximumBoundaryGrace() {
+        do {
+            _ = try AdaptiveEnergyVoiceActivityDetector(
+                configuration: .init(maximumBoundaryGrace: .milliseconds(-1))
+            )
+            Issue.record("Expected invalid maximum boundary grace")
+        } catch let error as VoiceActivityError {
+            #expect(error == .invalidConfiguration(parameter: "maximumBoundaryGrace"))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test func rejectsShortHoldBelowMinimumVoiced() {
+        #expect(
+            throws: VoiceActivityError.invalidConfiguration(
+                parameter: "shortUtterance"
+            )
+        ) {
+            try AdaptiveEnergyVoiceActivityDetector(
+                configuration: .init(shortUtterance: .milliseconds(100))
+            )
+        }
+    }
+
+    @Test func rejectsShortPauseBelowOrdinaryPause() {
+        #expect(
+            throws: VoiceActivityError.invalidConfiguration(
+                parameter: "shortTrailingSilence"
+            )
+        ) {
+            try AdaptiveEnergyVoiceActivityDetector(
+                configuration: .init(shortTrailingSilence: .milliseconds(500))
+            )
+        }
+    }
 }

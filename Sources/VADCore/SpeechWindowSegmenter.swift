@@ -2,19 +2,27 @@ import VADAPI
 
 struct SpeechWindowSegmenter {
     private let thresholds: SpeechSegmentationThresholds
-    private var classifier: AdaptiveEnergyClassifier
+    private let finalizer: SpeechSegmentFinalizer
+    private var classifier: any VoiceActivityClassifying
     private var decisionSmoother: SpeechDecisionSmoother
     private var preRoll: RollingAudioBuffer
-    private var candidateSpeechSampleCount = 0
+    private var startCandidate = SpeechStartCandidate()
     private var activeSpeech: ActiveSpeech?
+    private var startPublication: SpeechStartPublication
     private var pendingContinuation = false
-    private var nextSequenceNumber: UInt64 = 1
 
-    init(configuration: VoiceActivityConfiguration) {
+    init(
+        configuration: VoiceActivityConfiguration,
+        classifier: any VoiceActivityClassifying
+    ) {
         let thresholds = SpeechSegmentationThresholds(configuration: configuration)
         self.thresholds = thresholds
-        classifier = AdaptiveEnergyClassifier(configuration: configuration)
+        finalizer = SpeechSegmentFinalizer(thresholds: thresholds)
+        self.classifier = classifier
         decisionSmoother = SpeechDecisionSmoother(configuration: configuration)
+        startPublication = SpeechStartPublication(
+            minimumVoicedSampleCount: thresholds.minimumVoicedSampleCount
+        )
         preRoll = RollingAudioBuffer(
             capacity: thresholds.preRollSampleCount,
             sampleRate: thresholds.sampleRate
@@ -25,39 +33,55 @@ struct SpeechWindowSegmenter {
         _ window: [Float],
         at timestamp: Duration
     ) -> [VoiceActivityEvent] {
-        let rawSpeech = classifier.isSpeech(
-            window,
-            whileSpeaking: activeSpeech != nil
-        )
-        let isSpeech = decisionSmoother.append(rawSpeech)
+        let rawSpeech = classifier.isSpeech(window, whileSpeaking: activeSpeech != nil)
+        let smoothedSpeech = decisionSmoother.append(rawSpeech)
         if activeSpeech != nil {
-            return consumeWhileSpeaking(window, isSpeech: isSpeech)
+            return consumeWhileSpeaking(
+                window,
+                rawSpeech: rawSpeech,
+                smoothedSpeech: smoothedSpeech
+            )
         }
         if pendingContinuation {
             pendingContinuation = false
-            guard isSpeech else {
-                return consumeWhileIdle(window, at: timestamp, isSpeech: false)
+            guard rawSpeech else {
+                return consumeWhileIdle(
+                    window,
+                    at: timestamp,
+                    rawSpeech: false,
+                    smoothedSpeech: smoothedSpeech
+                )
             }
-            return [startSpeech(with: window, at: timestamp)]
+            return beginSpeech(
+                with: window,
+                at: timestamp,
+                voicedSampleCount: window.count
+            )
         }
-        return consumeWhileIdle(window, at: timestamp, isSpeech: isSpeech)
+        return consumeWhileIdle(
+            window,
+            at: timestamp,
+            rawSpeech: rawSpeech,
+            smoothedSpeech: smoothedSpeech
+        )
     }
 
-    mutating func flush() -> SpeechSegment? {
-        guard let speech = activeSpeech, !speech.samples.isEmpty else { return nil }
-        return close(speech, reason: .endOfStream)
+    mutating func flush() -> [VoiceActivityEvent] {
+        guard let speech = activeSpeech, !speech.samples.isEmpty else { return [] }
+        var events = startPublication.eventsIfConfirmed(for: speech)
+        guard let segment = close(speech, reason: .endOfStream) else { return events }
+        events.append(.speechEnded(segment))
+        return events
     }
 
     mutating func reset(resetSequence: Bool) {
-        candidateSpeechSampleCount = 0
+        startCandidate.reset()
         activeSpeech = nil
+        startPublication.reset(resetSequence: resetSequence)
         pendingContinuation = false
         preRoll.removeAll()
         classifier.reset()
         decisionSmoother.reset()
-        if resetSequence {
-            nextSequenceNumber = 1
-        }
     }
 }
 
@@ -65,58 +89,67 @@ extension SpeechWindowSegmenter {
     private mutating func consumeWhileIdle(
         _ window: [Float],
         at timestamp: Duration,
-        isSpeech: Bool
+        rawSpeech: Bool,
+        smoothedSpeech: Bool
     ) -> [VoiceActivityEvent] {
         preRoll.append(window, at: timestamp)
-        candidateSpeechSampleCount =
-            isSpeech
-            ? candidateSpeechSampleCount + window.count
-            : 0
-        guard candidateSpeechSampleCount >= thresholds.speechStartSampleCount else {
+        startCandidate.observe(
+            rawSpeech: rawSpeech,
+            smoothedSpeech: smoothedSpeech,
+            sampleCount: window.count
+        )
+        guard startCandidate.speechSampleCount >= thresholds.speechStartSampleCount else {
             return []
         }
         let samples = preRoll.samples
         let start = preRoll.startedAt ?? timestamp
-        return [startSpeech(with: samples, at: start)]
+        return beginSpeech(
+            with: samples,
+            at: start,
+            voicedSampleCount: min(startCandidate.voicedSampleCount, samples.count)
+        )
     }
 
     private mutating func consumeWhileSpeaking(
         _ window: [Float],
-        isSpeech: Bool
+        rawSpeech: Bool,
+        smoothedSpeech: Bool
     ) -> [VoiceActivityEvent] {
-        activeSpeech?.append(window, isSpeech: isSpeech)
+        activeSpeech?.append(window, rawSpeech: rawSpeech)
         guard let speech = activeSpeech else { return [] }
-        if speech.samples.count >= thresholds.maximumSegmentSampleCount {
-            pendingContinuation = isSpeech
-            return closeEvent(speech, reason: .maximumDuration)
+        var events = startPublication.eventsIfConfirmed(for: speech)
+        if let reason = thresholds.boundaryReason(
+            for: speech,
+            rawSpeech: rawSpeech,
+            smoothedSpeech: smoothedSpeech
+        ) {
+            events += closeEvent(speech, reason: reason)
+            return events
         }
-        let canSoftSplit =
-            speech.samples.count >= thresholds.softSplitAfterSampleCount
-            && speech.trailingSilenceSampleCount >= thresholds.softSilenceSampleCount
-        if canSoftSplit {
-            return closeEvent(speech, reason: .softSilence)
+        if speech.samples.count >= thresholds.hardMaximumSampleCount {
+            pendingContinuation = rawSpeech
+            events += closeEvent(speech, reason: .maximumDuration)
+            return events
         }
-        if speech.trailingSilenceSampleCount >= thresholds.silenceSampleCount {
-            return closeEvent(speech, reason: .trailingSilence)
-        }
-        return []
+        return events
     }
 
-    private mutating func startSpeech(
+    private mutating func beginSpeech(
         with samples: [Float],
-        at timestamp: Duration
-    ) -> VoiceActivityEvent {
-        let sequence = nextSequenceNumber
-        nextSequenceNumber += 1
+        at timestamp: Duration,
+        voicedSampleCount: Int
+    ) -> [VoiceActivityEvent] {
+        let sequence = startPublication.nextSequenceNumber
         activeSpeech = ActiveSpeech(
             sequenceNumber: sequence,
             samples: samples,
             startedAt: timestamp,
-            voicedSampleCount: candidateSpeechSampleCount
+            voicedSampleCount: voicedSampleCount
         )
-        candidateSpeechSampleCount = 0
+        startCandidate.reset()
         preRoll.removeAll()
-        return .speechStarted(sequenceNumber: sequence, at: timestamp)
+        guard let speech = activeSpeech else { return [] }
+        return startPublication.eventsIfConfirmed(for: speech)
     }
 
     private mutating func closeEvent(
@@ -131,21 +164,16 @@ extension SpeechWindowSegmenter {
         _ speech: ActiveSpeech,
         reason: SpeechSegmentEndReason
     ) -> SpeechSegment? {
-        let keepTrailing = reason == .maximumDuration ? Int.max : thresholds.postRollSampleCount
-        let segment = speech.segment(
-            sampleRate: thresholds.sampleRate,
-            reason: reason,
-            trailingSamplesToKeep: keepTrailing
-        )
-        activeSpeech = nil
-        candidateSpeechSampleCount = 0
-        preRoll.removeAll()
-        if reason != .maximumDuration {
-            decisionSmoother.reset()
-        }
-        guard speech.voicedSampleCount >= thresholds.minimumVoicedSampleCount else {
-            return nil
-        }
+        let segment = finalizer.finalize(speech, reason: reason)
+        resetAfterClose()
         return segment
+    }
+
+    private mutating func resetAfterClose() {
+        activeSpeech = nil
+        startPublication.close()
+        startCandidate.reset()
+        preRoll.removeAll()
+        decisionSmoother.reset()
     }
 }

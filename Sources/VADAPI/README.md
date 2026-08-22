@@ -8,10 +8,34 @@ segments consumed by ASR.
 ## Public API
 
 - `VoiceActivityDetector`: process, flush, and reset lifecycle.
+- `VoiceActivityClassifying`: replaceable frame-level speech decisions.
 - `VoiceActivityEvent`: explicit speech-start and speech-end events.
 - `SpeechSegment`: immutable samples, timing, sequence, and close reason,
-  including long-utterance soft-silence boundaries.
+  including long-utterance soft-silence, preferred-maximum, and hard-cap
+  boundaries.
 - `VoiceActivityConfiguration` and `VoiceActivityError`.
+
+## Sermon Profile
+
+The calibrated `.sermon` profile uses 20 ms analysis windows and a five-window,
+three-vote speech-start decision. It keeps 240 ms of pre-roll and 280 ms of
+post-roll, requires 240 ms of raw voiced audio, and applies these boundaries:
+
+- phrases with under 3.5 seconds of voiced audio: 950 ms of endpoint silence;
+- longer ordinary phrases: 650 ms of endpoint silence;
+- segments at least 9 seconds old: a 500 ms pause may soft-split;
+- segments at least 15 seconds old: the next stable three-of-five acoustic
+  non-speech decision ends with `.maximumBoundary`;
+- uninterrupted segments: a 1.5 second grace period ends at the absolute
+  16.5 second `.maximumDuration` cap.
+
+`preferredMaximumSegment` names the 15 second preference explicitly.
+`maximumSegment` remains as a source-compatible property and initializer label.
+`maximumBoundaryGrace` controls the wait from the preference to the hard cap.
+
+`speechStarted` is published only after `minimumVoiced` is confirmed. Candidates
+that end earlier emit no lifecycle events; accepted candidates retain their
+original pre-roll timestamp and are closed by an end boundary or `flush()`.
 
 ## Dependencies
 
@@ -30,6 +54,6 @@ active segment.
 
 ## Tests
 
-`VADCoreTests` verify noise adaptation, majority voting, minimum voiced audio,
-the 650 ms default hangover, 14-second soft splitting, post-roll trimming,
-maximum-duration splitting, flushing, and reset behavior.
+`VADCoreTests` verify the calibrated defaults, raw/smoothed decision separation,
+pause recovery, exact post-roll trimming, preferred and absolute maximums,
+minimum voiced audio, partial-window flushing, and reset behavior.

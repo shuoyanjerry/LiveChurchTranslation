@@ -1,4 +1,5 @@
 import AudioCaptureAPI
+import ASRAPI
 import ASRNormalizationCore
 import Foundation
 import GlossaryAPI
@@ -22,30 +23,36 @@ struct SessionTestHarness {
     init(
         permission: AudioCapturePermission = .authorized,
         recognizedText: String = "我们因信称义，这是恩典。",
+        recognizedTexts: [String]? = nil,
         translationFails: Bool = false,
         storageFails: Bool = false,
         finishFails: Bool = false,
         modelLoadFails: Bool = false,
         recognitionFails: Bool = false,
+        recognitionError: ASRError? = nil,
         modelPreparationDelay: Duration? = nil,
         holdsPermissionRequest: Bool = false,
         holdsCaptureOpen: Bool = false,
         emitsOnlyOnFlush: Bool = false,
+        emitsEveryFrame: Bool = false,
         audioFrames: [AudioFrame]? = nil
     ) {
         let components = SessionTestComponents(
             permission: permission,
             recognizedText: recognizedText,
+            recognizedTexts: recognizedTexts,
             translationFails: translationFails,
             storageFails: storageFails,
             finishFails: finishFails,
             modelLoadFails: modelLoadFails,
             recognitionFails: recognitionFails,
+            recognitionError: recognitionError,
             modelPreparationDelay: modelPreparationDelay,
             audioFrames: audioFrames ?? [Self.audioFrame],
             holdsPermissionRequest: holdsPermissionRequest,
             holdsCaptureOpen: holdsCaptureOpen,
-            emitsOnlyOnFlush: emitsOnlyOnFlush
+            emitsOnlyOnFlush: emitsOnlyOnFlush,
+            emitsEveryFrame: emitsEveryFrame
         )
         let dependencies = SessionDependencyFactory.make(components)
 

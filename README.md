@@ -66,8 +66,13 @@ graph.
 - Minimum deployment target: macOS 15, arm64 Apple Silicon.
 - ASR: Qwen3-ASR 0.6B INT8, revision-pinned model artifacts.
 - Translation: Hy-MT2 1.8B Q4_K_M GGUF, revision-pinned artifact.
+- Speech segmentation: native libfvad/WebRTC mode 2 at pinned commit `532ab666`,
+  wrapped behind `VADAPI` with calibrated sermon timing and an AdaptiveEnergy fallback.
 - Runtime dependency: sherpa-onnx 1.13.6 is exact-version pinned; the translation helper
   is bundled with the release app.
+- Experimental shadow adapter: Pipecat Smart Turn v3.2 CPU through exact-pinned ONNX
+  Runtime 1.27.1. It is isolated from the default VAD/session path. Its upstream 0.5
+  threshold is not treated as a calibrated Mandarin production boundary.
 
 Models are not stored in Git. First use downloads about 2.12 GB over HTTPS, verifies each
 artifact's exact byte count and SHA-256, and installs it atomically. Once installed, ASR
@@ -95,8 +100,8 @@ Development requires Swift 6.1 and Xcode 16.4, or a compatible newer toolchain.
 ./Scripts/check.sh
 ```
 
-The gate checks architecture and cycles, the 200-line Swift file limit, formatting,
-SwiftLint, warnings-as-errors builds and tests, and dead code. See
+The gate checks architecture and cycles, the 200-line project-owned source-file limit,
+formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
 [Testing](Docs/Testing.md) before interpreting a green local gate as release evidence.
 
 ## Use

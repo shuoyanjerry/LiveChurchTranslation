@@ -90,21 +90,24 @@ actor FakeAudioProcessor: AudioProcessor {
 
 actor FakeSegmentingVAD: VoiceActivityDetector {
     private let emitsOnlyOnFlush: Bool
+    private let emitsEveryFrame: Bool
     private var received: [ProcessedAudioFrame] = []
     private var hasEmitted = false
 
-    init(emitsOnlyOnFlush: Bool = false) {
+    init(emitsOnlyOnFlush: Bool = false, emitsEveryFrame: Bool = false) {
         self.emitsOnlyOnFlush = emitsOnlyOnFlush
+        self.emitsEveryFrame = emitsEveryFrame
     }
 
     func process(_ frame: ProcessedAudioFrame) -> [VoiceActivityEvent] {
         received.append(frame)
         guard !emitsOnlyOnFlush else { return [] }
-        guard !hasEmitted else { return [] }
+        guard emitsEveryFrame || !hasEmitted else { return [] }
         hasEmitted = true
         let end = frame.timestamp + frame.duration
+        let sequence = UInt64(received.count)
         let segment = SpeechSegment(
-            sequenceNumber: 1,
+            sequenceNumber: sequence,
             samples: frame.samples,
             sampleRate: frame.sampleRate,
             startedAt: frame.timestamp,
@@ -112,7 +115,7 @@ actor FakeSegmentingVAD: VoiceActivityDetector {
             endReason: .trailingSilence
         )
         return [
-            .speechStarted(sequenceNumber: 1, at: frame.timestamp),
+            .speechStarted(sequenceNumber: sequence, at: frame.timestamp),
             .speechEnded(segment),
         ]
     }

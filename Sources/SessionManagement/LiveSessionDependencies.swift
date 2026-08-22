@@ -3,6 +3,7 @@ import ASRNormalizationAPI
 import AudioCaptureAPI
 import AudioProcessingAPI
 import DiagnosticsAPI
+import DiscourseResolutionAPI
 import GlossaryAPI
 import LoggingAPI
 import ModelDownloadAPI
@@ -20,6 +21,7 @@ public struct LiveSessionDependencies: Sendable {
     let vad: any VoiceActivityDetector
     let asr: any ASRProvider
     let asrNormalizer: any ASRTextNormalizer
+    let discourseResolver: any DiscourseResolving
     let translator: any TranslationProvider
     let glossary: any GlossaryService
     let modelDownloader: any ModelDownloadProvider
@@ -37,6 +39,7 @@ public struct LiveSessionDependencies: Sendable {
         vad: any VoiceActivityDetector,
         asr: any ASRProvider,
         asrNormalizer: any ASRTextNormalizer,
+        discourseResolver: any DiscourseResolving,
         translator: any TranslationProvider,
         glossary: any GlossaryService,
         modelDownloader: any ModelDownloadProvider,
@@ -53,6 +56,7 @@ public struct LiveSessionDependencies: Sendable {
         self.vad = vad
         self.asr = asr
         self.asrNormalizer = asrNormalizer
+        self.discourseResolver = discourseResolver
         self.translator = translator
         self.glossary = glossary
         self.modelDownloader = modelDownloader

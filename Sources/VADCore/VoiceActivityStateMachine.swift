@@ -9,13 +9,19 @@ struct VoiceActivityStateMachine {
     private var nextAnalysisTimestamp: Duration?
     private(set) var lastFrameTimestamp: Duration?
 
-    init(configuration: VoiceActivityConfiguration) {
+    init(
+        configuration: VoiceActivityConfiguration,
+        classifier: any VoiceActivityClassifying
+    ) {
         self.configuration = configuration
         windowSampleCount = AudioTiming.sampleCount(
             for: configuration.analysisWindow,
             sampleRate: configuration.requiredSampleRate
         )
-        segmenter = SpeechWindowSegmenter(configuration: configuration)
+        segmenter = SpeechWindowSegmenter(
+            configuration: configuration,
+            classifier: classifier
+        )
     }
 
     mutating func process(_ frame: ProcessedAudioFrame) -> [VoiceActivityEvent] {
@@ -31,11 +37,15 @@ struct VoiceActivityStateMachine {
     mutating func flush() -> [VoiceActivityEvent] {
         var events: [VoiceActivityEvent] = []
         if !analysisSamples.isEmpty, let timestamp = nextAnalysisTimestamp {
+            analysisSamples.append(
+                contentsOf: repeatElement(
+                    0,
+                    count: windowSampleCount - analysisSamples.count
+                )
+            )
             events += segmenter.consume(analysisSamples, at: timestamp)
         }
-        if let segment = segmenter.flush() {
-            events.append(.speechEnded(segment))
-        }
+        events += segmenter.flush()
         clearStreamState(resetSequence: false)
         return events
     }

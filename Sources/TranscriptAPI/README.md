@@ -8,7 +8,7 @@ buffer events, and the replaceable live transcript-buffer boundary.
 ## Public API
 
 `TranscriptEntry`, `TranscriptSession`, `TranscriptSourceCorrection`,
-`TranscriptSourceAudit`, `TranscriptEvent`, `TranscriptBuffer`, and
+`TranscriptSourceCorrectionKind`, `TranscriptSourceAudit`, `TranscriptEvent`, `TranscriptBuffer`, and
 `TranscriptBufferError`.
 
 ## Dependencies
@@ -31,3 +31,4 @@ nonthrowing append and finish calls when no session exists.
 
 `TranscriptCoreTests` exercises the concrete buffer through this API.
 Persistence and session tests consume the immutable transcript values.
+Legacy correction JSON remains decodable when structured audit fields are absent.

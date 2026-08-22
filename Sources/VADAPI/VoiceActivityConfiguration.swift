@@ -1,13 +1,16 @@
-/// Immutable parameters for adaptive energy-based speech segmentation.
+/// Immutable parameters for classifier-driven speech segmentation.
 public struct VoiceActivityConfiguration: Sendable, Equatable {
     public let requiredSampleRate: Double
     public let analysisWindow: Duration
     public let preRoll: Duration
     public let speechStart: Duration
     public let trailingSilence: Duration
+    public let shortUtterance: Duration
+    public let shortTrailingSilence: Duration
     public let softSplitSilence: Duration
     public let softSplitAfter: Duration
-    public let maximumSegment: Duration
+    public let preferredMaximumSegment: Duration
+    public let maximumBoundaryGrace: Duration
     public let postRoll: Duration
     public let minimumVoiced: Duration
     public let decisionWindowCount: Int
@@ -23,10 +26,13 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
         preRoll: Duration = .milliseconds(240),
         speechStart: Duration = .milliseconds(100),
         trailingSilence: Duration = .milliseconds(650),
-        softSplitSilence: Duration = .milliseconds(180),
-        softSplitAfter: Duration = .seconds(14),
-        maximumSegment: Duration = .seconds(27),
-        postRoll: Duration = .milliseconds(180),
+        shortUtterance: Duration = .milliseconds(3_500),
+        shortTrailingSilence: Duration = .milliseconds(950),
+        softSplitSilence: Duration = .milliseconds(500),
+        softSplitAfter: Duration = .seconds(9),
+        preferredMaximumSegment: Duration = .seconds(15),
+        maximumBoundaryGrace: Duration = .milliseconds(1_500),
+        postRoll: Duration = .milliseconds(280),
         minimumVoiced: Duration = .milliseconds(240),
         decisionWindowCount: Int = 5,
         decisionSpeechVotes: Int = 3,
@@ -40,9 +46,12 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
         self.preRoll = preRoll
         self.speechStart = speechStart
         self.trailingSilence = trailingSilence
+        self.shortUtterance = shortUtterance
+        self.shortTrailingSilence = shortTrailingSilence
         self.softSplitSilence = softSplitSilence
         self.softSplitAfter = softSplitAfter
-        self.maximumSegment = maximumSegment
+        self.preferredMaximumSegment = preferredMaximumSegment
+        self.maximumBoundaryGrace = maximumBoundaryGrace
         self.postRoll = postRoll
         self.minimumVoiced = minimumVoiced
         self.decisionWindowCount = decisionWindowCount
@@ -54,4 +63,9 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
     }
 
     public static let sermon = VoiceActivityConfiguration()
+
+    /// Compatibility spelling for callers compiled against the original API.
+    public var maximumSegment: Duration {
+        preferredMaximumSegment
+    }
 }

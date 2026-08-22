@@ -25,9 +25,12 @@ loading, decoding, and unloading.
 ## Failure Modes
 
 Missing or corrupt artifacts fail model loading. Empty and sub-threshold audio
-are rejected before decoding to guard against prompt-only hallucinations.
+are rejected before decoding. Known nonspeech sentinels and a six-term minimum,
+ordered hotword echo are rejected after decoding; when an echo prefixes real
+speech, only the exact echo prefix is removed.
 
 ## Tests
 
 Input and hotword guards are unit tested without loading model weights. Release
-qualification additionally uses real sermon and silence fixtures on base M1.
+qualification additionally uses local real-sermon and silence fixtures. Media
+with no redistribution permission stays outside the repository.

@@ -4,6 +4,7 @@ import Foundation
 public enum SpeechSegmentEndReason: Sendable, Equatable {
     case trailingSilence
     case softSilence
+    case maximumBoundary
     case maximumDuration
     case endOfStream
 }

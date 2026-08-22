@@ -1,6 +1,6 @@
 import ASRAPI
 import ASRNormalizationAPI
-import DiagnosticsAPI
+import DiscourseResolutionAPI
 import Foundation
 import GlossaryAPI
 import PersistenceAPI
@@ -26,6 +26,7 @@ actor UtteranceProcessor {
 
     let dependencies: LiveSessionDependencies
     private var translationContext = TranslationContextWindow()
+    private var discourseContext = DiscourseContextWindow()
 
     init(dependencies: LiveSessionDependencies) {
         self.dependencies = dependencies
@@ -33,9 +34,17 @@ actor UtteranceProcessor {
 
     func resetContext() {
         translationContext.removeAll()
+        discourseContext.removeAll()
     }
 
     func recognize(_ segment: SpeechSegment) async throws -> RecognizedInput {
+        try await recognize(segment, discourseContext: discourseContext.entries)
+    }
+
+    func recognize(
+        _ segment: SpeechSegment,
+        discourseContext: [VerifiedDiscourseTurn]
+    ) async throws -> RecognizedInput {
         do {
             let glossary = try await dependencies.glossary.snapshot()
             let enabled = glossary.entries.filter(\.isEnabled)
@@ -46,14 +55,23 @@ actor UtteranceProcessor {
                 )
             )
             let normalized = normalizedRecognition(recognition, entries: enabled)
-            await recordRecognition(normalized.utterance, original: recognition, segment: segment)
+            let resolved = resolveDiscourse(
+                normalized,
+                sequence: Int(clamping: segment.sequenceNumber),
+                context: discourseContext
+            )
+            await recordRecognition(resolved.utterance, original: recognition, segment: segment)
             return RecognizedInput(
-                utterance: normalized.utterance,
+                utterance: resolved.utterance,
                 glossary: enabled,
-                sourceAudit: normalized.audit
+                sourceAudit: resolved.audit
             )
         } catch let failure as UtteranceProcessingFailure {
             throw failure
+        } catch ASRError.filteredNonspeech {
+            throw IgnoredUtterance(message: ASRError.filteredNonspeech.localizedDescription)
+        } catch ASRError.promptOnlyHallucination {
+            throw IgnoredUtterance(message: ASRError.promptOnlyHallucination.localizedDescription)
         } catch {
             throw failure(stage: .recognition, error: error)
         }
@@ -72,6 +90,9 @@ actor UtteranceProcessor {
                 sourceText: entry.sourceText,
                 targetText: entry.targetText
             )
+        )
+        discourseContext.append(
+            VerifiedDiscourseTurn(sequence: entry.sequence, text: entry.sourceText)
         )
         await dependencies.transcript.append(entry)
         await recordTranslation(duration: translation.duration)
@@ -98,72 +119,4 @@ actor UtteranceProcessor {
             throw failure(stage: .persistence, error: error, pendingEntry: entry)
         }
     }
-}
-
-extension UtteranceProcessor {
-    private func recordTranslation(duration: Duration) async {
-        await dependencies.diagnostics.record(
-            DiagnosticEvent(
-                severity: .info,
-                component: "Translation",
-                message: "Translated utterance",
-                measurements: ["latency_ms": duration.milliseconds]
-            )
-        )
-    }
-
-    private func makeEntry(
-        recognition: RecognizedUtterance,
-        translation: TranslationResult,
-        sourceAudit: TranscriptSourceAudit
-    ) async throws -> TranscriptEntry {
-        do {
-            return try await dependencies.transcript.makeEntry(
-                recognition: recognition,
-                translation: translation,
-                sourceAudit: sourceAudit
-            )
-        } catch {
-            throw failure(stage: .persistence, error: error)
-        }
-    }
-
-    private func recordRecognition(
-        _ normalized: RecognizedUtterance,
-        original: RecognizedUtterance,
-        segment: SpeechSegment
-    ) async {
-        await dependencies.diagnostics.record(
-            DiagnosticEvent(
-                severity: .info,
-                component: "ASR",
-                message: "Recognized utterance",
-                measurements: [
-                    "audio_seconds": segment.duration.seconds,
-                    "normalization_applied": normalized.text == original.text ? 0.0 : 1.0,
-                ]
-            )
-        )
-    }
-
-    private func failure(
-        stage: LiveSessionIssueStage,
-        error: any Error,
-        pendingEntry: TranscriptEntry? = nil
-    ) -> UtteranceProcessingFailure {
-        UtteranceProcessingFailure(
-            stage: stage,
-            message: error.localizedDescription,
-            pendingEntry: pendingEntry
-        )
-    }
-}
-
-extension Duration {
-    fileprivate var seconds: Double {
-        let parts = components
-        return Double(parts.seconds) + Double(parts.attoseconds) / 1e18
-    }
-
-    fileprivate var milliseconds: Double { seconds * 1_000 }
 }

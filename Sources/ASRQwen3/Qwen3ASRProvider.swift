@@ -26,26 +26,30 @@ public actor Qwen3ASRProvider: ASRProvider {
         let samples = request.segment.samples
         guard !samples.isEmpty else { throw ASRError.emptyAudio }
         guard ASRInputGuard.containsSpeech(samples, minimumRMS: configuration.minimumRMS) else {
-            throw ASRError.noSpeechRecognized
+            throw ASRError.filteredNonspeech
         }
 
         let stream = recognizer.createStream()
         stream.setOption(key: "language", value: request.languageCode)
-        stream.setOption(
-            key: "hotwords",
-            value: ASRInputGuard.hotwords(
-                from: request.contextPrompt,
-                limit: configuration.maximumHotwords
-            )
+        let hotwords = ASRInputGuard.hotwords(
+            from: request.contextPrompt,
+            limit: configuration.maximumHotwords
         )
+        stream.setOption(key: "hotwords", value: hotwords)
         stream.acceptWaveform(samples: samples, sampleRate: Int(request.segment.sampleRate))
         recognizer.decode(stream: stream)
-        let text = recognizer.getResult(stream: stream).text
+        let rawText = recognizer.getResult(stream: stream).text
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { throw ASRError.noSpeechRecognized }
+        guard !rawText.isEmpty else { throw ASRError.noSpeechRecognized }
+        let text = ASRInputGuard.removingPromptEchoPrefix(rawText, hotwords: hotwords)
+        guard !text.isEmpty else { throw ASRError.promptOnlyHallucination }
+        guard !ASRInputGuard.isKnownNonspeechHallucination(text) else {
+            throw ASRError.filteredNonspeech
+        }
 
         return RecognizedUtterance(
             sourceSegmentID: request.segment.id,
+            rawText: rawText,
             text: text,
             confidence: nil,
             startedAt: request.segment.startedAt,

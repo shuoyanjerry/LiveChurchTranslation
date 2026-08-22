@@ -1,0 +1,25 @@
+{
+  "generator": "transformers 4.57.1 WhisperFeatureExtractor(chunk_length=8, do_normalize=true)",
+  "realModelParity": {"waveFile": "theology.wav", "probability": 0.9522762298583984, "absoluteTolerance": 0.0002},
+  "coordinates": [[0, 0], [0, 399], [0, 799], [7, 123], [20, 400], [40, 600], [60, 799], [79, 0], [79, 799]],
+  "cases": [
+    {
+      "name": "silence",
+      "sampleCount": 16000,
+      "selected": [-1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5],
+      "statistics": {"minimum": -1.5, "maximum": -1.5, "mean": -1.5, "standardDeviation": 0.0, "sum": -96000.0}
+    },
+    {
+      "name": "sine",
+      "sampleCount": 32000,
+      "selected": [-0.1855101585, -0.1855101585, 0.8539857864, -0.1855101585, -0.1855101585, 0.6439558864, -0.0299088955, -0.1855101585, -0.1855101585],
+      "statistics": {"minimum": -0.1855101585, "maximum": 1.8144898415, "mean": -0.1596061885, "standardDeviation": 0.2129798681, "sum": -10214.7954950929}
+    },
+    {
+      "name": "mixed",
+      "sampleCount": 160000,
+      "selected": [1.4621748924, 0.0543916821, 0.6149062514, 1.5712087154, 0.3692224026, -0.2148307562, -0.1697958708, 0.3048258424, -0.2148307562],
+      "statistics": {"minimum": -0.2148307562, "maximum": 1.7851692438, "mean": 0.1005540267, "standardDeviation": 0.5374271870, "sum": 6435.4584733844}
+    }
+  ]
+}

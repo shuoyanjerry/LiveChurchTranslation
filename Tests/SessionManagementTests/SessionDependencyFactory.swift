@@ -2,6 +2,7 @@ import ASRAPI
 import ASRNormalizationCore
 import AudioCaptureAPI
 import AudioProcessingAPI
+import DiscourseResolutionCore
 import GlossaryAPI
 import ModelDownloadAPI
 import ModelRuntimeAPI
@@ -19,6 +20,7 @@ enum SessionDependencyFactory {
             vad: components.vad,
             asr: components.asr,
             asrNormalizer: RuleBasedASRTextNormalizer(),
+            discourseResolver: DiscourseResolver(),
             translator: components.translator,
             glossary: FakeGlossaryService(entries: glossary),
             modelDownloader: components.downloader,
@@ -65,16 +67,19 @@ struct SessionTestComponents {
     init(
         permission: AudioCapturePermission,
         recognizedText: String,
+        recognizedTexts: [String]? = nil,
         translationFails: Bool,
         storageFails: Bool,
         finishFails: Bool,
         modelLoadFails: Bool,
         recognitionFails: Bool,
+        recognitionError: ASRError? = nil,
         modelPreparationDelay: Duration?,
         audioFrames: [AudioFrame],
         holdsPermissionRequest: Bool,
         holdsCaptureOpen: Bool,
-        emitsOnlyOnFlush: Bool
+        emitsOnlyOnFlush: Bool,
+        emitsEveryFrame: Bool = false
     ) {
         capture = FakeAudioCaptureProvider(
             permission: permission,
@@ -83,12 +88,20 @@ struct SessionTestComponents {
             holdsStreamOpen: holdsCaptureOpen
         )
         processor = FakeAudioProcessor()
-        vad = FakeSegmentingVAD(emitsOnlyOnFlush: emitsOnlyOnFlush)
-        asr = FakeMandarinASRProvider(
-            text: recognizedText,
-            loadFails: modelLoadFails,
-            recognitionFails: recognitionFails
+        vad = FakeSegmentingVAD(
+            emitsOnlyOnFlush: emitsOnlyOnFlush,
+            emitsEveryFrame: emitsEveryFrame
         )
+        if let recognizedTexts {
+            asr = FakeMandarinASRProvider(texts: recognizedTexts)
+        } else {
+            asr = FakeMandarinASRProvider(
+                text: recognizedText,
+                loadFails: modelLoadFails,
+                recognitionFails: recognitionFails,
+                recognitionError: recognitionError
+            )
+        }
         translator = FakeHyTranslationProvider(shouldFail: translationFails)
         downloader = FakeModelDownloader(delay: modelPreparationDelay)
         reporter = FakeModelRuntimeReporter()

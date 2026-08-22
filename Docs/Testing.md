@@ -25,16 +25,19 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | Suite | Evidence provided |
 | --- | --- |
 | `AudioProcessingCoreTests` | Validation, downmixing, resampling, continuity, and reset |
-| `VADCoreTests` | Smoothing, pre/post roll, normal and soft silence, maximum duration, transient rejection, and flush |
-| `ASRQwen3Tests` | Model layout/configuration plus an opt-in real-model WAV smoke harness |
+| `VADCoreTests` | AdaptiveEnergy fallback plus calibrated defaults, raw two-frame endpoint cancellation, soft/preferred/hard boundaries, smoothing, transient rejection, and flush |
+| `VADWebRTCTests` | Pinned native libfvad configuration, typed input failures, lifecycle/reset, silence, strong-energy rescue, and independent instances |
+| `SemanticEndpointSmartTurnTests` | Input/lifecycle/integrity failures, fixed feature-extraction goldens, and opt-in native-to-Python probability parity |
+| `ASRQwen3Tests` | Model layout/configuration, silence/sentinel guards, recursive ordered prompt-prefix stripping, hotword bounds, plus an opt-in real-model WAV smoke harness |
 | `ASRNormalizationCoreTests` | Built-ins, editable aliases, longest precedence, non-cascading replacement, and correction audit |
+| `DiscourseResolutionCoreTests` | Explicit-evidence `他` / `她` correction and audit plus abstention for competing/stale/unsafe context, quotations, plurals, deity references, names, and occupations |
 | `GlossaryCoreTests` | Defaults, aliases/variants, enforcement, validation, and deterministic persistence behavior |
-| `TranslationHyMT2Tests` | Prompt isolation, latest-two context cap, helper lifecycle, retry/timeout, and structural output guards |
+| `TranslationHyMT2Tests` | Prompt isolation, latest-two context cap, ambiguous-pronoun policy, gender faithfulness guards, helper lifecycle, retry/timeout, and structural output guards |
 | `TranscriptCoreTests` | Ordered lifecycle, raw/normalized source audit, append events, and compatibility decoding |
 | `PersistenceFileSystemTests` | JSONL/Markdown sessions, synchronized append, idempotent IDs, loading, and source audit persistence |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
 | `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, atomic install, cancellation, and deduplication |
-| `SessionManagementTests` | Fake-provider end-to-end pipeline, state/stop ordering, stage-before-inference, replay, persistence failures, and two-entry context |
+| `SessionManagementTests` | Fake-provider end-to-end pipeline, state/stop ordering, stage-before-inference, discourse-before-translation, persisted-only two-turn context, audit, replay, and persistence failures |
 | `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, and sharing presentation contracts |
 | `RemotePairingCoreTests` | Entropy shape, expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, operator Start/Stop, stale revisions, concurrent races, replay, and target failure |
@@ -60,6 +63,11 @@ QWEN_MODEL_DIR=/path/to/qwen QWEN_TEST_WAV=/path/to/16k-mono.wav \
 
 HYMT_MODEL_DIR=/path/to/hy-mt2 HYMT_LLAMA_SERVER=/path/to/llama-server \
   swift test --filter HyMT2RealModelSmokeTests
+
+SMART_TURN_REAL_MODEL_TESTS=1 \
+SMART_TURN_MODEL_PATH=/path/to/smart-turn-v3.2-cpu.onnx \
+SMART_TURN_TEST_WAV=/path/to/16k-mono.wav \
+  swift test --filter SmartTurnRealModelParityTests
 ```
 
 The Qwen test reports raw output, normalized output, the correction audit, audio duration,
@@ -68,19 +76,42 @@ These are smoke harnesses, not quality claims. Do not use measurements from the 
 `church_translation` project, including its long-sermon run, as validation of this exact
 Qwen3-ASR/Hy-MT2 app stack.
 
-The final 2026-08-21 rerun recorded one 5.93-second Qwen fixture at 1.757 seconds decode
-and four Hy-MT2 fixtures at 0.596–1.206 seconds. Qwen corrected
+The 2026-08-21 final reruns recorded one 5.93-second Qwen fixture at 1.283 seconds decode
+and four Hy-MT2 theological fixtures at 0.461–0.864 seconds; the five-case suite including
+one discourse-pronoun case completed in 4.483 seconds. Qwen corrected
 `因信生义` → `因信称义`; `在圣灵里承受` remained unchanged and therefore did not qualify
 成圣 recognition. An earlier run also exercised `休恩` → `救恩`. See
 [the engineering snapshot](ReleaseQualification-2026-08-21.md).
+
+The Smart Turn parity fixture is pinned to the upstream model probability. Passing it
+demonstrates adapter parity for one waveform, not a safe Mandarin decision threshold.
+
+## Observed Mandarin-sermon replay
+
+The 2026-08-21 offline replay used four public church recordings totaling 4 h 1 m 54 s for
+endpoint behavior and six clips totaling exactly 50 minutes for the exact Qwen3-ASR INT8
+stack. The selected Swift libfvad/WebRTC hybrid produced 1,063 segments with 29 under two
+seconds, 366 hard-cap closures, and 288 preferred-boundary closures. It matched the pinned
+sibling WebRTC classifier on all 725,722 frames. The replay also found serious
+non-speech/hotword failure cases. Five reviewed discourse cases from three Mandarin
+spiritual messages passed; a sixth object-pronoun case remains an intentional abstention
+and known coverage gap. Exact numbers, source provenance, Smart Turn shadow distributions,
+rights policy, and limitations are recorded in
+[the Mandarin discourse and endpoint report](MandarinDiscourseAndEndpointQualification-2026-08-21.md).
+
+This was offline component replay. It did not exercise microphone capture, durable
+recovery, translation, and reader latency continuously over four hours, and it had no
+time-aligned verbatim gold transcript. Do not label it a WER/CER result, semantic-boundary
+accuracy result, 1–3 second SLA, or long-running end-to-end qualification.
 
 ## Required model and pipeline qualification
 
 Before calling a build production-ready, test the exact Git commit, model revisions,
 helper binary, macOS build, and Apple Silicon hardware class. Record:
 
-- Audio input → processing → VAD → staged recovery → Qwen3-ASR → audited correction →
-  Hy-MT2 → validator → JSONL append → recovery completion → local and Safari reader.
+- Audio input → processing → pinned libfvad hybrid → staged recovery → Qwen3-ASR → audited literal
+  normalization → audited discourse resolution → Hy-MT2 → validator → JSONL append →
+  recovery completion → local and Safari reader.
 - Permission denied/revoked, selected-device unplug/switch, no signal, silence, music,
   short noise, overlap, stream overflow, and maximum segment behavior.
 - Missing/corrupt model, interrupted install, disk full, helper startup/exit/timeout,
@@ -96,8 +127,14 @@ helper binary, macOS build, and Apple Silicon hardware class. Record:
   and transcript integrity.
 - Memory-pressure termination and relaunch on the minimum supported RAM configuration.
 
-The Mandarin corpus must include multiple speakers, rooms, microphones, accents, music,
-and overlap, with consent and no private recordings committed to Git.
+The locked Mandarin corpus must contain at least 12 sermons, 8 hours, and 6 speakers, plus
+multiple rooms, microphones, accents, music, and overlap, with consent and no private or
+third-party recording committed to Git. Human boundary labels must distinguish natural
+completion, incomplete pauses, unsafe clause cuts, and mid-word cuts. The release gates
+are zero mid-word cuts, at most 0.2% unsafe early boundaries, endpoint p95 at most 800 ms,
+and at least 98% of final English visible within three seconds. Keep the selected libfvad
+revision, configuration, notices, and contract tests pinned; AdaptiveEnergy must remain
+fallback-only unless it independently meets every gate.
 
 ## Translation quality set
 
@@ -113,6 +150,11 @@ Score separately:
 - Translation omissions, additions, altered negation/numbers/references, and hallucination.
 - Blinded bilingual human review for fidelity, naturalness, and theological terminology.
 - End-of-sentence ASR, translation, persistence, and total reader latency percentiles.
+- Pronoun-correction precision, abstention/coverage, evidence age, and forbidden
+  gender/deity rewrite count; any wrong automatic gender/deity rewrite fails the gate.
+- Non-speech publish rate with and without hotwords across silence, music, singing,
+  applause, room noise, and interpreter overlap; any hotword echo or known sentinel
+  reaching the transcript fails the gate.
 
 Automated validators are narrow defect detectors, not a substitute for bilingual human
 review. A rejected sentence remaining recoverable is safer than publishing an unchecked
