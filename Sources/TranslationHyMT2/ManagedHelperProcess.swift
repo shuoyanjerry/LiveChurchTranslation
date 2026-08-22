@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 final class ManagedHelperProcess: @unchecked Sendable {
@@ -17,9 +18,26 @@ final class ManagedHelperProcess: @unchecked Sendable {
             defer { process = nil }
             return process
         }
-        if active?.isRunning == true {
-            active?.terminate()
+        if let active, active.isRunning {
+            stop(active)
         }
+    }
+
+    private func stop(_ active: Process) {
+        active.terminate()
+        if waitForExit(active, timeout: 2.0) { return }
+        active.interrupt()
+        if waitForExit(active, timeout: 1.0) { return }
+        _ = Darwin.kill(active.processIdentifier, SIGKILL)
+        active.waitUntilExit()
+    }
+
+    private func waitForExit(_ process: Process, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning, Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.02)
+        }
+        return !process.isRunning
     }
 
     deinit {

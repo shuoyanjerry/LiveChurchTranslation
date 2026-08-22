@@ -8,7 +8,8 @@ import Testing
         state.userDidScroll(isAtLiveEdge: false)
 
         #expect(state.isFollowingLive == false)
-        #expect(state.shouldRevealNewTranscript() == false)
+        #expect(state.contentDidAppend() == false)
+        #expect(state.unseenEntryCount == 1)
     }
 
     @Test func jumpToLiveRestoresFollowing() {
@@ -18,7 +19,9 @@ import Testing
 
         #expect(shouldScroll)
         #expect(state.isFollowingLive)
-        #expect(state.shouldRevealNewTranscript())
+        #expect(state.unseenEntryCount == 0)
+        let followsAppend = state.contentDidAppend()
+        #expect(followsAppend)
     }
 
     @Test func newTranscriptFollowsWhenReaderIsAtLiveEdge() {
@@ -27,6 +30,19 @@ import Testing
         state.userDidScroll(isAtLiveEdge: true)
 
         #expect(state.isFollowingLive)
-        #expect(state.shouldRevealNewTranscript())
+        let followsAppend = state.contentDidAppend()
+        #expect(followsAppend)
+    }
+
+    @Test func contentGrowthDoesNotChangeTheUserViewportIntent() {
+        var state = LiveFollowState(isFollowingLive: false)
+
+        let firstAppend = state.contentDidAppend()
+        let secondAppend = state.contentDidAppend()
+
+        #expect(!firstAppend)
+        #expect(!secondAppend)
+        #expect(!state.isFollowingLive)
+        #expect(state.unseenEntryCount == 2)
     }
 }

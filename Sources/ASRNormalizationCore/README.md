@@ -1,7 +1,8 @@
 # ASRNormalizationCore
 
 - **Purpose:** Performs deterministic, literal Mandarin ASR phrase correction.
-- **Public API:** `RuleBasedASRTextNormalizer`, implementing `ASRTextNormalizer`.
+- **Public API:** `RuleBasedASRTextNormalizer`, implementing `ASRTextNormalizer`
+  and preserving original text plus every applied correction.
 - **Dependencies:** `ASRNormalizationAPI` only.
 - **Threading model:** Stateless value implementation; calls are concurrency-safe.
 - **Failure modes:** Empty, whitespace-only, duplicate, and no-op rules are ignored safely.

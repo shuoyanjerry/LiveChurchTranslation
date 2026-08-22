@@ -16,8 +16,11 @@ struct LiveChurchTranslationApp: App {
     var body: some Scene {
         WindowGroup {
             switch startup {
-            case .ready(let viewModel):
-                LiveReaderView(viewModel: viewModel)
+            case .ready(let dependencies):
+                LiveReaderView(
+                    viewModel: dependencies.viewModel,
+                    sharingFeature: dependencies.sharingFeature
+                )
             case .failed(let message):
                 StartupFailureView(message: message)
             }
@@ -27,6 +30,6 @@ struct LiveChurchTranslationApp: App {
 }
 
 private enum Startup {
-    case ready(LiveReaderViewModel)
+    case ready(AppSceneDependencies)
     case failed(String)
 }

@@ -26,7 +26,7 @@ import TranslationAPI
         #expect(prompt.contains("因信称义 translates to justification by faith"))
         #expect(prompt.contains("恩典 translates to grace"))
         #expect(!prompt.contains("洗礼"))
-        #expect(prompt.hasSuffix(source))
+        #expect(prompt.contains("<CURRENT_SOURCE>\n\(source)\n</CURRENT_SOURCE>"))
     }
 
     @Test func deduplicatesTermsAndExcludesContainedMatches() {
@@ -60,6 +60,24 @@ import TranslationAPI
         #expect(matched.map(\.source) == ["因信称义", "称义"])
     }
 
+    @Test func matchesSemanticSourceAliasWithoutRewritingASRText() {
+        let term = TranslationTerm(
+            source: "洗礼",
+            target: "baptism",
+            sourceAliases: ["受浸"]
+        )
+
+        let matched = TranslationTermMatcher.matched(
+            in: "今天有三位弟兄受浸",
+            from: [term],
+            limit: 2
+        )
+
+        #expect(matched == [term])
+    }
+}
+
+@Suite struct HyMT2PromptPolicyAndContextTests {
     @Test func strictPromptAddsFaithfulnessAndScriptureRules() {
         let prompt = HyMT2PromptBuilder.prompt(
             source: "约翰福音三章十六节",
@@ -82,5 +100,70 @@ import TranslationAPI
         )
 
         #expect(prompt.contains("圣 灵 translates to Holy Spirit"))
+    }
+
+    @Test func labelsPriorPairsAsBackgroundInsteadOfCurrentInput() {
+        let context = [
+            TranslationContextEntry(
+                sourceText: "这位姊妹分享了见证。",
+                targetText: "The sister shared her testimony."
+            )
+        ]
+        let source = "她感谢神的恩典。"
+
+        let prompt = HyMT2PromptBuilder.prompt(
+            source: source,
+            targetLanguage: "en",
+            terms: [],
+            context: context,
+            strict: false
+        )
+
+        #expect(prompt.contains("BACKGROUND FOR DISAMBIGUATION ONLY"))
+        #expect(prompt.contains("Chinese: \"这位姊妹分享了见证。\""))
+        #expect(prompt.contains("English: \"The sister shared her testimony.\""))
+        #expect(prompt.contains("Do not translate, output, copy, repeat, or summarize"))
+        #expect(prompt.contains("<CURRENT_SOURCE>\n\(source)\n</CURRENT_SOURCE>"))
+        #expect(
+            prompt.range(of: "END BACKGROUND")!.upperBound
+                < prompt.range(of: "<CURRENT_SOURCE>")!.lowerBound)
+    }
+
+    @Test func includesOnlyTwoNewestSuppliedContextPairs() {
+        let context = [
+            TranslationContextEntry(sourceText: "第一句", targetText: "First"),
+            TranslationContextEntry(sourceText: "第二句", targetText: "Second"),
+            TranslationContextEntry(sourceText: "第三句", targetText: "Third"),
+        ]
+
+        let prompt = HyMT2PromptBuilder.prompt(
+            source: "现在这句",
+            targetLanguage: "en",
+            terms: [],
+            context: context,
+            strict: false
+        )
+
+        #expect(!prompt.contains("第一句"))
+        #expect(prompt.contains("第二句"))
+        #expect(prompt.contains("第三句"))
+        #expect(prompt.contains("Prior pair 1"))
+        #expect(prompt.contains("Prior pair 2"))
+        #expect(!prompt.contains("Prior pair 3"))
+    }
+
+    @Test func translationRequestKeepsImmutableContext() {
+        let context = TranslationContextEntry(
+            sourceText: "神赐恩典。",
+            targetText: "God gives grace."
+        )
+
+        let request = TranslationRequest(
+            sourceText: "我们感谢祂。",
+            glossary: [],
+            context: [context]
+        )
+
+        #expect(request.context == [context])
     }
 }

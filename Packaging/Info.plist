@@ -5,7 +5,7 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Live Church Translation</string>
+	<string>Quiet Liturgy Reader</string>
   <key>CFBundleExecutable</key>
   <string>LiveChurchTranslation</string>
   <key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Live Church Translation</string>
+	<string>Quiet Liturgy Reader</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -35,8 +35,14 @@
   </dict>
   <key>NSHumanReadableCopyright</key>
   <string>Copyright © 2026 shuoyanjerry. MIT License.</string>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>Live Church Translation uses the selected microphone to recognize and translate a sermon locally on this Mac.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Quiet Liturgy Reader uses the selected microphone to recognize Mandarin and translate it into English locally on this Mac.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Quiet Liturgy Reader shares the live English transcript with devices you explicitly pair on your local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_churchtranslate._tcp</string>
+	</array>
   <key>NSSupportsAutomaticGraphicsSwitching</key>
   <true/>
 </dict>

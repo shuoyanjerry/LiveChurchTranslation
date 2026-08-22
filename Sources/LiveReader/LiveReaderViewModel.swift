@@ -51,6 +51,9 @@ public final class LiveReaderViewModel: ObservableObject {
     }
 
     public func load() async {
+        #if DEBUG
+            if loadDesignQAPreviewIfRequested() { return }
+        #endif
         eventTask?.cancel()
         eventTask = Task { [weak self, controller] in
             let stream = await controller.events()
@@ -64,7 +67,6 @@ public final class LiveReaderViewModel: ObservableObject {
             selectedInputID = settings.selectedAudioDeviceID.map { AudioInputID(rawValue: $0) }
             glossaryEntries = try await glossary.snapshot().entries
             devices = try await capture.availableInputs()
-            if selectedInputID == nil { selectedInputID = devices.first(where: \.isDefault)?.id }
         } catch {
             presentedError = error.localizedDescription
         }
@@ -78,31 +80,41 @@ public final class LiveReaderViewModel: ObservableObject {
             await controller.start(inputDeviceID: selectedInputID)
         }
     }
+}
 
-    public func saveGlossary(_ entries: [GlossaryEntry]) async {
+extension LiveReaderViewModel {
+    @discardableResult
+    public func saveGlossary(_ entries: [GlossaryEntry]) async -> Bool {
         do {
             try await glossary.replace(with: entries)
             glossaryEntries = try await glossary.snapshot().entries
+            return true
         } catch {
             presentedError = error.localizedDescription
+            return false
         }
     }
 
-    public func restoreGlossary() async {
+    public func restoreGlossary() async -> [GlossaryEntry]? {
         do {
             try await glossary.restoreDefaults()
             glossaryEntries = try await glossary.snapshot().entries
+            return glossaryEntries
         } catch {
             presentedError = error.localizedDescription
+            return nil
         }
     }
 
-    public func saveSettings() async {
+    @discardableResult
+    public func saveSettings() async -> Bool {
         settings.selectedAudioDeviceID = selectedInputID?.rawValue
         do {
             try await settingsStore.save(settings)
+            return true
         } catch {
             presentedError = error.localizedDescription
+            return false
         }
     }
 
@@ -123,4 +135,22 @@ public final class LiveReaderViewModel: ObservableObject {
             presentedError = message
         }
     }
+
+    #if DEBUG
+        private func loadDesignQAPreviewIfRequested() -> Bool {
+            guard UserDefaults.standard.bool(forKey: "QuietReaderDesignPreview") else {
+                return false
+            }
+            settings = AppSettings(readerFontSize: 30, showSourceText: false)
+            snapshot = LiveSessionSnapshot(
+                sessionID: nil,
+                phase: .idle,
+                transcript: DesignQAPreviewFixture.transcript,
+                modelStatus: nil,
+                statusMessage: "Transcript saved"
+            )
+            return true
+        }
+
+    #endif
 }

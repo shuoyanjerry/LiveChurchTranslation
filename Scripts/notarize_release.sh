@@ -3,13 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP="$REPOSITORY_ROOT/dist/LiveChurchTranslation.app"
-DMG="$REPOSITORY_ROOT/dist/LiveChurchTranslation.dmg"
+APP="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.app"
+DMG="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.dmg"
 : "${NOTARY_PROFILE:?Set NOTARY_PROFILE to a notarytool Keychain profile}"
 : "${DEVELOPER_ID_APPLICATION:?Set DEVELOPER_ID_APPLICATION to a Developer ID identity}"
 
 "$SCRIPT_DIR/package_release.sh"
-ZIP="$REPOSITORY_ROOT/dist/LiveChurchTranslation.zip"
+ZIP="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
 xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait

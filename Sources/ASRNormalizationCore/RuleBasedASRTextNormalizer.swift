@@ -3,14 +3,23 @@ import ASRNormalizationAPI
 public struct RuleBasedASRTextNormalizer: ASRTextNormalizer {
     public init() {}
 
-    public func normalize(
+    public func normalizeWithAudit(
         _ text: String,
         using additionalRules: [ASRNormalizationRule]
-    ) -> String {
-        guard !text.isEmpty else { return text }
+    ) -> ASRNormalizationResult {
+        guard !text.isEmpty else {
+            return ASRNormalizationResult(originalText: text, normalizedText: text, changes: [])
+        }
         let rules = compile(additionalRules + BuiltInASRNormalizationRules.rules)
-        guard !rules.isEmpty else { return text }
-        return replacingMatches(in: text, with: rules)
+        guard !rules.isEmpty else {
+            return ASRNormalizationResult(originalText: text, normalizedText: text, changes: [])
+        }
+        let replacement = replacingMatches(in: text, with: rules)
+        return ASRNormalizationResult(
+            originalText: text,
+            normalizedText: replacement.text,
+            changes: replacement.changes
+        )
     }
 
     private func compile(_ rules: [ASRNormalizationRule]) -> [CompiledRule] {
@@ -35,21 +44,28 @@ public struct RuleBasedASRTextNormalizer: ASRTextNormalizer {
     private func replacingMatches(
         in text: String,
         with rules: [CompiledRule]
-    ) -> String {
+    ) -> (text: String, changes: [ASRNormalizationChange]) {
         var result = ""
+        var changes: [ASRNormalizationChange] = []
         result.reserveCapacity(text.count)
         var cursor = text.startIndex
         while cursor < text.endIndex {
             let suffix = text[cursor...]
             if let match = rules.first(where: { suffix.hasPrefix($0.alias) }) {
                 result.append(match.canonical)
+                changes.append(
+                    ASRNormalizationChange(
+                        recognitionAlias: match.alias,
+                        canonicalText: match.canonical
+                    )
+                )
                 cursor = text.index(cursor, offsetBy: match.alias.count)
             } else {
                 result.append(text[cursor])
                 cursor = text.index(after: cursor)
             }
         }
-        return result
+        return (result, changes)
     }
 
     private func trim(_ text: String) -> String {

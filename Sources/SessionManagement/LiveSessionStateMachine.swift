@@ -9,10 +9,14 @@ struct LiveSessionStateMachine {
     private(set) var transcript: [TranscriptEntry] = []
     private(set) var modelStatus: ModelRuntimeStatus?
     private(set) var statusMessage = "Ready"
+    private(set) var issues: [LiveSessionIssue] = []
+    private(set) var finalizationOutcome: LiveSessionFinalizationOutcome?
 
     mutating func begin(sessionID: UUID) {
         self.sessionID = sessionID
         transcript = []
+        issues = []
+        finalizationOutcome = nil
         transition(to: .requestingPermission, message: "Requesting microphone access…")
     }
 
@@ -36,13 +40,25 @@ struct LiveSessionStateMachine {
         transcript.append(entry)
     }
 
-    mutating func finish(message: String = "Transcript saved") {
+    mutating func record(_ issue: LiveSessionIssue) {
+        issues.append(issue)
+    }
+
+    mutating func finish(
+        outcome: LiveSessionFinalizationOutcome,
+        message: String
+    ) {
         sessionID = nil
+        finalizationOutcome = outcome
         transition(to: .idle, message: message)
     }
 
-    mutating func fail(_ message: String) {
+    mutating func fail(
+        _ message: String,
+        outcome: LiveSessionFinalizationOutcome? = nil
+    ) {
         sessionID = nil
+        finalizationOutcome = outcome
         transition(to: .failed(message: message), message: message)
     }
 
@@ -52,7 +68,9 @@ struct LiveSessionStateMachine {
             phase: phase,
             transcript: transcript,
             modelStatus: modelStatus,
-            statusMessage: statusMessage
+            statusMessage: statusMessage,
+            issues: issues,
+            finalizationOutcome: finalizationOutcome
         )
     }
 }

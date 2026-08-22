@@ -8,17 +8,30 @@ struct HyMT2TranslationExecutor: Sendable {
         source: String,
         targetLanguage: String,
         terms: [TranslationTerm],
+        context: [TranslationContextEntry],
         endpoint: LlamaServerEndpoint
     ) async throws -> String {
         let first = try await completion(
-            prompt(source, language: targetLanguage, terms: terms, strict: false),
+            prompt(
+                source,
+                language: targetLanguage,
+                terms: terms,
+                context: context,
+                strict: false
+            ),
             endpoint: endpoint
         )
         do {
             return try validate(first, source: source, terms: terms)
         } catch is OutputValidationFailure {
             let retry = try await completion(
-                prompt(source, language: targetLanguage, terms: terms, strict: true),
+                prompt(
+                    source,
+                    language: targetLanguage,
+                    terms: terms,
+                    context: context,
+                    strict: true
+                ),
                 endpoint: endpoint
             )
             do {
@@ -33,12 +46,14 @@ struct HyMT2TranslationExecutor: Sendable {
         _ source: String,
         language: String,
         terms: [TranslationTerm],
+        context: [TranslationContextEntry],
         strict: Bool
     ) -> String {
         HyMT2PromptBuilder.prompt(
             source: source,
             targetLanguage: language,
             terms: terms,
+            context: context,
             strict: strict
         )
     }

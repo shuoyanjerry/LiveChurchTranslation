@@ -25,6 +25,7 @@ enum SessionDependencyFactory {
             modelReporter: components.reporter,
             transcript: components.transcript,
             transcriptStore: components.store,
+            recoveryStore: components.recoveryStore,
             settings: FakeSettingsStore(),
             logger: NoopAppLogger(),
             diagnostics: FakeDiagnosticsRecorder()
@@ -32,9 +33,13 @@ enum SessionDependencyFactory {
     }
 
     private static let glossary = [
-        GlossaryEntry(source: "因信称义", target: "justification by faith"),
-        GlossaryEntry(source: "恩典", target: "grace"),
-        GlossaryEntry(source: "救恩", target: "salvation"),
+        GlossaryEntry(
+            source: "因信称义",
+            target: "justification by faith",
+            enforcement: .required
+        ),
+        GlossaryEntry(source: "恩典", target: "grace", enforcement: .required),
+        GlossaryEntry(source: "救恩", target: "salvation", enforcement: .required),
         GlossaryEntry(source: "在圣灵里成圣", target: "be sanctified in the Holy Spirit"),
         GlossaryEntry(
             source: "洗礼",
@@ -55,22 +60,40 @@ struct SessionTestComponents {
     let reporter: FakeModelRuntimeReporter
     let transcript: LiveTranscriptBuffer
     let store: FakeTranscriptStore
+    let recoveryStore: FakeUtteranceRecoveryStore
 
     init(
         permission: AudioCapturePermission,
         recognizedText: String,
         translationFails: Bool,
         storageFails: Bool,
-        audioFrame: AudioFrame
+        finishFails: Bool,
+        modelLoadFails: Bool,
+        recognitionFails: Bool,
+        modelPreparationDelay: Duration?,
+        audioFrames: [AudioFrame],
+        holdsPermissionRequest: Bool,
+        holdsCaptureOpen: Bool,
+        emitsOnlyOnFlush: Bool
     ) {
-        capture = FakeAudioCaptureProvider(permission: permission, frames: [audioFrame])
+        capture = FakeAudioCaptureProvider(
+            permission: permission,
+            frames: audioFrames,
+            holdsPermissionRequest: holdsPermissionRequest,
+            holdsStreamOpen: holdsCaptureOpen
+        )
         processor = FakeAudioProcessor()
-        vad = FakeSegmentingVAD()
-        asr = FakeMandarinASRProvider(text: recognizedText)
+        vad = FakeSegmentingVAD(emitsOnlyOnFlush: emitsOnlyOnFlush)
+        asr = FakeMandarinASRProvider(
+            text: recognizedText,
+            loadFails: modelLoadFails,
+            recognitionFails: recognitionFails
+        )
         translator = FakeHyTranslationProvider(shouldFail: translationFails)
-        downloader = FakeModelDownloader()
+        downloader = FakeModelDownloader(delay: modelPreparationDelay)
         reporter = FakeModelRuntimeReporter()
         transcript = LiveTranscriptBuffer()
-        store = FakeTranscriptStore(failAppend: storageFails)
+        store = FakeTranscriptStore(failAppend: storageFails, failFinish: finishFails)
+        recoveryStore = FakeUtteranceRecoveryStore()
     }
 }

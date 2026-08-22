@@ -42,7 +42,11 @@ import TranslationAPI
         }
         #expect(!prompt.contains("大使命 translates to the Great Commission"))
         #expect(prompt.contains("without summarizing, adding, or omitting"))
-        #expect(prompt.hasSuffix(fixture.source))
+        #expect(
+            prompt.contains(
+                "<CURRENT_SOURCE>\n\(fixture.source)\n</CURRENT_SOURCE>"
+            )
+        )
     }
 
     @Test(arguments: TheologicalGoldenFixtures.userRequestedTerms)

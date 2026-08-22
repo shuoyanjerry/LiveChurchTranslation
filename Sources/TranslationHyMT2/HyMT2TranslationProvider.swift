@@ -91,6 +91,7 @@ public actor HyMT2TranslationProvider: TranslationProvider {
             source: source,
             targetLanguage: request.targetLanguage,
             terms: terms,
+            context: request.context,
             endpoint: endpoint
         )
         return TranslationResult(

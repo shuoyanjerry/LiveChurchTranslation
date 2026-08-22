@@ -26,6 +26,38 @@ import TranslationAPI
         )
     }
 
+    @Test func acceptsApprovedGrammaticalVariantForRequiredTerm() throws {
+        let result = try HyMT2OutputValidator.validate(
+            "We are justified by faith.",
+            source: "我们因信称义。",
+            requiredTerms: [
+                TranslationTerm(
+                    source: "因信称义",
+                    target: "justification by faith",
+                    acceptedTargets: ["justified by faith"]
+                )
+            ]
+        )
+
+        #expect(result == "We are justified by faith.")
+    }
+
+    @Test func preferredTermGuidesModelWithoutRejectingNaturalOutput() throws {
+        let result = try HyMT2OutputValidator.validate(
+            "We serve one another.",
+            source: "我们彼此事奉。",
+            requiredTerms: [
+                TranslationTerm(
+                    source: "事奉",
+                    target: "ministry",
+                    requirement: .preferred
+                )
+            ]
+        )
+
+        #expect(result == "We serve one another.")
+    }
+
     @Test func rejectsMissingNumberAndMalformedReference() {
         let issues = issues(
             output: "John chapter 3 records this truth.",

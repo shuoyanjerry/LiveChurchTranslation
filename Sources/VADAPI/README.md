@@ -9,7 +9,8 @@ segments consumed by ASR.
 
 - `VoiceActivityDetector`: process, flush, and reset lifecycle.
 - `VoiceActivityEvent`: explicit speech-start and speech-end events.
-- `SpeechSegment`: immutable samples, timing, sequence, and close reason.
+- `SpeechSegment`: immutable samples, timing, sequence, and close reason,
+  including long-utterance soft-silence boundaries.
 - `VoiceActivityConfiguration` and `VoiceActivityError`.
 
 ## Dependencies
@@ -29,5 +30,6 @@ active segment.
 
 ## Tests
 
-`VADCoreTests` verify noise adaptation, start/end events, the 650 ms default
-hangover, maximum-duration splitting, flushing, and reset behavior.
+`VADCoreTests` verify noise adaptation, majority voting, minimum voiced audio,
+the 650 ms default hangover, 14-second soft splitting, post-roll trimming,
+maximum-duration splitting, flushing, and reset behavior.

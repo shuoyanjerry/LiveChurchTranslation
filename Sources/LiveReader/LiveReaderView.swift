@@ -1,3 +1,4 @@
+import RemoteSharingFeatureAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -5,9 +6,16 @@ public struct LiveReaderView: View {
     @ObservedObject private var viewModel: LiveReaderViewModel
     @State private var showsGlossary = false
     @State private var showsSettings = false
+    @State private var showsSharing = false
+    @State private var sharingState = LocalSharingViewState.off
+    private let sharingFeature: any LocalSharingFeature
 
-    public init(viewModel: LiveReaderViewModel) {
+    public init(
+        viewModel: LiveReaderViewModel,
+        sharingFeature: any LocalSharingFeature
+    ) {
         self.viewModel = viewModel
+        self.sharingFeature = sharingFeature
     }
 
     public var body: some View {
@@ -17,19 +25,29 @@ public struct LiveReaderView: View {
                 LiveReaderHeader(
                     viewModel: viewModel,
                     showsGlossary: $showsGlossary,
-                    showsSettings: $showsSettings
+                    showsSettings: $showsSettings,
+                    showsSharing: $showsSharing,
+                    sharingState: sharingState,
+                    onSharingIntent: sendSharingIntent
                 )
-                Divider().overlay(Color.white.opacity(0.08))
+                Divider().overlay(ChurchTheme.stone)
                 LiveTranscriptReader(viewModel: viewModel)
             }
         }
-        .frame(minWidth: 820, minHeight: 600)
+        .preferredColorScheme(.light)
+        .frame(minWidth: 1_080, minHeight: 640)
         .task { await viewModel.load() }
+        .task {
+            sharingState = await sharingFeature.state()
+            for await state in await sharingFeature.events() {
+                sharingState = state
+            }
+        }
         .sheet(isPresented: $showsGlossary) {
             GlossaryEditorView(entries: viewModel.glossaryEntries) { entries in
-                Task { await viewModel.saveGlossary(entries) }
+                await viewModel.saveGlossary(entries)
             } onRestore: {
-                Task { await viewModel.restoreGlossary() }
+                await viewModel.restoreGlossary()
             }
         }
         .sheet(isPresented: $showsSettings) {
@@ -46,5 +64,9 @@ public struct LiveReaderView: View {
         } message: {
             Text(viewModel.presentedError ?? "Unknown error")
         }
+    }
+
+    private func sendSharingIntent(_ intent: LocalSharingIntent) {
+        Task { await sharingFeature.send(intent) }
     }
 }

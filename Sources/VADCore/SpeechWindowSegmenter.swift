@@ -3,6 +3,7 @@ import VADAPI
 struct SpeechWindowSegmenter {
     private let thresholds: SpeechSegmentationThresholds
     private var classifier: AdaptiveEnergyClassifier
+    private var decisionSmoother: SpeechDecisionSmoother
     private var preRoll: RollingAudioBuffer
     private var candidateSpeechSampleCount = 0
     private var activeSpeech: ActiveSpeech?
@@ -13,6 +14,7 @@ struct SpeechWindowSegmenter {
         let thresholds = SpeechSegmentationThresholds(configuration: configuration)
         self.thresholds = thresholds
         classifier = AdaptiveEnergyClassifier(configuration: configuration)
+        decisionSmoother = SpeechDecisionSmoother(configuration: configuration)
         preRoll = RollingAudioBuffer(
             capacity: thresholds.preRollSampleCount,
             sampleRate: thresholds.sampleRate
@@ -23,10 +25,11 @@ struct SpeechWindowSegmenter {
         _ window: [Float],
         at timestamp: Duration
     ) -> [VoiceActivityEvent] {
-        let isSpeech = classifier.isSpeech(
+        let rawSpeech = classifier.isSpeech(
             window,
             whileSpeaking: activeSpeech != nil
         )
+        let isSpeech = decisionSmoother.append(rawSpeech)
         if activeSpeech != nil {
             return consumeWhileSpeaking(window, isSpeech: isSpeech)
         }
@@ -51,11 +54,14 @@ struct SpeechWindowSegmenter {
         pendingContinuation = false
         preRoll.removeAll()
         classifier.reset()
+        decisionSmoother.reset()
         if resetSequence {
             nextSequenceNumber = 1
         }
     }
+}
 
+extension SpeechWindowSegmenter {
     private mutating func consumeWhileIdle(
         _ window: [Float],
         at timestamp: Duration,
@@ -82,10 +88,16 @@ struct SpeechWindowSegmenter {
         guard let speech = activeSpeech else { return [] }
         if speech.samples.count >= thresholds.maximumSegmentSampleCount {
             pendingContinuation = isSpeech
-            return [.speechEnded(close(speech, reason: .maximumDuration))]
+            return closeEvent(speech, reason: .maximumDuration)
+        }
+        let canSoftSplit =
+            speech.samples.count >= thresholds.softSplitAfterSampleCount
+            && speech.trailingSilenceSampleCount >= thresholds.softSilenceSampleCount
+        if canSoftSplit {
+            return closeEvent(speech, reason: .softSilence)
         }
         if speech.trailingSilenceSampleCount >= thresholds.silenceSampleCount {
-            return [.speechEnded(close(speech, reason: .trailingSilence))]
+            return closeEvent(speech, reason: .trailingSilence)
         }
         return []
     }
@@ -99,24 +111,41 @@ struct SpeechWindowSegmenter {
         activeSpeech = ActiveSpeech(
             sequenceNumber: sequence,
             samples: samples,
-            startedAt: timestamp
+            startedAt: timestamp,
+            voicedSampleCount: candidateSpeechSampleCount
         )
         candidateSpeechSampleCount = 0
         preRoll.removeAll()
         return .speechStarted(sequenceNumber: sequence, at: timestamp)
     }
 
+    private mutating func closeEvent(
+        _ speech: ActiveSpeech,
+        reason: SpeechSegmentEndReason
+    ) -> [VoiceActivityEvent] {
+        guard let segment = close(speech, reason: reason) else { return [] }
+        return [.speechEnded(segment)]
+    }
+
     private mutating func close(
         _ speech: ActiveSpeech,
         reason: SpeechSegmentEndReason
-    ) -> SpeechSegment {
+    ) -> SpeechSegment? {
+        let keepTrailing = reason == .maximumDuration ? Int.max : thresholds.postRollSampleCount
         let segment = speech.segment(
             sampleRate: thresholds.sampleRate,
-            reason: reason
+            reason: reason,
+            trailingSamplesToKeep: keepTrailing
         )
         activeSpeech = nil
         candidateSpeechSampleCount = 0
         preRoll.removeAll()
+        if reason != .maximumDuration {
+            decisionSmoother.reset()
+        }
+        guard speech.voicedSampleCount >= thresholds.minimumVoicedSampleCount else {
+            return nil
+        }
         return segment
     }
 }

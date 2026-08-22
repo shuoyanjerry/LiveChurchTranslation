@@ -23,12 +23,16 @@ actor FakeGlossaryService: GlossaryService {
 
 actor FakeTranscriptStore: TranscriptStore {
     private let failAppend: Bool
+    private let failFinish: Bool
     private var begun: [TranscriptSession] = []
     private var appendAttempts = 0
     private var appended: [TranscriptEntry] = []
     private var finished: [TranscriptSession] = []
 
-    init(failAppend: Bool) { self.failAppend = failAppend }
+    init(failAppend: Bool, failFinish: Bool = false) {
+        self.failAppend = failAppend
+        self.failFinish = failFinish
+    }
 
     func begin(_ session: TranscriptSession) { begun.append(session) }
 
@@ -38,7 +42,20 @@ actor FakeTranscriptStore: TranscriptStore {
         appended.append(entry)
     }
 
-    func finish(_ session: TranscriptSession) { finished.append(session) }
+    func load(sessionID: UUID) -> TranscriptSession? {
+        guard let session = begun.first(where: { $0.id == sessionID }) else { return nil }
+        return TranscriptSession(
+            id: session.id,
+            startedAt: session.startedAt,
+            endedAt: session.endedAt,
+            entries: appended
+        )
+    }
+
+    func finish(_ session: TranscriptSession) throws {
+        if failFinish { throw SessionPipelineFakeError.finalization }
+        finished.append(session)
+    }
     func recentSessions(limit _: Int) -> [StoredSessionSummary] { [] }
 
     func begunSessions() -> [TranscriptSession] { begun }

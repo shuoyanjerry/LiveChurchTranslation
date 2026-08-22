@@ -15,30 +15,61 @@ public struct TranslationRequest: Identifiable, Equatable, Sendable {
     public let sourceLanguage: String
     public let targetLanguage: String
     public let glossary: [TranslationTerm]
+    public let context: [TranslationContextEntry]
 
     public init(
         id: UUID = UUID(),
         sourceText: String,
         sourceLanguage: String = "zh-Hans",
         targetLanguage: String = "en",
-        glossary: [TranslationTerm]
+        glossary: [TranslationTerm],
+        context: [TranslationContextEntry] = []
     ) {
         self.id = id
         self.sourceText = sourceText
         self.sourceLanguage = sourceLanguage
         self.targetLanguage = targetLanguage
         self.glossary = glossary
+        self.context = context
+    }
+}
+
+/// One finalized, validator-approved bilingual turn available to a later request.
+public struct TranslationContextEntry: Codable, Equatable, Hashable, Sendable {
+    public let sourceText: String
+    public let targetText: String
+
+    public init(sourceText: String, targetText: String) {
+        self.sourceText = sourceText
+        self.targetText = targetText
     }
 }
 
 public struct TranslationTerm: Codable, Equatable, Hashable, Sendable {
     public let source: String
     public let target: String
+    public let sourceAliases: [String]
+    public let acceptedTargets: [String]
+    public let requirement: TranslationTermRequirement
 
-    public init(source: String, target: String) {
+    public init(
+        source: String,
+        target: String,
+        sourceAliases: [String] = [],
+        acceptedTargets: [String] = [],
+        requirement: TranslationTermRequirement = .required
+    ) {
         self.source = source
         self.target = target
+        self.sourceAliases = sourceAliases
+        self.acceptedTargets = acceptedTargets
+        self.requirement = requirement
     }
+}
+
+public enum TranslationTermRequirement: String, Codable, Sendable {
+    case required
+    case preferred
 }
 
 public struct TranslationResult: Identifiable, Equatable, Sendable {

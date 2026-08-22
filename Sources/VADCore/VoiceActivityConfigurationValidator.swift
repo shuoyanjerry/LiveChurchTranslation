@@ -7,7 +7,17 @@ enum VoiceActivityConfigurationValidator {
         try require(value.preRoll >= value.speechStart, "preRoll")
         try require(value.speechStart > .zero, "speechStart")
         try require(value.trailingSilence > .zero, "trailingSilence")
+        try require(value.softSplitSilence > .zero, "softSplitSilence")
+        try require(value.softSplitAfter > value.preRoll, "softSplitAfter")
         try require(value.maximumSegment > value.preRoll, "maximumSegment")
+        try require(value.postRoll >= .zero, "postRoll")
+        try require(value.minimumVoiced > .zero, "minimumVoiced")
+        try require(value.decisionWindowCount > 0, "decisionWindowCount")
+        try require(value.decisionSpeechVotes > 0, "decisionSpeechVotes")
+        try require(
+            value.decisionSpeechVotes <= value.decisionWindowCount,
+            "decisionSpeechVotes"
+        )
         try require(
             value.initialNoiseFloorRMS.isFinite && value.initialNoiseFloorRMS >= 0, "initialNoiseFloorRMS")
         try require(value.minimumSpeechRMS.isFinite && value.minimumSpeechRMS > 0, "minimumSpeechRMS")

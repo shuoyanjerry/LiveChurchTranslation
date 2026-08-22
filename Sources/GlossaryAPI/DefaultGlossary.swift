@@ -1,5 +1,9 @@
 public enum DefaultGlossary {
-    public static let entries: [GlossaryEntry] = [
+    public static let entries = scriptureAndDoctrineEntries + ministryEntries
+}
+
+extension DefaultGlossary {
+    fileprivate static let scriptureAndDoctrineEntries: [GlossaryEntry] = [
         GlossaryEntry(source: "你们要去，使万民作我的门徒", target: "go and make disciples of all nations"),
         GlossaryEntry(source: "你们得救是本乎恩，也因着信", target: "by grace you have been saved through faith"),
         GlossaryEntry(
@@ -26,11 +30,21 @@ public enum DefaultGlossary {
         GlossaryEntry(
             source: "因信称义",
             target: "justification by faith",
-            recognitionAliases: ["因信生义"]),
+            recognitionAliases: ["因信生义"],
+            targetVariants: ["justified by faith", "justification through faith"],
+            enforcement: .required),
         GlossaryEntry(source: "本乎恩因着信", target: "by grace through faith"),
         GlossaryEntry(source: "惟独藉着信心", target: "through faith alone"),
-        GlossaryEntry(source: "三位一体的神", target: "the triune God"),
-        GlossaryEntry(source: "三位一体", target: "the Trinity"),
+        GlossaryEntry(
+            source: "三位一体的神",
+            target: "the triune God",
+            targetVariants: ["the Trinitarian God"],
+            enforcement: .required),
+        GlossaryEntry(
+            source: "三位一体",
+            target: "the Trinity",
+            targetVariants: ["Trinitarian"],
+            enforcement: .required),
         GlossaryEntry(source: "圣父、圣子、圣灵", target: "the Father, the Son, and the Holy Spirit"),
         GlossaryEntry(source: "道成肉身", target: "the incarnation"),
         GlossaryEntry(source: "神人二性", target: "the divine and human natures"),
@@ -42,19 +56,37 @@ public enum DefaultGlossary {
         GlossaryEntry(source: "全然败坏", target: "total depravity"),
         GlossaryEntry(source: "无条件拣选", target: "unconditional election"),
         GlossaryEntry(source: "圣徒蒙保守", target: "the perseverance of the saints"),
-        GlossaryEntry(source: "圣灵", target: "the Holy Spirit"),
+    ]
+}
+
+extension DefaultGlossary {
+    fileprivate static let ministryEntries: [GlossaryEntry] = [
+        GlossaryEntry(source: "圣灵", target: "the Holy Spirit", enforcement: .required),
         GlossaryEntry(source: "圣父", target: "God the Father"),
         GlossaryEntry(source: "圣子", target: "God the Son"),
-        GlossaryEntry(source: "救恩", target: "salvation", recognitionAliases: ["休恩"]),
-        GlossaryEntry(source: "恩典", target: "grace"),
-        GlossaryEntry(source: "称义", target: "justification"),
+        GlossaryEntry(
+            source: "救恩",
+            target: "salvation",
+            recognitionAliases: ["休恩"],
+            targetVariants: ["saved", "saving"],
+            enforcement: .required),
+        GlossaryEntry(source: "恩典", target: "grace", enforcement: .required),
+        GlossaryEntry(
+            source: "称义",
+            target: "justification",
+            targetVariants: ["justified", "justify", "justifies"]),
         GlossaryEntry(
             source: "在圣灵里成圣",
-            target: "be sanctified in the Holy Spirit",
-            recognitionAliases: ["在圣灵里承受"]),
-        GlossaryEntry(source: "成圣", target: "sanctification"),
-        GlossaryEntry(source: "重生", target: "regeneration"),
-        GlossaryEntry(source: "赎罪", target: "atonement"),
+            target: "be sanctified in the Holy Spirit"),
+        GlossaryEntry(
+            source: "成圣",
+            target: "sanctification",
+            targetVariants: ["sanctified", "sanctify", "sanctifies"]),
+        GlossaryEntry(
+            source: "重生",
+            target: "regeneration",
+            targetVariants: ["born again", "new birth"]),
+        GlossaryEntry(source: "赎罪", target: "atonement", enforcement: .required),
         GlossaryEntry(source: "悔改", target: "repentance"),
         GlossaryEntry(source: "信心", target: "faith"),
         GlossaryEntry(source: "罪性", target: "sinful nature"),
@@ -89,8 +121,19 @@ public enum DefaultGlossary {
         GlossaryEntry(source: "再来", target: "the Second Coming"),
         GlossaryEntry(source: "末世", target: "the last days"),
         GlossaryEntry(source: "团契", target: "fellowship"),
-        GlossaryEntry(source: "事奉", target: "ministry"),
-        GlossaryEntry(source: "圣餐", target: "the Lord's Supper"),
-        GlossaryEntry(source: "洗礼", target: "baptism"),
+        GlossaryEntry(
+            source: "事奉",
+            target: "ministry",
+            targetVariants: ["serve", "serving", "service"]),
+        GlossaryEntry(
+            source: "圣餐",
+            target: "the Lord's Supper",
+            targetVariants: ["Holy Communion", "Communion"],
+            enforcement: .required),
+        GlossaryEntry(
+            source: "洗礼",
+            target: "baptism",
+            sourceAliases: ["受浸"],
+            targetVariants: ["baptized", "baptize"]),
     ]
 }

@@ -16,13 +16,16 @@ public struct StatusPill: View {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)
-                .shadow(color: pulses ? color.opacity(0.8) : .clear, radius: 5)
             Text(text)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
         }
-        .foregroundStyle(.white.opacity(0.88))
+        .foregroundStyle(ChurchTheme.muted)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .background(Color.black.opacity(0.22), in: Capsule())
+        .background(ChurchTheme.surfaceWarm, in: Capsule())
+        .fixedSize(horizontal: true, vertical: false)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
+        .accessibilityValue(pulses ? "Active" : "Inactive")
     }
 }
