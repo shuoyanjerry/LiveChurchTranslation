@@ -11,6 +11,7 @@ import PersistenceAPI
 import SettingsAPI
 import TranscriptAPI
 import TranslationAPI
+import UtteranceRecoveryAPI
 import VADAPI
 
 public struct LiveSessionDependencies: Sendable {
@@ -25,6 +26,7 @@ public struct LiveSessionDependencies: Sendable {
     let modelReporter: any ModelRuntimeReporting
     let transcript: any TranscriptBuffer
     let transcriptStore: any TranscriptStore
+    let recoveryStore: any UtteranceRecoveryStore
     let settings: any SettingsStore
     let logger: any AppLogger
     let diagnostics: any DiagnosticsRecorder
@@ -41,6 +43,7 @@ public struct LiveSessionDependencies: Sendable {
         modelReporter: any ModelRuntimeReporting,
         transcript: any TranscriptBuffer,
         transcriptStore: any TranscriptStore,
+        recoveryStore: any UtteranceRecoveryStore,
         settings: any SettingsStore,
         logger: any AppLogger,
         diagnostics: any DiagnosticsRecorder
@@ -56,6 +59,7 @@ public struct LiveSessionDependencies: Sendable {
         self.modelReporter = modelReporter
         self.transcript = transcript
         self.transcriptStore = transcriptStore
+        self.recoveryStore = recoveryStore
         self.settings = settings
         self.logger = logger
         self.diagnostics = diagnostics

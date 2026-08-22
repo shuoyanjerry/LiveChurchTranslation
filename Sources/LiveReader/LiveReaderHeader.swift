@@ -1,4 +1,4 @@
-import SessionManagementAPI
+import RemoteSharingFeatureAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -6,69 +6,108 @@ struct LiveReaderHeader: View {
     @ObservedObject var viewModel: LiveReaderViewModel
     @Binding var showsGlossary: Bool
     @Binding var showsSettings: Bool
+    @Binding var showsSharing: Bool
+    let sharingState: LocalSharingViewState
+    let onSharingIntent: LocalSharingIntentHandler
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             title
-            Spacer()
-            StatusPill(
-                text: viewModel.snapshot.statusMessage,
-                color: statusColor,
-                pulses: viewModel.isRunning
-            )
-            actionButton("Glossary", icon: "character.book.closed") {
-                showsGlossary = true
-            }
-            actionButton("Settings", icon: "slider.horizontal.3") {
-                showsSettings = true
-            }
-            Button {
-                Task { await viewModel.toggleSession() }
-            } label: {
-                Label(viewModel.isRunning ? "Stop" : "Start", systemImage: sessionButtonIcon)
-            }
-            .buttonStyle(ChurchPrimaryButtonStyle())
+            StatusPill(text: modelStatusText, color: statusColor, pulses: viewModel.isRunning)
+            Spacer(minLength: 24)
+            sharingButton
+            optionsMenu
+            inputMenu
+            sessionButton
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 28)
+        .frame(minHeight: 76)
+        .background(ChurchTheme.surface)
     }
 
     private var title: some View {
-        HStack(spacing: 16) {
-            Image(systemName: "waveform.and.mic")
-                .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(ChurchTheme.primary)
+        HStack(spacing: 13) {
+            Image(systemName: "book.pages")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(ChurchTheme.olive)
+                .frame(width: 42, height: 42)
+                .background(ChurchTheme.surfaceWarm, in: Circle())
             VStack(alignment: .leading, spacing: 2) {
-                Text("LIVE CHURCH TRANSLATION")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .tracking(1.5)
-                    .foregroundStyle(ChurchTheme.secondaryText)
-                Text("Sermon Reader")
-                    .font(.system(size: 23, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                Text("Quiet Liturgy Reader")
+                    .font(.system(size: 21, weight: .semibold, design: .serif))
+                    .foregroundStyle(ChurchTheme.ink)
+                Text(viewModel.snapshot.statusMessage)
+                    .font(.caption)
+                    .foregroundStyle(ChurchTheme.muted)
+                    .lineLimit(1)
             }
         }
+        .accessibilityElement(children: .combine)
+        .fixedSize(horizontal: true, vertical: false)
+        .layoutPriority(2)
     }
 
-    private func actionButton(
-        _ title: String,
-        icon: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) { Label(title, systemImage: icon) }
-            .buttonStyle(ChurchSecondaryButtonStyle())
-    }
-
-    private var statusColor: Color {
-        switch viewModel.snapshot.phase {
-        case .failed: ChurchTheme.danger
-        case .idle: ChurchTheme.secondaryText
-        case .preparingModel: ChurchTheme.warning
-        default: ChurchTheme.live
+    private var sharingButton: some View {
+        Button {
+            showsSharing.toggle()
+        } label: {
+            Label(sharingLabel, systemImage: "antenna.radiowaves.left.and.right")
         }
+        .buttonStyle(ChurchSecondaryButtonStyle())
+        .popover(isPresented: $showsSharing, arrowEdge: .bottom) {
+            LocalSharingPopover(state: sharingState, onIntent: onSharingIntent)
+        }
+        .help("Share the live transcript on the local network")
     }
 
-    private var sessionButtonIcon: String {
-        viewModel.isRunning ? "stop.fill" : "play.fill"
+    private var optionsMenu: some View {
+        Menu {
+            Button("Theological Glossary", systemImage: "character.book.closed") {
+                showsGlossary = true
+            }
+            Button("Reader Settings", systemImage: "slider.horizontal.3") {
+                showsSettings = true
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+        }
+        .menuStyle(.borderlessButton)
+        .foregroundStyle(ChurchTheme.ink)
+        .accessibilityLabel("Reader options")
+    }
+
+    private var inputMenu: some View {
+        Menu {
+            Button("System Default") { selectInput(nil) }
+            if !viewModel.devices.isEmpty { Divider() }
+            ForEach(viewModel.devices) { device in
+                Button(device.name) { selectInput(device.id) }
+            }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "mic")
+                Text(selectedInputName)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 150)
+                Image(systemName: "chevron.down").font(.caption2)
+            }
+        }
+        .buttonStyle(ChurchSecondaryButtonStyle())
+        .accessibilityLabel("Audio input")
+        .accessibilityValue(selectedInputName)
+    }
+
+    private var sessionButton: some View {
+        Button {
+            Task { await viewModel.toggleSession() }
+        } label: {
+            Label(sessionButtonTitle, systemImage: sessionButtonIcon)
+        }
+        .buttonStyle(ChurchPrimaryButtonStyle())
+        .keyboardShortcut(.return, modifiers: [.command])
+        .accessibilityHint("Starts or stops Chinese recognition and English translation")
     }
 }

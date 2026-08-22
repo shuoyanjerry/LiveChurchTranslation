@@ -6,11 +6,11 @@ import Testing
     private let normalizer = RuleBasedASRTextNormalizer()
 
     @Test func repairsObservedQwenTheologicalMisrecognitions() {
-        let raw = "休恩出于恩典，我们因信生义，并且在圣灵里承受。"
+        let raw = "休恩出于恩典，我们因信生义。"
 
         let result = normalizer.normalize(raw, using: [])
 
-        #expect(result == "救恩出于恩典，我们因信称义，并且在圣灵里成圣。")
+        #expect(result == "救恩出于恩典，我们因信称义。")
     }
 
     @Test func appliesUserEditableRecognitionAlias() {
@@ -57,5 +57,22 @@ import Testing
         ]
 
         #expect(normalizer.normalize("原文 误听", using: rules) == "原文 误听")
+    }
+
+    @Test func reportsOriginalTextAndEveryAppliedCorrection() {
+        let result = normalizer.normalizeWithAudit("休恩和因信生义", using: [])
+
+        #expect(result.originalText == "休恩和因信生义")
+        #expect(result.normalizedText == "救恩和因信称义")
+        #expect(
+            result.changes == [
+                ASRNormalizationChange(recognitionAlias: "休恩", canonicalText: "救恩"),
+                ASRNormalizationChange(recognitionAlias: "因信生义", canonicalText: "因信称义"),
+            ]
+        )
+    }
+
+    @Test func doesNotRewriteAmbiguousHolySpiritPhraseGlobally() {
+        #expect(normalizer.normalize("在圣灵里承受产业", using: []) == "在圣灵里承受产业")
     }
 }

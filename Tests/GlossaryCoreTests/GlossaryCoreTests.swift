@@ -33,6 +33,9 @@ import Testing
 
         #expect(entries.count == 1)
         #expect(entries[0].recognitionAliases.isEmpty)
+        #expect(entries[0].sourceAliases.isEmpty)
+        #expect(entries[0].targetVariants.isEmpty)
+        #expect(entries[0].enforcement == .preferred)
     }
 
     @Test func serviceTrimsAndPersistsRecognitionAliases() async throws {
@@ -48,6 +51,42 @@ import Testing
         ])
 
         #expect(try await service.snapshot().entries[0].recognitionAliases == ["休恩"])
+    }
+
+    @Test func servicePreservesSemanticAliasesVariantsAndEnforcement() async throws {
+        let repository = InMemoryGlossaryRepository()
+        let service = DefaultGlossaryService(repository: repository)
+        try await service.replace(with: [
+            GlossaryEntry(
+                source: "洗礼",
+                target: "baptism",
+                sourceAliases: [" 受浸 "],
+                targetVariants: [" baptized "],
+                enforcement: .required,
+                note: "  sacrament term  "
+            )
+        ])
+
+        let entry = try #require(try await service.snapshot().entries.first)
+        #expect(entry.sourceAliases == ["受浸"])
+        #expect(entry.targetVariants == ["baptized"])
+        #expect(entry.enforcement == .required)
+        #expect(entry.note == "sacrament term")
+    }
+
+    @Test func recognitionAliasCannotShadowARealSourceAlias() async throws {
+        let service = DefaultGlossaryService(repository: InMemoryGlossaryRepository())
+
+        await #expect(throws: GlossaryError.self) {
+            try await service.replace(with: [
+                GlossaryEntry(source: "洗礼", target: "baptism", sourceAliases: ["受浸"]),
+                GlossaryEntry(
+                    source: "浸礼",
+                    target: "immersion",
+                    recognitionAliases: ["受浸"]
+                ),
+            ])
+        }
     }
 }
 

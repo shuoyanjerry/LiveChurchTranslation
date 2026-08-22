@@ -13,6 +13,7 @@ import SessionManagement
 import SettingsUserDefaults
 import TranscriptCore
 import TranslationHyMT2
+import UtteranceRecoveryFileSystem
 import VADCore
 
 @MainActor
@@ -62,6 +63,7 @@ struct AppServiceGraph {
             modelReporter: reporter,
             transcript: LiveTranscriptBuffer(),
             transcriptStore: FileTranscriptStore(root: directories.transcripts),
+            recoveryStore: try FileUtteranceRecoveryStore(root: directories.recovery),
             settings: settings,
             logger: logger,
             diagnostics: InMemoryDiagnosticsRecorder(

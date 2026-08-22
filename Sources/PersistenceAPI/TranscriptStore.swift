@@ -20,6 +20,7 @@ public struct StoredSessionSummary: Identifiable, Equatable, Sendable {
 public protocol TranscriptStore: Sendable {
     func begin(_ session: TranscriptSession) async throws
     func append(_ entry: TranscriptEntry, to sessionID: UUID) async throws
+    func load(sessionID: UUID) async throws -> TranscriptSession?
     func finish(_ session: TranscriptSession) async throws
     func recentSessions(limit: Int) async throws -> [StoredSessionSummary]
 }

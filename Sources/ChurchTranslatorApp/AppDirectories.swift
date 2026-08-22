@@ -6,6 +6,7 @@ struct AppDirectories: Sendable {
     let glossary: URL
     let transcripts: URL
     let diagnostics: URL
+    let recovery: URL
 
     static func production(fileManager: FileManager = .default) throws -> AppDirectories {
         let applicationSupport = try fileManager.url(
@@ -24,7 +25,8 @@ struct AppDirectories: Sendable {
             models: root.appending(path: "Models", directoryHint: .isDirectory),
             glossary: root.appending(path: "Glossary", directoryHint: .isDirectory),
             transcripts: root.appending(path: "Transcripts", directoryHint: .isDirectory),
-            diagnostics: root.appending(path: "Diagnostics", directoryHint: .isDirectory)
+            diagnostics: root.appending(path: "Diagnostics", directoryHint: .isDirectory),
+            recovery: root.appending(path: ".PendingUtterances", directoryHint: .isDirectory)
         )
     }
 }

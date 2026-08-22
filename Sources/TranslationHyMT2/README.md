@@ -10,6 +10,8 @@ Infrastructure adapter for faithful local Chinese-to-English translation with Te
 - `HyMT2Configuration`: immutable helper, inference, timeout, and resource limits.
 - `HyMT2Error`: explicit model, helper, startup, transport, and output-validation failures.
 
+Each request may carry prior validator-approved `TranslationContextEntry` pairs. The prompt includes only the two newest pairs, labels them as non-output background, and keeps the current source in a separate delimiter. Callers remain responsible for admitting only finalized, persisted translations into this context.
+
 `loadModel(at:)` accepts either a GGUF file or a directory containing `Hy-MT2-1.8B-Q4_K_M.gguf`.
 
 ## Dependencies
@@ -30,4 +32,4 @@ The helper binds to `127.0.0.1` on a randomized high port with a per-launch rand
 
 ## Tests
 
-`TranslationHyMT2Tests` uses fake process and transport actors. It covers model lifecycle, readiness polling, exact single retry, glossary filtering, prompt rules, shutdown, termination, timeout, and each output guard without starting the real helper.
+`TranslationHyMT2Tests` uses fake process and transport actors. It covers model lifecycle, readiness polling, exact single retry, glossary filtering, bounded background context, current-source delimiters, prompt rules, shutdown, termination, timeout, and each output guard without starting the real helper.

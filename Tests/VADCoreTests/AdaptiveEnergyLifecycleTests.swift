@@ -75,7 +75,13 @@ import Testing
             preRoll: .milliseconds(40),
             speechStart: .milliseconds(40),
             trailingSilence: .milliseconds(80),
-            maximumSegment: maximumSegment
+            softSplitSilence: .milliseconds(40),
+            softSplitAfter: .seconds(14),
+            maximumSegment: maximumSegment,
+            postRoll: .milliseconds(40),
+            minimumVoiced: .milliseconds(40),
+            decisionWindowCount: 1,
+            decisionSpeechVotes: 1
         )
     }
 }

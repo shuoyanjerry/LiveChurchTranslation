@@ -7,22 +7,49 @@ enum TranslationTermMatcher {
         from glossary: [TranslationTerm],
         limit: Int
     ) -> [TranslationTerm] {
+        let candidates = candidates(in: source, from: glossary)
+        return selectNonoverlapping(candidates, limit: limit)
+    }
+
+    private static func candidates(
+        in source: String,
+        from glossary: [TranslationTerm]
+    ) -> [Candidate] {
         var seen = Set<String>()
-        let candidates = glossary.compactMap { term -> Candidate? in
-            let key = term.source.trimmingCharacters(in: .whitespacesAndNewlines)
-                .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            guard !key.isEmpty, !term.target.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                seen.insert(key).inserted
-            else { return nil }
-            let matches = ranges(of: term.source, in: source)
-            return matches.isEmpty ? nil : Candidate(term: term, ranges: matches)
+        return glossary.compactMap {
+            candidate(for: $0, in: source, seen: &seen)
         }.sorted {
-            if $0.term.source.count != $1.term.source.count {
-                return $0.term.source.count > $1.term.source.count
+            if $0.longestMatch != $1.longestMatch {
+                return $0.longestMatch > $1.longestMatch
             }
             return $0.term.source < $1.term.source
         }
+    }
 
+    private static func candidate(
+        for term: TranslationTerm,
+        in source: String,
+        seen: inout Set<String>
+    ) -> Candidate? {
+        let key = normalized(term.source)
+        guard !key.isEmpty, !term.target.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            seen.insert(key).inserted
+        else { return nil }
+        let matchedPhrases = ([term.source] + term.sourceAliases).compactMap { phrase in
+            let matches = ranges(of: phrase, in: source)
+            return matches.isEmpty ? nil : MatchedPhrase(text: phrase, ranges: matches)
+        }
+        let matches = matchedPhrases.flatMap(\.ranges)
+        let longestMatch = matchedPhrases.map(\.text.count).max() ?? 0
+        return matches.isEmpty
+            ? nil
+            : Candidate(term: term, ranges: matches, longestMatch: longestMatch)
+    }
+
+    private static func selectNonoverlapping(
+        _ candidates: [Candidate],
+        limit: Int
+    ) -> [TranslationTerm] {
         var occupied: [Range<String.Index>] = []
         var selected: [TranslationTerm] = []
         for candidate in candidates where selected.count < max(0, limit) {
@@ -34,6 +61,11 @@ enum TranslationTermMatcher {
             occupied.append(contentsOf: available)
         }
         return selected
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
 
     private static func ranges(
@@ -59,5 +91,11 @@ enum TranslationTermMatcher {
 
 private struct Candidate {
     let term: TranslationTerm
+    let ranges: [Range<String.Index>]
+    let longestMatch: Int
+}
+
+private struct MatchedPhrase {
+    let text: String
     let ranges: [Range<String.Index>]
 }

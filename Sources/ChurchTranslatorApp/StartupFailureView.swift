@@ -8,7 +8,7 @@ struct StartupFailureView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.orange)
-            Text("Live Church Translation could not start")
+            Text("Quiet Liturgy Reader could not start")
                 .font(.title2.weight(.semibold))
             Text(message)
                 .foregroundStyle(.secondary)

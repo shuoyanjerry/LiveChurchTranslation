@@ -3,9 +3,10 @@ import PersistenceAPI
 import TranscriptAPI
 
 public actor FileTranscriptStore: TranscriptStore {
-    private let root: URL
-    private let fileManager: FileManager
-    private let jsonEncoder: JSONEncoder
+    let root: URL
+    let fileManager: FileManager
+    let jsonEncoder: JSONEncoder
+    var entryIDs: [UUID: Set<UUID>] = [:]
 
     public init(root: URL, fileManager: FileManager = .default) {
         self.root = root
@@ -27,6 +28,7 @@ public actor FileTranscriptStore: TranscriptStore {
                 encoding: .utf8
             )
             try Data().write(to: jsonLinesURL(session.id), options: .atomic)
+            entryIDs[session.id] = []
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
@@ -37,9 +39,11 @@ public actor FileTranscriptStore: TranscriptStore {
             throw TranscriptStoreError.sessionNotFound
         }
         do {
+            let existing = try loadEntryIDsIfNeeded(sessionID: sessionID)
+            guard !existing.contains(entry.id) else { return }
             let encoded = try lineEncoder().encode(entry) + Data([0x0A])
             try append(encoded, to: jsonLinesURL(sessionID))
-            try append(Data(markdown(for: entry).utf8), to: markdownURL(sessionID))
+            entryIDs[sessionID, default: []].insert(entry.id)
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
@@ -48,7 +52,29 @@ public actor FileTranscriptStore: TranscriptStore {
     public func finish(_ session: TranscriptSession) async throws {
         do {
             try writeManifest(for: session)
-            try append(Data("\n---\nSession complete.\n".utf8), to: markdownURL(session.id))
+            try completeMarkdown(for: session).write(
+                to: markdownURL(session.id),
+                atomically: true,
+                encoding: .utf8
+            )
+        } catch {
+            throw TranscriptStoreError.fileSystem(error.localizedDescription)
+        }
+    }
+
+    public func load(sessionID: UUID) async throws -> TranscriptSession? {
+        let manifest = manifestURL(sessionID)
+        guard fileManager.fileExists(atPath: manifest.path) else { return nil }
+        do {
+            let stored = try decoder().decode(SessionManifest.self, from: Data(contentsOf: manifest))
+            let entries = try readEntries(sessionID: sessionID)
+            entryIDs[sessionID] = Set(entries.map(\.id))
+            return TranscriptSession(
+                id: stored.id,
+                startedAt: stored.startedAt,
+                endedAt: stored.endedAt,
+                entries: entries.sorted { $0.sequence < $1.sequence }
+            )
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
@@ -70,63 +96,4 @@ public actor FileTranscriptStore: TranscriptStore {
         }
     }
 
-    private func writeManifest(for session: TranscriptSession) throws {
-        let manifest = SessionManifest(
-            id: session.id,
-            startedAt: session.startedAt,
-            endedAt: session.endedAt,
-            entryCount: session.entries.count
-        )
-        try jsonEncoder.encode(manifest).write(to: manifestURL(session.id), options: .atomic)
-    }
-
-    private func readSummary(_ directory: URL) throws -> StoredSessionSummary? {
-        let manifestURL = directory.appending(path: "session.json")
-        guard fileManager.fileExists(atPath: manifestURL.path) else { return nil }
-        let data = try Data(contentsOf: manifestURL)
-        let manifest = try decoder().decode(SessionManifest.self, from: data)
-        return StoredSessionSummary(
-            id: manifest.id,
-            startedAt: manifest.startedAt,
-            endedAt: manifest.endedAt,
-            entryCount: manifest.entryCount,
-            location: directory
-        )
-    }
-
-    private func append(_ data: Data, to url: URL) throws {
-        let handle = try FileHandle(forWritingTo: url)
-        defer { try? handle.close() }
-        try handle.seekToEnd()
-        try handle.write(contentsOf: data)
-        try handle.synchronize()
-    }
-
-    private func markdownHeader(for session: TranscriptSession) -> String {
-        "# Live Church Translation\n\nStarted: \(session.startedAt.formatted())\n\n"
-    }
-
-    private func markdown(for entry: TranscriptEntry) -> String {
-        "## \(entry.sequence)\n\n\(entry.targetText)\n\n> \(entry.sourceText)\n\n"
-    }
-
-    private func sessionDirectory(_ id: UUID) -> URL {
-        root.appending(path: id.uuidString, directoryHint: .isDirectory)
-    }
-
-    private func manifestURL(_ id: UUID) -> URL { sessionDirectory(id).appending(path: "session.json") }
-    private func jsonLinesURL(_ id: UUID) -> URL { sessionDirectory(id).appending(path: "transcript.jsonl") }
-    private func markdownURL(_ id: UUID) -> URL { sessionDirectory(id).appending(path: "transcript.md") }
-
-    private func lineEncoder() -> JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        return encoder
-    }
-
-    private func decoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return decoder
-    }
 }

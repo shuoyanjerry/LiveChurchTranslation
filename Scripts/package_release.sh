@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPOSITORY_ROOT/dist"
-APP="$DIST_DIR/LiveChurchTranslation.app"
+APP="$DIST_DIR/Quiet Liturgy Reader.app"
 RUNTIME="$REPOSITORY_ROOT/.artifacts/llama-b10549"
 IDENTITY="${DEVELOPER_ID_APPLICATION:--}"
 VERSION="${APP_VERSION:-1.0.0}"
@@ -18,7 +18,7 @@ BIN_DIR="$(swift build -c release --show-bin-path)"
 
 mkdir -p "$DIST_DIR"
 if [[ -e "$APP" ]]; then
-  [[ "$APP" == "$REPOSITORY_ROOT/dist/LiveChurchTranslation.app" ]]
+  [[ "$APP" == "$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.app" ]]
   rm -rf "$APP"
 fi
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
@@ -27,7 +27,7 @@ ditto "$REPOSITORY_ROOT/Packaging/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
 ditto "$REPOSITORY_ROOT/THIRD_PARTY_NOTICES.md" "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
-ditto "$REPOSITORY_ROOT/Assets/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+ditto "$REPOSITORY_ROOT/Assets/AppIconQuiet.icns" "$APP/Contents/Resources/AppIcon.icns"
 ditto "$RUNTIME/LICENSE" "$APP/Contents/Resources/llama.cpp-LICENSE"
 
 for file in "$RUNTIME"/llama-server "$RUNTIME"/*.dylib; do

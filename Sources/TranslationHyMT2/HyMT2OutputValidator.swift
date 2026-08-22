@@ -72,10 +72,15 @@ enum HyMT2OutputValidator {
         required: [TranslationTerm]
     ) -> [OutputValidationIssue] {
         required.compactMap { term in
-            target.range(
-                of: term.target,
-                options: [.caseInsensitive, .diacriticInsensitive]
-            ) == nil ? .missingTerm(term.target) : nil
+            guard term.requirement == .required else { return nil }
+            let accepted = [term.target] + term.acceptedTargets
+            let found = accepted.contains { candidate in
+                target.range(
+                    of: candidate,
+                    options: [.caseInsensitive, .diacriticInsensitive]
+                ) != nil
+            }
+            return found ? nil : .missingTerm(term.target)
         }
     }
 

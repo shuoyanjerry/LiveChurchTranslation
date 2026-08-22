@@ -7,20 +7,20 @@ import Testing
     @Test func defaultEndsAfterApproximately650MillisecondsOfSilence() async throws {
         let detector = try AdaptiveEnergyVoiceActivityDetector()
         let speechEvents = try await detector.process(
-            VADTestSupport.frame(amplitude: 0.1, milliseconds: 120, timestamp: .zero)
+            VADTestSupport.frame(amplitude: 0.1, milliseconds: 300, timestamp: .zero)
         )
         let earlySilenceEvents = try await detector.process(
             VADTestSupport.frame(
                 amplitude: 0,
                 milliseconds: 640,
-                timestamp: .milliseconds(120)
+                timestamp: .milliseconds(300)
             )
         )
         let boundaryEvents = try await detector.process(
             VADTestSupport.frame(
                 amplitude: 0,
-                milliseconds: 20,
-                timestamp: .milliseconds(760)
+                milliseconds: 60,
+                timestamp: .milliseconds(940)
             )
         )
 
@@ -68,7 +68,13 @@ import Testing
             preRoll: .milliseconds(40),
             speechStart: .milliseconds(40),
             trailingSilence: .milliseconds(80),
+            softSplitSilence: .milliseconds(40),
+            softSplitAfter: .seconds(14),
             maximumSegment: .seconds(1),
+            postRoll: .milliseconds(40),
+            minimumVoiced: .milliseconds(40),
+            decisionWindowCount: 1,
+            decisionSpeechVotes: 1,
             initialNoiseFloorRMS: 0.001,
             minimumSpeechRMS: minimumSpeechRMS,
             speechThresholdMultiplier: thresholdMultiplier,

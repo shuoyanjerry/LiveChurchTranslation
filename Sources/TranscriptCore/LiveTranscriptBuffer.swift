@@ -28,6 +28,19 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
         return entry(recognition: recognition, translation: translation)
     }
 
+    public func makeEntry(
+        recognition: RecognizedUtterance,
+        translation: TranslationResult,
+        sourceAudit: TranscriptSourceAudit
+    ) async throws -> TranscriptEntry {
+        guard session != nil else { throw TranscriptBufferError.noActiveSession }
+        return entry(
+            recognition: recognition,
+            translation: translation,
+            sourceAudit: sourceAudit
+        )
+    }
+
     public func append(_ entry: TranscriptEntry) async {
         guard let current = session else { return }
         session = TranscriptSession(
@@ -68,11 +81,15 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
 
     private func entry(
         recognition: RecognizedUtterance,
-        translation: TranslationResult
+        translation: TranslationResult,
+        sourceAudit: TranscriptSourceAudit? = nil
     ) -> TranscriptEntry {
         TranscriptEntry(
+            id: recognition.sourceSegmentID,
             sequence: (session?.entries.count ?? 0) + 1,
+            rawSourceText: sourceAudit?.rawText,
             sourceText: recognition.text,
+            sourceCorrections: sourceAudit?.corrections ?? [],
             targetText: translation.targetText,
             startedMilliseconds: recognition.startedAt.milliseconds,
             endedMilliseconds: recognition.endedAt.milliseconds,

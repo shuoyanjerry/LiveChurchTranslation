@@ -13,13 +13,14 @@ enum ASRInputGuard {
         guard limit > 0 else { return "" }
         let separators = CharacterSet(charactersIn: ",，、;；\n")
         var seen = Set<String>()
-        return
-            context
-            .components(separatedBy: separators)
-            .lazy
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty && seen.insert($0).inserted }
-            .prefix(limit)
-            .joined(separator: ",")
+        var selected: [String] = []
+        selected.reserveCapacity(limit)
+        for component in context.components(separatedBy: separators) {
+            let word = component.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !word.isEmpty, seen.insert(word).inserted else { continue }
+            selected.append(word)
+            if selected.count == limit { break }
+        }
+        return selected.joined(separator: ",")
     }
 }

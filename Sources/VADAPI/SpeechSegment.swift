@@ -3,6 +3,7 @@ import Foundation
 /// Why a VAD implementation closed a speech segment.
 public enum SpeechSegmentEndReason: Sendable, Equatable {
     case trailingSilence
+    case softSilence
     case maximumDuration
     case endOfStream
 }

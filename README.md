@@ -1,76 +1,128 @@
-# Live Church Translation
+# Quiet Liturgy Reader
 
-Live Church Translation is a privacy-first macOS application for sentence-level,
-real-time Mandarin sermon transcription and faithful English translation. Inference
-runs locally on Apple Silicon. The installed app does not require Python, Node,
-Ollama, OBS, LocalVocal, or another user-managed runtime.
+Quiet Liturgy Reader is a focused macOS tool for one workflow only: capture Chinese
+speech, recognize Mandarin locally, translate it faithfully into English, and keep the
+complete result readable during a church service. It is not a presentation system,
+sermon summarizer, or OBS companion.
 
-## Product behavior
+The app targets arm64 Apple Silicon and does not require users to install Python, Node,
+Ollama, LocalVocal, llama.cpp, or another runtime.
 
-- Select an audio input, grant microphone access, and start a session.
-- Voice activity detection closes sentence-sized speech segments before recognition.
-- Qwen3-ASR recognizes Mandarin; constrained ASR aliases repair known mishearings;
-  Hy-MT2 translates with an editable theological glossary and output-integrity checks.
-- The live reader keeps the complete session visible. Reading older text disables
-  automatic following until **Jump to Live** is selected.
-- Every accepted entry is appended to a recoverable local transcript.
+## What it does
 
-The application never summarizes a sermon. Validation rejects suspicious translation
-output; it cannot prove theological correctness. Release qualification therefore uses
-human-reviewed church and Bible fixtures in addition to automated tests.
+- Captures a selected microphone or audio input and forms sentence-sized segments with
+  voice activity detection.
+- Runs Qwen3-ASR 0.6B INT8 locally through the pinned sherpa-onnx Swift package.
+- Applies only literal, reviewed Mandarin alias corrections. Every transcript entry
+  retains the raw ASR text, normalized text, and the exact correction audit.
+- Translates with Tencent Hy-MT2 1.8B Q4_K_M through an app-bundled llama.cpp helper.
+  The prompt requires clause-by-clause translation without summaries, additions, or
+  omissions. Validators check required glossary terms, numbers, negation, Scripture
+  reference shape, implausible length, and model commentary.
+- Supports an editable theological glossary with source aliases, ASR aliases, accepted
+  English variants, and `required` or `preferred` enforcement.
+- Gives Hy-MT2 only the latest two validator-approved and durably appended Chinese/English
+  pairs as background. The current sentence is delimited separately, and context is never
+  treated as text to output.
+- Shows a continuous English reader with optional Chinese, selectable text, timestamps,
+  stable upward reading, an unseen-entry count, and **Jump to Live**.
+- Writes each accepted entry to local JSONL and produces a Markdown transcript for the
+  session.
 
-## Platform and models
+Validation catches specific structural defects; it cannot prove that a translation is
+theologically or linguistically correct. Human review remains a release requirement.
 
-- Deployment target: macOS 15 or newer, arm64 Apple Silicon.
-- ASR adapter: Qwen3-ASR 0.6B INT8 through the pinned sherpa-onnx Swift package.
-- Translation adapter: Tencent Hy-MT2 1.8B Q4_K_M through a bundled, pinned
-  llama.cpp helper that is restricted to an authenticated IPv4 loopback endpoint.
-- Models are not stored in Git. First use downloads revision-pinned artifacts over
-  HTTPS, verifies exact size and SHA-256, and installs them atomically.
+## Crash-safe sentence handoff
 
-Model files consume roughly 2.2 GB before filesystem overhead. The release app size,
-latency, memory ceiling, signing identity, and notarization ticket are release outputs,
-not constants; do not infer them from this README.
+Every completed VAD segment is staged durably before ASR begins. Its recovery record is
+removed only after the translated entry has been appended to the transcript. On a later
+start, pending records are replayed in session and sequence order. Corrupt, partial,
+or oversized artifacts are quarantined and surfaced as recoverable issues instead of
+being silently discarded.
 
-## Architecture
+The recovery directory contains temporary sermon audio. It stays under the app's local
+Application Support directory and is deleted after successful handoff; quarantine is
+retained for diagnosis until the user removes the app data.
 
-The repository is intentionally split into small Swift Package targets. Domain
-protocols and immutable values live in `*API` targets. Business orchestration depends
-only on those protocols. Apple frameworks, model SDKs, the filesystem, and process
-management remain behind adapter targets. `ChurchTranslatorApp` is only the composition
-root; `LiveReader` only renders state and forwards user intent.
+## Optional local-network reader
 
-See [Architecture](Docs/Architecture.md) for module contracts and the dependency rules.
-See [Testing](Docs/Testing.md) for automated gates and release-qualification evidence.
+Local sharing is off by default. When the Mac user enables it and creates an invitation,
+a paired Safari device can receive the live reader. A viewer is read-only; an operator can
+request only **Start** or **Stop**, using the input already selected on the Mac. Remote APIs
+cannot change the microphone, glossary, model, settings, history, export, or app lifecycle.
+The Mac remains the sole inference host and transcript writer.
 
-## Developer verification
+Pairing uses single-use, expiring invitations, high-entropy credentials, role checks,
+revocation, bounded connections, strict Host/Origin policy, and hardened no-cache web
+responses. The current LAN transport is HTTP/WebSocket without TLS. Pairing provides
+authorization, not confidentiality against a hostile network observer; enable sharing
+only on a trusted local network and disable or revoke it after the service.
 
-Full development requires Swift 6.1 and Xcode 16.4 or a compatible newer toolchain.
+See [Architecture](Docs/Architecture.md) for the complete trust boundary and dependency
+graph.
+
+## Platform and model installation
+
+- Minimum deployment target: macOS 15, arm64 Apple Silicon.
+- ASR: Qwen3-ASR 0.6B INT8, revision-pinned model artifacts.
+- Translation: Hy-MT2 1.8B Q4_K_M GGUF, revision-pinned artifact.
+- Runtime dependency: sherpa-onnx 1.13.6 is exact-version pinned; the translation helper
+  is bundled with the release app.
+
+Models are not stored in Git. First use downloads about 2.12 GB over HTTPS, verifies each
+artifact's exact byte count and SHA-256, and installs it atomically. Once installed, ASR
+and translation run locally. LAN sharing creates network traffic only when explicitly
+enabled.
+
+## Repository architecture
+
+The Swift package is divided into small API, domain, infrastructure, feature, and
+composition targets. Cross-module values are immutable and `Sendable`; mutable lifecycle
+state is actor-owned. Business orchestration depends on protocols, not SwiftUI, storage,
+Apple audio frameworks, model SDKs, or network implementations. `ChurchTranslatorApp` is
+the only composition root.
+
+- [Architecture and module catalog](Docs/Architecture.md)
+- [Tests and release qualification](Docs/Testing.md)
+- Per-target `README.md` files document purpose, public API, dependencies, threading,
+  failures, and tests.
+
+## Build and verify
+
+Development requires Swift 6.1 and Xcode 16.4, or a compatible newer toolchain.
 
 ```sh
 ./Scripts/check.sh
 ```
 
-That command enforces architecture and file-size constraints, formatting, warnings as
-errors, tests, and dead-code checks. SwiftLint 0.65.0 is mandatory and fetched from its
-checksum-pinned official artifact when needed. Periphery augments the mandatory static
-dead-code check when it is installed.
+The gate checks architecture and cycles, the 200-line Swift file limit, formatting,
+SwiftLint, warnings-as-errors builds and tests, and dead code. See
+[Testing](Docs/Testing.md) before interpreting a green local gate as release evidence.
 
-## Install and use
+## Use
 
-Open the DMG, drag **Live Church Translation** to Applications, then launch it. Select an
-input device, edit the theological glossary or ASR aliases if desired, and choose
-**Start**. The first session downloads and verifies about 2.12 GB of model files. Later
-sessions run recognition and translation offline. Use **Jump to Live** after reading
-older text; transcripts are stored under `~/Library/Application Support/LiveChurchTranslation/Transcripts`.
+1. Launch Quiet Liturgy Reader and allow microphone access.
+2. Select the desired input and review the glossary if needed.
+3. Choose **Start**. First use installs and verifies the local models.
+4. Read the continuous English transcript. Scroll upward freely; choose **Jump to Live**
+   when ready to resume following.
+5. Choose **Stop** to flush queued speech and finalize the transcript.
+6. Optionally open **Share**, enable local sharing, and create a viewer or operator
+   invitation for a trusted Safari device.
 
-## Privacy, licensing, and distribution
+Application data is stored under
+`~/Library/Application Support/LiveChurchTranslation/`, including `Models`, `Glossary`,
+`Transcripts`, `Diagnostics`, and the hidden pending-utterance recovery directory.
 
-Audio, recognized text, translations, glossary data, and transcripts stay on the Mac.
-Only explicit model installation performs network requests. A distributable build must
-include model and third-party notices, a hardened-runtime signature, microphone usage
-text, and notarization/stapling evidence. Developer ID credentials are intentionally
-not committed.
+## Distribution status and licensing
 
-The application source is MIT licensed. Model weights and bundled third-party code keep
-their own upstream licenses; review `THIRD_PARTY_NOTICES.md` in a release before shipping.
+Build scripts can create engineering `.app` and `.dmg` artifacts. A build is not a
+public release unless its release report records Developer ID signing, notarization,
+stapling, Gatekeeper launch on a clean Mac, exact model revisions, hashes, hardware tests,
+and quality review. This repository does not claim those results in this README.
+
+The source is MIT licensed. Model weights and bundled third-party code retain their own
+licenses; review `THIRD_PARTY_NOTICES.md` before distribution. The visual system is an
+original, restrained church-reader design inspired by the Northville context. It does
+not include or redistribute The Church in Northville's official logo, photography, or
+other brand assets, and this project does not claim affiliation or endorsement.

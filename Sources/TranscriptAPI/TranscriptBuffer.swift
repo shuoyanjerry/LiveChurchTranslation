@@ -14,10 +14,25 @@ public protocol TranscriptBuffer: Sendable {
         recognition: RecognizedUtterance,
         translation: TranslationResult
     ) async throws -> TranscriptEntry
+    func makeEntry(
+        recognition: RecognizedUtterance,
+        translation: TranslationResult,
+        sourceAudit: TranscriptSourceAudit
+    ) async throws -> TranscriptEntry
     func append(_ entry: TranscriptEntry) async
     func snapshot() async -> TranscriptSession?
     func finish(at date: Date) async -> TranscriptSession?
     func events() async -> AsyncStream<TranscriptEvent>
+}
+
+extension TranscriptBuffer {
+    public func makeEntry(
+        recognition: RecognizedUtterance,
+        translation: TranslationResult,
+        sourceAudit: TranscriptSourceAudit
+    ) async throws -> TranscriptEntry {
+        try await makeEntry(recognition: recognition, translation: translation)
+    }
 }
 
 public enum TranscriptBufferError: LocalizedError, Sendable {
