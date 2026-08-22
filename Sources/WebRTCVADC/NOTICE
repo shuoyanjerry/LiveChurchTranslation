@@ -1,0 +1,7 @@
+Vendored component: libfvad
+Repository: https://github.com/dpirch/libfvad
+Commit: 532ab666c20d3cfda38bca63abbb0f152706c369
+License: BSD 3-Clause
+Archive SHA-256: bf639e4a5bc37b1c90e047c42524e80a1d0cecadeb6e0a61a33580fca22a00ab
+
+The files under Vendor/libfvad/ are copied unchanged from that commit.

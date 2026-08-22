@@ -3,6 +3,7 @@ import ASRQwen3
 import AudioCaptureAVFoundation
 import AudioProcessingCore
 import DiagnosticsCore
+import DiscourseResolutionCore
 import GlossaryCore
 import GlossaryFileSystem
 import LoggingOSLog
@@ -15,6 +16,7 @@ import TranscriptCore
 import TranslationHyMT2
 import UtteranceRecoveryFileSystem
 import VADCore
+import VADWebRTC
 
 @MainActor
 struct AppServiceGraph {
@@ -52,9 +54,12 @@ struct AppServiceGraph {
         LiveSessionDependencies(
             capture: capture,
             audioProcessor: try MonoResamplingAudioProcessor(),
-            vad: try AdaptiveEnergyVoiceActivityDetector(),
+            vad: try CalibratedVoiceActivityDetector(
+                classifier: try WebRTCVoiceActivityClassifier()
+            ),
             asr: Qwen3ASRProvider(),
             asrNormalizer: RuleBasedASRTextNormalizer(),
+            discourseResolver: DiscourseResolver(),
             translator: HyMT2TranslationProvider(
                 helperExecutableURL: HelperExecutableLocator.llamaServer()
             ),

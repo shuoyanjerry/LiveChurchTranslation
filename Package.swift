@@ -30,6 +30,11 @@ let sherpaOnnx: Target.Dependency = .product(
     package: "sherpa-onnx"
 )
 
+let onnxRuntime: Target.Dependency = .product(
+    name: "OnnxRuntimeKit",
+    package: "onnxruntime-libs"
+)
+
 let package = Package(
     name: "LiveChurchTranslation",
     platforms: [.macOS(.v15)],
@@ -38,17 +43,23 @@ let package = Package(
     ],
     dependencies: [
         .package(
+            url: "https://github.com/csukuangfj/onnxruntime-libs",
+            exact: "1.27.1"
+        ),
+        .package(
             url: "https://github.com/k2-fsa/sherpa-onnx.git",
             exact: "1.13.6"
-        )
+        ),
     ],
     targets: [
         target("AudioCaptureAPI"),
         target("AudioProcessingAPI", dependencies: ["AudioCaptureAPI"]),
         target("VADAPI", dependencies: ["AudioProcessingAPI"]),
+        target("SemanticEndpointAPI"),
         target("UtteranceRecoveryAPI", dependencies: ["VADAPI"]),
         target("ASRAPI", dependencies: ["VADAPI"]),
         target("ASRNormalizationAPI"),
+        target("DiscourseResolutionAPI"),
         target("TranslationAPI"),
         target("GlossaryAPI"),
         target("ModelRuntimeAPI"),
@@ -74,6 +85,44 @@ let package = Package(
         target("AudioCaptureAVFoundation", dependencies: ["AudioCaptureAPI"]),
         target("AudioProcessingCore", dependencies: ["AudioProcessingAPI"]),
         target("VADCore", dependencies: ["VADAPI"]),
+        .target(
+            name: "WebRTCVADC",
+            exclude: [
+                "NOTICE", "README.md", "Vendor/libfvad/AUTHORS", "Vendor/libfvad/LICENSE",
+                "Vendor/libfvad/PATENTS", "Vendor/libfvad/src/CMakeLists.txt",
+                "Vendor/libfvad/src/Makefile.am",
+            ],
+            sources: ["Vendor/libfvad/src"],
+            publicHeadersPath: "Vendor/libfvad/include",
+            cSettings: [
+                .unsafeFlags(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
+            ]
+        ),
+        .target(
+            name: "VADWebRTC",
+            dependencies: ["VADAPI", "WebRTCVADC"],
+            exclude: ["NOTICE", "README.md"],
+            swiftSettings: strict
+        ),
+        .target(
+            name: "SmartTurnOnnxRuntimeC",
+            dependencies: [onnxRuntime],
+            exclude: ["README.md"],
+            publicHeadersPath: "include",
+            cSettings: [
+                .unsafeFlags([
+                    "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
+                    "-Wno-incomplete-umbrella",
+                ])
+            ]
+        ),
+        .target(
+            name: "SemanticEndpointSmartTurn",
+            dependencies: ["SemanticEndpointAPI", "SmartTurnOnnxRuntimeC"],
+            exclude: ["NOTICE", "README.md"],
+            swiftSettings: strict,
+            linkerSettings: [.linkedFramework("Accelerate")]
+        ),
         target(
             "UtteranceRecoveryFileSystem",
             dependencies: ["UtteranceRecoveryAPI", "VADAPI"]
@@ -83,6 +132,10 @@ let package = Package(
             dependencies: ["ASRAPI", "ModelRuntimeAPI", sherpaOnnx]
         ),
         target("ASRNormalizationCore", dependencies: ["ASRNormalizationAPI"]),
+        target(
+            "DiscourseResolutionCore",
+            dependencies: ["DiscourseResolutionAPI"]
+        ),
         target(
             "TranslationApple",
             dependencies: ["TranslationAPI", "ModelRuntimeAPI"]
@@ -139,7 +192,7 @@ let package = Package(
             "SessionManagement",
             dependencies: [
                 "ASRAPI", "ASRNormalizationAPI", "AudioCaptureAPI", "AudioProcessingAPI",
-                "DiagnosticsAPI", "GlossaryAPI", "LoggingAPI", "ModelDownloadAPI",
+                "DiagnosticsAPI", "DiscourseResolutionAPI", "GlossaryAPI", "LoggingAPI", "ModelDownloadAPI",
                 "ModelRuntimeAPI", "PersistenceAPI", "SessionManagementAPI", "SettingsAPI",
                 "TranscriptAPI", "TranslationAPI", "VADAPI",
                 "UtteranceRecoveryAPI",
@@ -166,13 +219,23 @@ let package = Package(
                 "RemoteSharingFeature", "RemoteSharingFeatureAPI", "RemoteTransportAPI",
                 "RemoteTransportNetwork", "RemoteWebAssets", "SessionManagement", "SettingsAPI",
                 "SettingsUserDefaults", "TranscriptCore", "TranslationHyMT2", "VADCore",
-                "UtteranceRecoveryFileSystem",
+                "DiscourseResolutionCore", "UtteranceRecoveryFileSystem", "VADWebRTC",
             ],
             exclude: ["README.md"],
             swiftSettings: strict
         ),
         test("AudioProcessingCoreTests", dependencies: ["AudioCaptureAPI", "AudioProcessingCore"]),
-        test("VADCoreTests", dependencies: ["AudioProcessingAPI", "VADCore"]),
+        test(
+            "VADCoreTests",
+            dependencies: ["AudioProcessingAPI", "VADCore", "VADWebRTC"]
+        ),
+        test("VADWebRTCTests", dependencies: ["VADWebRTC"]),
+        .testTarget(
+            name: "SemanticEndpointSmartTurnTests",
+            dependencies: ["SemanticEndpointAPI", "SemanticEndpointSmartTurn"],
+            resources: [.process("Fixtures")],
+            swiftSettings: strict
+        ),
         test(
             "ASRQwen3Tests",
             dependencies: [
@@ -182,6 +245,12 @@ let package = Package(
         test(
             "ASRNormalizationCoreTests",
             dependencies: ["ASRNormalizationAPI", "ASRNormalizationCore"]
+        ),
+        .testTarget(
+            name: "DiscourseResolutionCoreTests",
+            dependencies: ["DiscourseResolutionAPI", "DiscourseResolutionCore"],
+            exclude: ["README.md"],
+            swiftSettings: strict
         ),
         test("GlossaryCoreTests", dependencies: ["GlossaryCore"]),
         test(
@@ -255,6 +324,7 @@ let package = Package(
             "SessionManagementTests",
             dependencies: [
                 "ASRAPI", "ASRNormalizationCore", "AudioCaptureAPI", "AudioProcessingAPI",
+                "DiscourseResolutionCore",
                 "DiagnosticsAPI", "GlossaryAPI", "LoggingAPI", "ModelDownloadAPI",
                 "ModelRuntimeAPI", "PersistenceAPI", "SessionManagement", "SettingsAPI",
                 "TranscriptAPI", "TranscriptCore", "TranslationAPI", "VADAPI",

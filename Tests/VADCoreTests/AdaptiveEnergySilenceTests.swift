@@ -4,23 +4,23 @@ import Testing
 
 @MainActor
 @Suite struct AdaptiveEnergySilenceTests {
-    @Test func defaultEndsAfterApproximately650MillisecondsOfSilence() async throws {
+    @Test func longPhraseEndsAfterApproximately650MillisecondsOfSilence() async throws {
         let detector = try AdaptiveEnergyVoiceActivityDetector()
         let speechEvents = try await detector.process(
-            VADTestSupport.frame(amplitude: 0.1, milliseconds: 300, timestamp: .zero)
+            VADTestSupport.frame(amplitude: 0.1, milliseconds: 3_600, timestamp: .zero)
         )
         let earlySilenceEvents = try await detector.process(
             VADTestSupport.frame(
                 amplitude: 0,
                 milliseconds: 640,
-                timestamp: .milliseconds(300)
+                timestamp: .milliseconds(3_600)
             )
         )
         let boundaryEvents = try await detector.process(
             VADTestSupport.frame(
                 amplitude: 0,
                 milliseconds: 60,
-                timestamp: .milliseconds(940)
+                timestamp: .milliseconds(4_240)
             )
         )
 
@@ -68,9 +68,12 @@ import Testing
             preRoll: .milliseconds(40),
             speechStart: .milliseconds(40),
             trailingSilence: .milliseconds(80),
+            shortUtterance: .milliseconds(40),
+            shortTrailingSilence: .milliseconds(80),
             softSplitSilence: .milliseconds(40),
             softSplitAfter: .seconds(14),
-            maximumSegment: .seconds(1),
+            preferredMaximumSegment: .seconds(1),
+            maximumBoundaryGrace: .zero,
             postRoll: .milliseconds(40),
             minimumVoiced: .milliseconds(40),
             decisionWindowCount: 1,

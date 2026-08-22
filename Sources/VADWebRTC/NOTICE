@@ -1,0 +1,9 @@
+VADWebRTC contains an adapter around libfvad at commit
+532ab666c20d3cfda38bca63abbb0f152706c369.
+
+libfvad incorporates WebRTC voice activity detection code and is distributed
+under the BSD 3-Clause license. The unmodified upstream LICENSE, PATENTS, and
+AUTHORS files are retained under Vendor/libfvad/.
+
+Upstream codeload archive SHA-256:
+bf639e4a5bc37b1c90e047c42524e80a1d0cecadeb6e0a61a33580fca22a00ab

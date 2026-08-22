@@ -29,6 +29,8 @@ public struct ASRRequest: Sendable {
 public struct RecognizedUtterance: Identifiable, Equatable, Sendable {
     public let id: UUID
     public let sourceSegmentID: UUID
+    /// Untouched model output retained for correction audits.
+    public let rawText: String
     public let text: String
     public let confidence: Float?
     public let startedAt: Duration
@@ -37,6 +39,7 @@ public struct RecognizedUtterance: Identifiable, Equatable, Sendable {
     public init(
         id: UUID = UUID(),
         sourceSegmentID: UUID,
+        rawText: String? = nil,
         text: String,
         confidence: Float?,
         startedAt: Duration,
@@ -44,6 +47,7 @@ public struct RecognizedUtterance: Identifiable, Equatable, Sendable {
     ) {
         self.id = id
         self.sourceSegmentID = sourceSegmentID
+        self.rawText = rawText ?? text
         self.text = text
         self.confidence = confidence
         self.startedAt = startedAt
@@ -54,6 +58,8 @@ public struct RecognizedUtterance: Identifiable, Equatable, Sendable {
 public enum ASRError: LocalizedError, Sendable {
     case modelNotLoaded
     case emptyAudio
+    case filteredNonspeech
+    case promptOnlyHallucination
     case noSpeechRecognized
     case inferenceFailed(String)
 
@@ -61,6 +67,8 @@ public enum ASRError: LocalizedError, Sendable {
         switch self {
         case .modelNotLoaded: "The speech recognition model is not loaded."
         case .emptyAudio: "The speech segment contains no audio."
+        case .filteredNonspeech: "The segment was filtered as nonspeech."
+        case .promptOnlyHallucination: "The recognizer output only its prompt terms."
         case .noSpeechRecognized: "No Chinese speech was recognized."
         case .inferenceFailed(let message): "Speech recognition failed: \(message)"
         }

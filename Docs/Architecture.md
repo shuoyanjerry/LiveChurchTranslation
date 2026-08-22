@@ -51,10 +51,12 @@ files over 200 lines.
 | --- | --- | --- |
 | `AudioCaptureAPI` | `AudioCaptureAVFoundation` | Input discovery, permission, and copied audio frames from the selected CoreAudio device |
 | `AudioProcessingAPI` | `AudioProcessingCore` | Frame validation, downmixing, normalization, and streaming resampling |
-| `VADAPI` | `VADCore` | Adaptive-energy, smoothed, sentence-oriented speech segmentation with bounded soft/max endings |
+| `VADAPI` | `VADCore`, `VADWebRTC`, `WebRTCVADC` | Replaceable classifier/boundary contracts, calibrated timing, pinned native libfvad sermon classifier, and AdaptiveEnergy fallback |
+| `SemanticEndpointAPI` | `SemanticEndpointSmartTurn` | Replaceable semantic endpoint contract and pinned native Smart Turn v3.2 adapter; offline shadow only, never live boundary authority |
 | `UtteranceRecoveryAPI` | `UtteranceRecoveryFileSystem` | Stage-before-inference records, restart replay, completion tombstones, limits, and quarantine |
 | `ASRAPI` | `ASRQwen3` | Replaceable ASR protocol and Qwen3-ASR INT8 sherpa-onnx adapter |
 | `ASRNormalizationAPI` | `ASRNormalizationCore` | Literal longest-match, non-cascading Mandarin corrections with full audit |
+| `DiscourseResolutionAPI` | `DiscourseResolutionCore` | Pure-Swift, two-turn, explicit-evidence Mandarin pronoun repair with typed abstention and audit |
 | `GlossaryAPI` | `GlossaryCore`, `GlossaryFileSystem` | Editable terminology, aliases, accepted targets, enforcement, validation, and atomic JSON storage |
 | `TranslationAPI` | `TranslationHyMT2`, optional `TranslationApple` | Translation requests/results, two-entry context values, Hy-MT2 runtime and integrity guards |
 | `TranscriptAPI` | `TranscriptCore` | Immutable raw/normalized/audited bilingual entries and actor-owned live buffer |
@@ -115,14 +117,23 @@ idle → preparing → listening ⇄ recognizing → translating → listening �
 
 The sentence path is ordered deliberately:
 
-1. Capture copies audio; processing emits normalized mono frames; VAD closes a bounded
-   speech segment.
+1. Capture copies audio; processing emits normalized mono frames to the injected VAD. The
+   production composition injects pinned libfvad mode 2 plus the measured strong-energy
+   rescue. Short turns use 950 ms silence, ordinary turns 650 ms, and turns over 9 seconds
+   may soft-split after 500 ms. From 15 seconds the first stable 3-of-5 non-speech boundary
+   closes the segment; 16.5 seconds is the hard cap. Two raw voiced frames cancel a pending
+   endpoint. `AdaptiveEnergyClassifier` remains a functional fallback.
 2. `UtteranceRecoveryStore.stage` durably commits the exact segment before inference.
 3. Qwen3-ASR produces raw Mandarin. The normalizer applies only explicit aliases and
-   carries raw text plus every change into `TranscriptEntry`.
+   then the discourse resolver may repair narrowly eligible `他` / `她` spellings using
+   explicit evidence from at most two prior persisted turns. Both stages carry raw text
+   plus every accepted change and its evidence into `TranscriptEntry`; ambiguity causes
+   abstention, not a guess.
 4. Hy-MT2 receives matched glossary terms and at most the latest two prior finalized,
    validator-approved, durably appended pairs. Context is marked as non-output background;
-   only the separately delimited current source may be translated.
+   only the separately delimited current source may be translated. The prompt forbids
+   gender inference from names, occupations, or stereotypes and permits singular `they`
+   when evidence is absent.
 5. Output guards reject empty, implausibly sized, meta-text, required-term, number,
    negation, or Scripture-reference failures.
 6. The accepted entry is appended and synchronized in the transcript store. Only then is
@@ -130,6 +141,13 @@ The sentence path is ordered deliberately:
 7. The recovery record is marked complete. A crash before this step causes idempotent
    replay on the next preparation; unreadable artifacts move to quarantine and surface as
    recoverable issues.
+
+Smart Turn is intentionally outside this live state transition. Its adapter is independently
+loadable and testable through `SemanticEndpointAPI`, but only offline shadow trials may consume
+its probability until the Mandarin-sermon release gates in
+[the qualification report](MandarinDiscourseAndEndpointQualification-2026-08-21.md) pass.
+The same report records native classifier parity and the remaining labelled-corpus release
+gate; changing the adapter must not change session or UI callers.
 
 Stop first prevents new capture, waits for capture callbacks, flushes VAD, drains staged
 segments, and then finalizes the transcript. Typed finalization outcomes distinguish a

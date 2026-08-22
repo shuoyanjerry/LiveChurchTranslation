@@ -66,6 +66,22 @@ import TranslationAPI
         #expect(decoded.sourceCorrections.isEmpty)
     }
 
+    @Test func legacyCorrectionJSONDefaultsStructuredAuditFields() throws {
+        let legacy = Data(#"{"observedText":"他","replacementText":"她"}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(TranscriptSourceCorrection.self, from: legacy)
+
+        #expect(decoded.observedText == "他")
+        #expect(decoded.replacementText == "她")
+        #expect(decoded.kind == nil)
+        #expect(decoded.reason == nil)
+        #expect(decoded.confidence == nil)
+        #expect(decoded.evidenceSequence == nil)
+        #expect(decoded.evidenceText == nil)
+        #expect(decoded.utf16Location == nil)
+        #expect(decoded.utf16Length == nil)
+    }
+
     private func fixtureRecognition(text: String) -> RecognizedUtterance {
         RecognizedUtterance(
             sourceSegmentID: UUID(), text: text, confidence: nil,

@@ -6,10 +6,13 @@ import UtteranceRecoveryAPI
 extension UtteranceProcessor {
     func recoverEntry(
         _ record: PendingUtteranceRecord,
-        context: [TranslationContextEntry]
+        context: RecoveryProcessingContext
     ) async throws -> TranscriptEntry {
-        let input = try await recognize(record.segment)
-        let translation = try await translateRecovered(input, context: context)
+        let input = try await recognize(
+            record.segment,
+            discourseContext: context.discourse
+        )
+        let translation = try await translateRecovered(input, context: context.translation)
         let entry = makeRecoveredEntry(
             record: record,
             input: input,

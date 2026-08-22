@@ -1,6 +1,6 @@
 import VADAPI
 
-struct AdaptiveEnergyClassifier {
+struct AdaptiveEnergyClassifier: VoiceActivityClassifying {
     private let configuration: VoiceActivityConfiguration
     private(set) var noiseFloorRMS: Float
 

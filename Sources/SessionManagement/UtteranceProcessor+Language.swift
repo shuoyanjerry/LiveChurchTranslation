@@ -25,6 +25,7 @@ extension UtteranceProcessor {
         let normalized = RecognizedUtterance(
             id: utterance.id,
             sourceSegmentID: utterance.sourceSegmentID,
+            rawText: utterance.rawText,
             text: result.normalizedText,
             confidence: utterance.confidence,
             startedAt: utterance.startedAt,
@@ -33,12 +34,13 @@ extension UtteranceProcessor {
         let corrections = result.changes.map {
             TranscriptSourceCorrection(
                 observedText: $0.recognitionAlias,
-                replacementText: $0.canonicalText
+                replacementText: $0.canonicalText,
+                kind: .recognitionNormalization
             )
         }
         return (
             normalized,
-            TranscriptSourceAudit(rawText: result.originalText, corrections: corrections)
+            TranscriptSourceAudit(rawText: utterance.rawText, corrections: corrections)
         )
     }
 

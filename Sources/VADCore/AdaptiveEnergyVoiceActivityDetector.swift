@@ -1,17 +1,30 @@
 import AudioProcessingAPI
 import VADAPI
 
-/// Actor-isolated adaptive energy VAD with pre-roll and bounded segments.
-public actor AdaptiveEnergyVoiceActivityDetector: VoiceActivityDetector {
+/// Actor-isolated sermon segmenter with a replaceable speech classifier.
+public actor CalibratedVoiceActivityDetector: VoiceActivityDetector {
     private let requiredSampleRate: Double
     private var stateMachine: VoiceActivityStateMachine
 
     public init(
         configuration: VoiceActivityConfiguration = .sermon
     ) throws {
+        try self.init(
+            classifier: AdaptiveEnergyClassifier(configuration: configuration),
+            configuration: configuration
+        )
+    }
+
+    public init(
+        classifier: any VoiceActivityClassifying,
+        configuration: VoiceActivityConfiguration = .sermon
+    ) throws {
         try VoiceActivityConfigurationValidator.validate(configuration)
         requiredSampleRate = configuration.requiredSampleRate
-        stateMachine = VoiceActivityStateMachine(configuration: configuration)
+        stateMachine = VoiceActivityStateMachine(
+            configuration: configuration,
+            classifier: classifier
+        )
     }
 
     public func process(
@@ -33,3 +46,6 @@ public actor AdaptiveEnergyVoiceActivityDetector: VoiceActivityDetector {
         stateMachine.reset()
     }
 }
+
+/// Compatibility spelling for the built-in adaptive-energy fallback.
+public typealias AdaptiveEnergyVoiceActivityDetector = CalibratedVoiceActivityDetector

@@ -5,11 +5,40 @@ import TranslationAPI
 public struct TranscriptSourceCorrection: Codable, Equatable, Sendable {
     public let observedText: String
     public let replacementText: String
+    public let kind: TranscriptSourceCorrectionKind?
+    public let reason: String?
+    public let confidence: Double?
+    public let evidenceSequence: Int?
+    public let evidenceText: String?
+    public let utf16Location: Int?
+    public let utf16Length: Int?
 
-    public init(observedText: String, replacementText: String) {
+    public init(
+        observedText: String,
+        replacementText: String,
+        kind: TranscriptSourceCorrectionKind? = nil,
+        reason: String? = nil,
+        confidence: Double? = nil,
+        evidenceSequence: Int? = nil,
+        evidenceText: String? = nil,
+        utf16Location: Int? = nil,
+        utf16Length: Int? = nil
+    ) {
         self.observedText = observedText
         self.replacementText = replacementText
+        self.kind = kind
+        self.reason = reason
+        self.confidence = confidence
+        self.evidenceSequence = evidenceSequence
+        self.evidenceText = evidenceText
+        self.utf16Location = utf16Location
+        self.utf16Length = utf16Length
     }
+}
+
+public enum TranscriptSourceCorrectionKind: String, Codable, Equatable, Sendable {
+    case recognitionNormalization
+    case discoursePronoun
 }
 
 public struct TranscriptSourceAudit: Equatable, Sendable {

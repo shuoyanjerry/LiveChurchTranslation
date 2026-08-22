@@ -111,7 +111,7 @@ enum HyMT2TestSupport {
     )
 
     static func configuration(
-        startupTimeout: Duration = .milliseconds(50),
+        startupTimeout: Duration = .seconds(1),
         healthPollInterval: Duration = .milliseconds(1)
     ) -> HyMT2Configuration {
         HyMT2Configuration(

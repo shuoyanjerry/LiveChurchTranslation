@@ -70,6 +70,7 @@ struct StoredDuration: Codable, Sendable {
 enum StoredEndReason: String, Codable, Sendable {
     case trailingSilence
     case softSilence
+    case maximumBoundary
     case maximumDuration
     case endOfStream
 
@@ -77,6 +78,7 @@ enum StoredEndReason: String, Codable, Sendable {
         switch value {
         case .trailingSilence: self = .trailingSilence
         case .softSilence: self = .softSilence
+        case .maximumBoundary: self = .maximumBoundary
         case .maximumDuration: self = .maximumDuration
         case .endOfStream: self = .endOfStream
         }
@@ -86,6 +88,7 @@ enum StoredEndReason: String, Codable, Sendable {
         switch self {
         case .trailingSilence: .trailingSilence
         case .softSilence: .softSilence
+        case .maximumBoundary: .maximumBoundary
         case .maximumDuration: .maximumDuration
         case .endOfStream: .endOfStream
         }

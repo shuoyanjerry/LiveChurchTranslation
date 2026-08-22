@@ -105,6 +105,21 @@ import TranslationAPI
         #expect(pending.first?.translatedEntry?.targetText == "We are justified by faith; this is grace.")
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
     }
+
+    @Test func filteredPromptEchoIsAcknowledgedWithoutPublishingOrRetrying() async throws {
+        let harness = SessionTestHarness(recognitionError: .promptOnlyHallucination)
+
+        let events = try await harness.run()
+
+        #expect(events.appendedEntries.isEmpty)
+        #expect(events.recoverableErrors.isEmpty)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        #expect((await harness.recoveryStore.completedIDs()).count == 1)
+        #expect((await harness.store.persistedEntries()).isEmpty)
+        let snapshot = await harness.coordinator.currentSnapshot()
+        #expect(snapshot.issues.isEmpty)
+        #expect(snapshot.finalizationOutcome == .saved)
+    }
 }
 
 extension LiveSessionCoordinatorIntegrationTests {

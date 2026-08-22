@@ -5,9 +5,12 @@ struct SpeechSegmentationThresholds {
     let preRollSampleCount: Int
     let speechStartSampleCount: Int
     let silenceSampleCount: Int
+    let shortUtteranceSampleCount: Int
+    let shortSilenceSampleCount: Int
     let softSilenceSampleCount: Int
     let softSplitAfterSampleCount: Int
-    let maximumSegmentSampleCount: Int
+    let preferredMaximumSampleCount: Int
+    let hardMaximumSampleCount: Int
     let postRollSampleCount: Int
     let minimumVoicedSampleCount: Int
 
@@ -17,9 +20,14 @@ struct SpeechSegmentationThresholds {
         preRollSampleCount = samples.count(for: configuration.preRoll)
         speechStartSampleCount = samples.count(for: configuration.speechStart)
         silenceSampleCount = samples.count(for: configuration.trailingSilence)
+        shortUtteranceSampleCount = samples.count(for: configuration.shortUtterance)
+        shortSilenceSampleCount = samples.count(for: configuration.shortTrailingSilence)
         softSilenceSampleCount = samples.count(for: configuration.softSplitSilence)
         softSplitAfterSampleCount = samples.count(for: configuration.softSplitAfter)
-        maximumSegmentSampleCount = samples.count(for: configuration.maximumSegment)
+        preferredMaximumSampleCount = samples.count(for: configuration.preferredMaximumSegment)
+        hardMaximumSampleCount = samples.count(
+            for: configuration.preferredMaximumSegment + configuration.maximumBoundaryGrace
+        )
         postRollSampleCount = samples.countAllowingZero(for: configuration.postRoll)
         minimumVoicedSampleCount = samples.count(for: configuration.minimumVoiced)
     }

@@ -15,14 +15,21 @@ report_failure() {
 
 while IFS= read -r file; do
     lines="$(awk 'END { print NR }' "$file")"
-    if [ "$lines" -gt 200 ]; then
-        report_failure "$file has $lines lines; Swift files are limited to 200"
+    if [ "$lines" -ge 200 ]; then
+        report_failure "$file has $lines lines; source files must stay below 200"
     fi
-done < <(find Sources Tests -type f -name '*.swift' -print | sort)
+done < <(
+    find Sources Tests -type f \
+        \( -name '*.swift' -o -name '*.c' -o -name '*.h' -o -name '*.html' \
+        -o -name '*.css' -o -name '*.js' \) -print \
+        | rg -v '^Sources/WebRTCVADC/Vendor/' \
+        | sort
+)
 
 while IFS= read -r path; do
     [ -z "$path" ] || report_failure "garbage-drawer name is forbidden: $path"
 done < <(find Sources -mindepth 1 \( -type d -o -type f \) \
+    | rg -v '^Sources/WebRTCVADC/Vendor/' \
     | rg -i '/(shared|common|utils|utilities)([./]|$)' || true)
 
 for directory in Sources/*API; do

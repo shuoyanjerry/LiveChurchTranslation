@@ -9,6 +9,8 @@ enum OutputValidationIssue: Equatable, Sendable {
     case missingNumber(String)
     case missingNegation
     case malformedScriptureReference
+    case unexpectedMasculinePronoun
+    case unexpectedFemininePronoun
 
     var description: String {
         switch self {
@@ -19,6 +21,8 @@ enum OutputValidationIssue: Equatable, Sendable {
         case .missingNumber(let number): "missing number: \(number)"
         case .missingNegation: "source negation was not preserved"
         case .malformedScriptureReference: "Scripture reference was not preserved"
+        case .unexpectedMasculinePronoun: "female source referent changed to a masculine pronoun"
+        case .unexpectedFemininePronoun: "male source referent changed to a feminine pronoun"
         }
     }
 }
@@ -46,6 +50,7 @@ enum HyMT2OutputValidator {
         if containsScriptureReference(source), !containsEnglishScriptureReference(target) {
             issues.append(.malformedScriptureReference)
         }
+        issues.append(contentsOf: HyMT2GenderValidator.issues(in: target, source: source))
         guard issues.isEmpty else { throw OutputValidationFailure(issues: issues) }
         return target
     }
