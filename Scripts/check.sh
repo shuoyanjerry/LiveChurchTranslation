@@ -24,7 +24,8 @@ run_logged_gate() {
     set -e
     if [[ "$result" -ne 0 && "${GITHUB_ACTIONS:-}" == "true" ]]; then
         details="$(
-            rg 'error:|fatalError|Expectation failed|Caught error|✘ (Test|Suite)' "$log_file" \
+            rg 'error:|fatalError|Expectation failed|Caught error|✘ (Test|Suite).* failed' \
+                "$log_file" \
                 | tail -n 120 \
                 || true
         )"
