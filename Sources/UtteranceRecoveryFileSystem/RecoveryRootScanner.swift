@@ -36,14 +36,20 @@ struct RecoveryRootScanner {
             at: layout.root,
             maximum: limits.maximumRootEntryCount
         )
+        let sessionURLs =
+            urls
+            .filter(isSessionDirectoryCandidate)
+            .sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
         var accumulator = RecoveryRootIndexAccumulator(limits: limits)
-        for url in urls.sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
-        where url.lastPathComponent != layout.rootQuarantineDirectory.lastPathComponent
-            && url.lastPathComponent != layout.resolvedRootDirectory.lastPathComponent
-        {
+        for url in sessionURLs {
             try process(url, accumulator: &accumulator)
         }
         return accumulator.result()
+    }
+
+    private func isSessionDirectoryCandidate(_ url: URL) -> Bool {
+        url.lastPathComponent != layout.rootQuarantineDirectory.lastPathComponent
+            && url.lastPathComponent != layout.resolvedRootDirectory.lastPathComponent
     }
 
     private func process(_ url: URL, accumulator: inout RecoveryRootIndexAccumulator) throws {

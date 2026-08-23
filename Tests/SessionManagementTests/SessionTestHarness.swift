@@ -57,33 +57,35 @@ struct SessionTestHarness {
     ) {
         self.init(
             components: SessionTestComponents(
-                permission: permission,
-                recognizedText: recognizedText,
-                recognizedTexts: recognizedTexts,
-                translationFails: translationFails,
-                translationRejectsFirstOutput: translationRejectsFirstOutput,
-                translationRejectedRequestIndices: translationRejectedRequestIndices,
-                translationReviewedRequestIndices: translationReviewedRequestIndices,
-                storageFails: storageFails,
-                finishFails: finishFails,
-                modelLoadFails: modelLoadFails,
-                recognitionFails: recognitionFails,
-                recognitionError: recognitionError,
-                recognitionErrorsByIndex: recognitionErrorsByIndex,
-                recognitionDelay: recognitionDelay,
-                recoveryStageFails: recoveryStageFails,
-                recordingAppendFails: recordingAppendFails,
-                recordingFinishFails: recordingFinishFails,
-                recordingRepairFails: recordingRepairFails,
-                modelPreparationDelay: modelPreparationDelay,
-                audioFrames: audioFrames ?? [Self.audioFrame],
-                holdsPermissionRequest: holdsPermissionRequest,
-                holdsCaptureOpen: holdsCaptureOpen,
-                emitsOnlyOnFlush: emitsOnlyOnFlush,
-                emitsEveryFrame: emitsEveryFrame,
-                translationMode: translationMode,
-                sentenceVisibilityClock:
-                    sentenceVisibilityClock ?? ContinuousSentenceVisibilityClock()
+                configuration: SessionTestConfiguration(
+                    permission: permission,
+                    recognizedText: recognizedText,
+                    recognizedTexts: recognizedTexts,
+                    translationFails: translationFails,
+                    translationRejectsFirstOutput: translationRejectsFirstOutput,
+                    translationRejectedRequestIndices: translationRejectedRequestIndices,
+                    translationReviewedRequestIndices: translationReviewedRequestIndices,
+                    storageFails: storageFails,
+                    finishFails: finishFails,
+                    modelLoadFails: modelLoadFails,
+                    recognitionFails: recognitionFails,
+                    recognitionError: recognitionError,
+                    recognitionErrorsByIndex: recognitionErrorsByIndex,
+                    recognitionDelay: recognitionDelay,
+                    recoveryStageFails: recoveryStageFails,
+                    recordingAppendFails: recordingAppendFails,
+                    recordingFinishFails: recordingFinishFails,
+                    recordingRepairFails: recordingRepairFails,
+                    modelPreparationDelay: modelPreparationDelay,
+                    audioFrames: audioFrames ?? [Self.audioFrame],
+                    holdsPermissionRequest: holdsPermissionRequest,
+                    holdsCaptureOpen: holdsCaptureOpen,
+                    emitsOnlyOnFlush: emitsOnlyOnFlush,
+                    emitsEveryFrame: emitsEveryFrame,
+                    translationMode: translationMode,
+                    sentenceVisibilityClock:
+                        sentenceVisibilityClock ?? ContinuousSentenceVisibilityClock()
+                )
             ),
             sessionKind: sessionKind
         )
@@ -120,28 +122,6 @@ struct SessionTestHarness {
         return try await SessionEventWaiter.eventsUntilTerminal(from: stream)
     }
 
-    static let audioFrame = AudioFrame(
-        samples: Array(repeating: 0.25, count: 320),
-        sampleRate: 16_000,
-        channelCount: 1,
-        timestamp: .zero
-    )
-
-    private static let models = SessionModelDescriptors(
-        speechRecognition: descriptor(id: "asr", name: "Mandarin ASR"),
-        translation: descriptor(id: "translation", name: "Hy-MT2")
-    )
-
-    private static func descriptor(id: String, name: String) -> ModelDescriptor {
-        ModelDescriptor(
-            id: ModelID(rawValue: id),
-            displayName: name,
-            version: "test",
-            expectedBytes: 1,
-            sha256: nil,
-            license: "Apache-2.0"
-        )
-    }
 }
 
 func verifyRecognitionRequest(from harness: SessionTestHarness) async throws {

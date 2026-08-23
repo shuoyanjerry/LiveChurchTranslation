@@ -30,9 +30,10 @@ extension UtteranceProcessor {
             )
         } catch let failure as UtteranceProcessingFailure {
             throw failure
-        } catch let classified as any ASRFailureImpactProviding
-            where classified.asrFailureImpact == .ignoredUtterance
-        {
+        } catch let classified as any ASRFailureImpactProviding {
+            guard classified.asrFailureImpact == .ignoredUtterance else {
+                throw failure(stage: .recognition, error: classified)
+            }
             throw IgnoredUtterance(message: classified.localizedDescription)
         } catch {
             if error is CancellationError { throw CancellationError() }

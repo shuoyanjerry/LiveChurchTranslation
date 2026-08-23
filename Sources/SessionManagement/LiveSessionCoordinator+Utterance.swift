@@ -32,16 +32,8 @@ extension LiveSessionCoordinator {
             try await completeRecovery(record, outcome: outcome)
         } catch let ignored as IgnoredUtterance {
             await discardFiltered(record, reason: ignored.message)
-        } catch let failure as UtteranceProcessingFailure
-            where failure.impact == .retryableUtterance
-        {
-            deferForRetry(record, failure: failure)
-        } catch let failure as UtteranceProcessingFailure
-            where failure.impact == .terminalUtterance
-        {
-            await completeTerminalRejection(record, failure: failure)
         } catch let failure as UtteranceProcessingFailure {
-            preserve(segment, after: failure, recoveryID: record.id)
+            await handle(failure, for: record)
         } catch is CancellationError {
             return
         } catch {
@@ -54,6 +46,20 @@ extension LiveSessionCoordinator {
                 ),
                 recoveryID: record.id
             )
+        }
+    }
+
+    private func handle(
+        _ failure: UtteranceProcessingFailure,
+        for record: PendingUtteranceRecord
+    ) async {
+        switch failure.impact {
+        case .retryableUtterance:
+            deferForRetry(record, failure: failure)
+        case .terminalUtterance:
+            await completeTerminalRejection(record, failure: failure)
+        case .pipeline:
+            preserve(record.segment, after: failure, recoveryID: record.id)
         }
     }
 
@@ -101,14 +107,21 @@ extension LiveSessionCoordinator {
             return .translated(
                 try await utteranceProcessor.translate(sentence, sessionID: sessionID)
             )
-        } catch let failure as UtteranceProcessingFailure
-            where failure.impact == .retryableUtterance
-        {
+        } catch let failure as UtteranceProcessingFailure {
+            return try await sentenceFailureResult(failure, sentence: sentence, ordinal: ordinal)
+        }
+    }
+
+    private func sentenceFailureResult(
+        _ failure: UtteranceProcessingFailure,
+        sentence: UtteranceProcessor.RecognizedInput,
+        ordinal: Int
+    ) async throws -> LiveSentenceProcessingResult {
+        switch failure.impact {
+        case .retryableUtterance:
             await utteranceProcessor.acceptSourceDiscourse(afterTerminalTranslation: sentence)
             return .deferred(failure)
-        } catch let failure as UtteranceProcessingFailure
-            where failure.impact == .terminalUtterance
-        {
+        case .terminalUtterance:
             await utteranceProcessor.acceptSourceDiscourse(afterTerminalTranslation: sentence)
             return .rejected(
                 TerminalSentenceRejection(
@@ -120,6 +133,8 @@ extension LiveSessionCoordinator {
                     failure: failure
                 )
             )
+        case .pipeline:
+            throw failure
         }
     }
 

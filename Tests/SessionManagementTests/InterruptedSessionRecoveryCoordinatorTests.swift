@@ -7,52 +7,19 @@ import SessionManagement
 import Testing
 import UtteranceRecoveryAPI
 
-@Suite struct InterruptedSessionRecoveryCoordinatorTests {
+@Suite struct InterruptedRecoveryCoordinatorTests {
     @Test func repairsCAFBeforeCommittingTheTranscriptRecovery() async {
-        let sessionID = UUID()
-        let calls = StartupRecoveryCallLog()
-        let transcripts = StartupTranscriptRecoveryStore(
-            scan: TranscriptRecoveryScan(
-                candidates: [
-                    TranscriptRecoveryCandidate(
-                        sessionID: sessionID,
-                        requiresTranscriptRecovery: true,
-                        hasRecordingActivityArtifact: true
-                    )
-                ],
-                issues: [],
-                didReachLimit: false
-            ),
-            calls: calls,
-            recoveryResult: .recovered(
-                RecoveredTranscriptSession(
-                    sessionID: sessionID,
-                    endedAt: Date(timeIntervalSince1970: 100),
-                    entryCount: 4
-                )
-            )
-        )
-        let recordings = StartupRecordingRecoveryStore(
-            calls: calls,
-            result: SessionRecordingMetadata(
-                sessionID: sessionID,
-                fileURL: FileManager.default.temporaryDirectory.appending(path: "recording.caf"),
-                format: RecordingFormat(sampleRate: 16_000, channelCount: 1),
-                frameCount: 16_000,
-                audioDataByteCount: 32_000,
-                recoveredFromInterruption: true
-            )
-        )
+        let fixture = InterruptedRecoveryFixture.successful()
         let diagnostics = FakeDiagnosticsRecorder()
 
         let report = await InterruptedSessionRecoveryCoordinator(
-            transcripts: transcripts,
-            recordings: recordings,
+            transcripts: fixture.transcripts,
+            recordings: fixture.recordings,
             recovery: FakeUtteranceRecoveryStore(),
             diagnostics: diagnostics
         ).recover()
 
-        #expect(await calls.values() == ["recording", "transcript"])
+        #expect(await fixture.calls.values() == ["recording", "transcript"])
         #expect(report.repairedRecordingCount == 1)
         #expect(report.recoveredTranscriptCount == 1)
         #expect(report.issues.isEmpty)
@@ -60,40 +27,17 @@ import UtteranceRecoveryAPI
     }
 
     @Test func recordingFailureLeavesTranscriptUncommittedAndEntersDiagnostics() async {
-        let sessionID = UUID()
-        let calls = StartupRecoveryCallLog()
-        let transcripts = StartupTranscriptRecoveryStore(
-            scan: TranscriptRecoveryScan(
-                candidates: [
-                    TranscriptRecoveryCandidate(
-                        sessionID: sessionID,
-                        requiresTranscriptRecovery: true,
-                        hasRecordingActivityArtifact: true
-                    )
-                ],
-                issues: [],
-                didReachLimit: false
-            ),
-            calls: calls,
-            recoveryResult: .notRequired
-        )
-        let recordings = StartupRecordingRecoveryStore(
-            calls: calls,
-            failure: RecordingStoreError.fileSystem(
-                operation: "repair",
-                reason: "Injected CAF failure"
-            )
-        )
+        let fixture = InterruptedRecoveryFixture.recordingFailure()
         let diagnostics = FakeDiagnosticsRecorder()
 
         let report = await InterruptedSessionRecoveryCoordinator(
-            transcripts: transcripts,
-            recordings: recordings,
+            transcripts: fixture.transcripts,
+            recordings: fixture.recordings,
             recovery: FakeUtteranceRecoveryStore(),
             diagnostics: diagnostics
         ).recover()
 
-        #expect(await calls.values() == ["recording"])
+        #expect(await fixture.calls.values() == ["recording"])
         #expect(report.recoveredTranscriptCount == 0)
         #expect(report.issues.map(\.stage) == [.recording])
         let events = await diagnostics.recordedEvents()

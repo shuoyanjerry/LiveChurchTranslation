@@ -43,10 +43,7 @@ struct AppServiceGraph {
     init(directories: AppDirectories, models: SessionModelDescriptors) throws {
         let logger = UnifiedLogger(subsystem: "com.shuoyan.LiveChurchTranslation")
         let reporter = ModelRuntimeReporter()
-        let diagnostics = InMemoryDiagnosticsRecorder(
-            logger: logger,
-            exportDirectory: directories.diagnostics
-        )
+        let diagnostics = Self.makeDiagnostics(logger: logger, directory: directories.diagnostics)
         let downloader = try Self.makeModelProvider(
             cacheRoot: directories.models,
             reporter: reporter
@@ -78,6 +75,13 @@ struct AppServiceGraph {
             translator: translator,
             models: models
         )
+    }
+
+    private static func makeDiagnostics(
+        logger: UnifiedLogger,
+        directory: URL
+    ) -> InMemoryDiagnosticsRecorder {
+        InMemoryDiagnosticsRecorder(logger: logger, exportDirectory: directory)
     }
 
     private static func makeModelProvider(
