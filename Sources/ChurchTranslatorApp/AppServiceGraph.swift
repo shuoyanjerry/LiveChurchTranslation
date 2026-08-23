@@ -5,10 +5,13 @@ import AudioCaptureAVFoundation
 import AudioProcessingCore
 import DiagnosticsCore
 import DiscourseResolutionCore
+import Foundation
 import GlossaryCore
 import GlossaryFileSystem
 import LoggingOSLog
+import ModelDownloadAPI
 import ModelDownloadHTTP
+import ModelRuntimeAPI
 import ModelRuntimeCore
 import PersistenceFileSystem
 import RecordingFileSystem
@@ -27,22 +30,26 @@ struct AppServiceGraph {
     let settings: UserDefaultsSettingsStore
     let transcripts: FileTranscriptStore
     let recordings: FileSessionRecordingStore
+    let recovery: FileUtteranceRecoveryStore
     let modelPreparation: InferenceModelPreparationCoordinator
+    let diagnostics: InMemoryDiagnosticsRecorder
 
     private let logger: UnifiedLogger
     private let reporter: ModelRuntimeReporter
-    private let downloader: HTTPModelDownloader
+    private let downloader: any ModelDownloadProvider
     private let asr: Qwen3ASRProvider
     private let translator: HyMT2TranslationProvider
 
     init(directories: AppDirectories, models: SessionModelDescriptors) throws {
         let logger = UnifiedLogger(subsystem: "com.shuoyan.LiveChurchTranslation")
         let reporter = ModelRuntimeReporter()
-        let downloader = try HTTPModelDownloader(
-            manifests: ProductionModelCatalog.manifests(),
-            rootDirectory: directories.models,
-            locationStore: LocalModelLocationStore(root: directories.models),
-            runtimeReporter: reporter
+        let diagnostics = InMemoryDiagnosticsRecorder(
+            logger: logger,
+            exportDirectory: directories.diagnostics
+        )
+        let downloader = try Self.makeModelProvider(
+            cacheRoot: directories.models,
+            reporter: reporter
         )
         let asr = Qwen3ASRProvider()
         let translator = HyMT2TranslationProvider(
@@ -57,8 +64,10 @@ struct AppServiceGraph {
         )
         transcripts = FileTranscriptStore(root: directories.transcripts)
         recordings = try FileSessionRecordingStore(root: directories.transcripts)
+        recovery = try FileUtteranceRecoveryStore(root: directories.recovery)
         self.logger = logger
         self.reporter = reporter
+        self.diagnostics = diagnostics
         self.downloader = downloader
         self.asr = asr
         self.translator = translator
@@ -69,6 +78,39 @@ struct AppServiceGraph {
             translator: translator,
             models: models
         )
+    }
+
+    private static func makeModelProvider(
+        cacheRoot: URL,
+        reporter: any ModelRuntimeReporting
+    ) throws -> any ModelDownloadProvider {
+        let manifests = try ProductionModelCatalog.manifests()
+        #if DEBUG
+            if let bundledRoot = BundledModelLocator.modelsRoot() {
+                if FileManager.default.fileExists(atPath: bundledRoot.path) {
+                    return try BundledModelProvider(
+                        manifests: manifests,
+                        rootDirectory: bundledRoot,
+                        runtimeReporter: reporter
+                    )
+                }
+            }
+            return try HTTPModelDownloader(
+                manifests: manifests,
+                rootDirectory: cacheRoot,
+                locationStore: LocalModelLocationStore(root: cacheRoot),
+                runtimeReporter: reporter
+            )
+        #else
+            guard let bundledRoot = BundledModelLocator.modelsRoot() else {
+                throw BundledModelError.invalidRoot
+            }
+            return try BundledModelProvider(
+                manifests: manifests,
+                rootDirectory: bundledRoot,
+                runtimeReporter: reporter
+            )
+        #endif
     }
 
     func makeSessionDependencies(
@@ -91,13 +133,10 @@ struct AppServiceGraph {
             transcript: LiveTranscriptBuffer(),
             transcriptStore: transcripts,
             recordingStore: recordings,
-            recoveryStore: try FileUtteranceRecoveryStore(root: directories.recovery),
+            recoveryStore: recovery,
             settings: settings,
             logger: logger,
-            diagnostics: InMemoryDiagnosticsRecorder(
-                logger: logger,
-                exportDirectory: directories.diagnostics
-            )
+            diagnostics: diagnostics
         )
     }
 }

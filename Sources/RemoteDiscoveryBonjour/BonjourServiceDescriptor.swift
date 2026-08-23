@@ -7,7 +7,7 @@ public struct BonjourServiceDescriptor: Equatable, Sendable, RemoteBonjourDescri
     public let name: String
     public let protocolVersion: UInt16
 
-    public init(name: String = "Quiet Liturgy Reader", protocolVersion: UInt16 = 1) {
+    public init(name: String = "教会实时翻译", protocolVersion: UInt16 = 1) {
         self.name = String(name.prefix(63))
         self.protocolVersion = protocolVersion
     }

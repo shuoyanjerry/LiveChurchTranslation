@@ -32,12 +32,13 @@ struct LiveSessionProjectionAdapterTests {
         await adapter.start()
         try await waitUntil { await projection.entries().count == 1 }
         await controller.emit(.stateChanged(makeFailedSnapshot(entry: entry)))
-        try await waitUntil { await projection.messages().last == "Needs attention on the Mac" }
+        try await waitUntil { await projection.messages().last == "请在 Mac 上检查" }
 
         #expect(await projection.sessions() == [sessionID])
         #expect(await projection.entries().first?.targetText == "Salvation is by grace.")
         #expect(await projection.entries().first?.sourceLanguage == "zh-Hans")
         #expect(await projection.entries().first?.targetLanguage == "en")
+        #expect((await projection.messages()).contains("正在聆听"))
         #expect(!(await projection.messages()).contains { $0.contains("/Users/") })
     }
 

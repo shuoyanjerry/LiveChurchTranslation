@@ -38,6 +38,7 @@ let sherpaOnnx: Target.Dependency = .product(
 
 let package = Package(
     name: "LiveChurchTranslation",
+    defaultLocalization: "zh-Hans",
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "ChurchTranslatorApp", targets: ["ChurchTranslatorApp"]),
@@ -203,7 +204,7 @@ let package = Package(
             dependencies: [
                 "AudioCaptureAPI", "GlossaryAPI", "ModelRuntimeAPI",
                 "PersistenceAPI", "RemoteSharingFeatureAPI", "SessionManagementAPI", "SettingsAPI",
-                "ScriptureAPI", "TranscriptAPI", "UIDesignSystem",
+                "ScriptureAPI", "TranscriptAPI", "UIDesignSystem", "UtteranceRecoveryAPI",
             ]
         ),
         target(
@@ -211,7 +212,8 @@ let package = Package(
             dependencies: [
                 "ASRNormalizationCore", "ASRQwen3", "AudioCaptureAVFoundation",
                 "AudioFileAVFoundation", "AudioProcessingCore", "DiagnosticsCore", "GlossaryCore",
-                "GlossaryFileSystem", "LiveReader", "LoggingOSLog", "ModelDownloadHTTP",
+                "GlossaryFileSystem", "LiveReader", "LoggingOSLog", "ModelDownloadAPI",
+                "ModelDownloadHTTP",
                 "ModelRuntimeAPI", "ModelRuntimeCore", "PersistenceFileSystem",
                 "RemoteControlCore", "RemoteControlSessionAdapter", "RemoteDiscoveryBonjour",
                 "RemotePairingCore", "RemoteProjectionCore", "RemoteProjectionSessionAdapter",

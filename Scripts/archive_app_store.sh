@@ -121,6 +121,7 @@ grep -Eq 'WRAPPER_EXTENSION = app$' "$SETTINGS_LOG" \
 cd "$REPOSITORY_ROOT"
 "$SCRIPT_DIR/check.sh"
 "$SCRIPT_DIR/fetch_llama_runtime.sh"
+"$SCRIPT_DIR/fetch_release_models.sh"
 mkdir -p "$(dirname "$ARCHIVE")"
 BUILD_LOG="$ARCHIVE.build.log"
 echo "$XCODE_VERSION"

@@ -43,11 +43,51 @@ import TranscriptAPI
             Issue.record("Expected an incomplete import to fail explicitly")
             return
         }
-        #expect(message.contains("incomplete"))
+        #expect(message.contains("音频听抄未完成"))
         #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 40))
         #expect((await harness.asr.receivedRequests()).count == 1)
         #expect((await harness.recoveryStore.pendingRecords()).count == frames.count)
         #expect((await harness.recordingStore.recordedFrames()) == frames)
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.integrity == .incomplete)
+        #expect(finalization.pendingRecordCount == frames.count)
+    }
+
+    @Test func missingSafeOutputContinuesWholeImportAndRemainsRecoverable() async throws {
+        let frames = Self.frames(count: 3)
+        let harness = SessionTestHarness(
+            translationRejectsFirstOutput: true,
+            emitsEveryFrame: true,
+            audioFrames: frames,
+            sessionKind: .importedAudio
+        )
+
+        _ = try await harness.run()
+
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected the recoverable import to be incomplete")
+            return
+        }
+        #expect(message.contains("听抄不完整"))
+        #expect(
+            snapshot.finalizationOutcome
+                == .savedWithIncompleteTranscript(
+                    rejectedUtteranceCount: 0,
+                    recoverableUtteranceCount: 1
+                )
+        )
+        #expect((await harness.asr.receivedRequests()).count == frames.count)
+        #expect((await harness.translator.receivedRequests()).count == frames.count)
+        #expect((await harness.store.persistedEntries()).count == frames.count - 1)
+        #expect((await harness.recoveryStore.pendingRecords()).count == 1)
+        #expect((await harness.recoveryStore.terminalRejections()).isEmpty)
+        #expect((await harness.recordingStore.recordedFrames()) == frames)
+        #expect(await harness.coordinator.diskRecoveryMode == nil)
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.integrity == .incomplete)
+        #expect(finalization.pendingRecordCount == 1)
+        #expect(finalization.rejections.isEmpty)
     }
 
     @Test func recoveryStoreFailureRequiresOriginalFileRetry() async throws {
@@ -66,8 +106,9 @@ import TranscriptAPI
             Issue.record("Expected an import without durable segments to fail explicitly")
             return
         }
-        #expect(message.contains("Retry the original file"))
+        #expect(message.contains("重新处理原始文件"))
         #expect((await harness.asr.receivedRequests()).isEmpty)
+        #expect(await harness.recoveryStore.stageAttemptCount() == 1)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect((await harness.recordingStore.recordedFrames()) == frames)
     }
@@ -88,7 +129,7 @@ import TranscriptAPI
             Issue.record("Expected a stopped import to fail explicitly")
             return
         }
-        #expect(message.contains("before the complete file"))
+        #expect(message.contains("完整听抄前中断"))
     }
 
     private static func frames(count: Int) -> [AudioFrame] {

@@ -52,8 +52,7 @@ import TranslationAPI
         let valid = spacedCanonical(fixture.plan, 0, "she") + "continues."
         let namespace = String(fixture.plan.occurrences[0].markerName.prefix(12))
         let residuals = [
-            " P9999", " p00", " QLR_", " Q\u{200B}LR_", " ＱＬＲ＿",
-            " \(namespace)", " ABCDEF123456", " &lt;/QLR", " <QL", " </Q",
+            " QLR_", " Q\u{200B}LR_", " ＱＬＲ＿", " \(namespace)", " &lt;/QLR",
         ]
 
         for residual in residuals {

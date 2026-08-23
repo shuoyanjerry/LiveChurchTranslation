@@ -52,6 +52,30 @@ import TranslationAPI
         #expect(entry.sourcePronounDecisions.first?.resolution == .unresolvedSpokenMandarin)
     }
 
+    @Test func backendReviewEvidenceSurvivesBufferAndJSONRoundTrip() async throws {
+        let buffer = LiveTranscriptBuffer()
+        await buffer.begin(sessionID: UUID(), at: Date())
+        let review = TranslationReview(issueCodes: [
+            "quality.missing_negation", "quality.missing_required_term",
+        ])
+        let entry = try await buffer.makeEntry(
+            recognition: fixtureRecognition(text: "我们不是靠行为得救。"),
+            translation: TranslationResult(
+                requestID: UUID(),
+                sourceText: "我们不是靠行为得救。",
+                targetText: "We are saved by works.",
+                duration: .milliseconds(20),
+                review: review
+            )
+        )
+
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(TranscriptEntry.self, from: data)
+
+        #expect(decoded.targetText == "We are saved by works.")
+        #expect(decoded.translationReview == review)
+    }
+
     @Test func legacyEntryJSONDefaultsRawTextToNormalizedText() throws {
         let entry = TranscriptEntry(
             sequence: 1,
@@ -68,6 +92,7 @@ import TranslationAPI
         object.removeValue(forKey: "rawSourceText")
         object.removeValue(forKey: "sourceCorrections")
         object.removeValue(forKey: "sourcePronounDecisions")
+        object.removeValue(forKey: "translationReview")
         let legacy = try JSONSerialization.data(withJSONObject: object)
 
         let decoded = try JSONDecoder().decode(TranscriptEntry.self, from: legacy)
@@ -75,6 +100,7 @@ import TranslationAPI
         #expect(decoded.rawSourceText == "救恩")
         #expect(decoded.sourceCorrections.isEmpty)
         #expect(decoded.sourcePronounDecisions.isEmpty)
+        #expect(decoded.translationReview == nil)
     }
 
     @Test func legacyCorrectionJSONDefaultsStructuredAuditFields() throws {

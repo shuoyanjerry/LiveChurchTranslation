@@ -9,13 +9,13 @@ public enum FileAudioCaptureError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "The selected audio source is not a local file."
+            "所选音频不是本地文件。"
         case .unreadableFile(let name):
-            "The audio file could not be opened: \(name)"
+            "无法打开音频文件：\(name)"
         case .unsupportedFormat(let detail):
-            "The audio format is unsupported: \(detail)"
+            "暂不支持此音频格式：\(detail)"
         case .decodingFailed(let detail):
-            "The audio file could not be decoded: \(detail)"
+            "无法解码音频文件：\(detail)"
         }
     }
 }

@@ -57,7 +57,7 @@ import TranslationAPI
             let harness = try await makeTranslationHarness(
                 responses: [.success(initial), .success(strict)]
             )
-            await expectInvalid(
+            await expectReviewed(
                 harness,
                 request: TranslationRequest(
                     id: pronounTestRequestID,
@@ -80,7 +80,7 @@ import TranslationAPI
         )
         let term = TranslationTerm(source: "恩典", target: "grace")
 
-        await expectInvalid(
+        await expectReviewed(
             harness,
             request: TranslationRequest(
                 id: pronounTestRequestID,
@@ -101,7 +101,7 @@ import TranslationAPI
             responses: [.success(initial), .success(strict)]
         )
 
-        await expectInvalid(
+        await expectReviewed(
             harness,
             request: TranslationRequest(
                 id: pronounTestRequestID,
@@ -132,7 +132,7 @@ import TranslationAPI
             responses: [.success(initial), .success(strict)]
         )
 
-        await expectInvalid(
+        await expectReviewed(
             harness,
             request: TranslationRequest(
                 id: pronounTestRequestID,
@@ -145,22 +145,15 @@ import TranslationAPI
 }
 
 @MainActor
-private func expectInvalid(
+private func expectReviewed(
     _ harness: TranslationHarness,
     request: TranslationRequest
 ) async {
     defer { harness.model.remove() }
-    do {
-        _ = try await harness.provider.translate(request)
-        Issue.record("Expected invalid output")
-    } catch let error as HyMT2Error {
-        guard case .invalidOutput = error else {
-            Issue.record("Unexpected error: \(error)")
-            return
-        }
-    } catch {
-        Issue.record("Unexpected error: \(error)")
-    }
+    let result = try? await harness.provider.translate(request)
+    #expect(result != nil)
+    #expect(result?.review != nil)
+    #expect(result?.targetText.contains("QLR") == false)
     #expect(await harness.transport.completionRequests().count == 2)
 }
 

@@ -10,7 +10,9 @@ struct RecoverySessionCursor {
     let stored: TranscriptSession?
     var entries: [TranscriptEntry]
     let unavailableMessage: String?
-    var issues: [LiveSessionIssue] = []
+    var issues = BoundedLiveSessionIssueBuffer()
+    var isBlocked = false
+    var terminalRejectionCount = 0
 }
 
 extension UtteranceRecoveryReplayer {
@@ -18,7 +20,7 @@ extension UtteranceRecoveryReplayer {
         do {
             guard let stored = try await dependencies.transcriptStore.load(sessionID: sessionID)
             else {
-                return unavailableCursor(id: sessionID, message: "Transcript missing")
+                return unavailableCursor(id: sessionID, message: "找不到对应的听抄稿。")
             }
             guard
                 let mode = TranslationMode(
@@ -30,7 +32,7 @@ extension UtteranceRecoveryReplayer {
                     id: sessionID,
                     stored: stored,
                     entries: stored.entries,
-                    unavailableMessage: "The saved translation language pair is not supported."
+                    unavailableMessage: "不支持该听抄稿保存的翻译语言组合。"
                 )
             }
             await processor.configure(mode: mode)
@@ -50,22 +52,40 @@ extension UtteranceRecoveryReplayer {
         cursor: inout RecoverySessionCursor
     ) async {
         if let message = cursor.unavailableMessage {
-            cursor.issues.append(
-                issue(sequence: record.id.sequenceNumber, message: message)
-            )
+            if cursor.issues.values.isEmpty {
+                cursor.issues.append(
+                    issue(sequence: record.id.sequenceNumber, message: message)
+                )
+            }
             return
         }
-        if let replayIssue = await replay(record, entries: &cursor.entries) {
-            cursor.issues.append(replayIssue)
-        }
+        let result = await replayRecord(record, entries: &cursor.entries)
+        cursor.issues.append(contentsOf: result.issues)
+        cursor.isBlocked = result.isBlocked
+        let updatedCount = cursor.terminalRejectionCount.addingReportingOverflow(
+            result.terminalRejectionCount
+        )
+        cursor.terminalRejectionCount = updatedCount.overflow ? Int.max : updatedCount.partialValue
     }
 
-    func finalize(_ cursor: RecoverySessionCursor) async -> [LiveSessionIssue] {
+    func finalize(_ cursor: RecoverySessionCursor) async -> RecoveryCursorCloseResult {
         var issues = cursor.issues
-        if issues.isEmpty, let stored = cursor.stored {
-            await finish(stored: stored, entries: cursor.entries, issues: &issues)
+        guard !cursor.isBlocked else {
+            return RecoveryCursorCloseResult(issues: issues.values, isBlocked: true)
         }
-        return issues
+        guard let stored = cursor.stored else {
+            return RecoveryCursorCloseResult(issues: issues.values, isBlocked: false)
+        }
+        do {
+            try Task.checkCancellation()
+            try await finish(stored: stored, entries: cursor.entries)
+        } catch is CancellationError {
+            return RecoveryCursorCloseResult(issues: issues.values, isBlocked: true)
+        } catch {
+            issues.append(issue(message: error.localizedDescription))
+            return RecoveryCursorCloseResult(issues: issues.values, isBlocked: true)
+        }
+        return RecoveryCursorCloseResult(issues: issues.values, isBlocked: false)
     }
 
     private func unavailableCursor(
@@ -79,86 +99,11 @@ extension UtteranceRecoveryReplayer {
             unavailableMessage: message
         )
     }
+}
 
-    private func replay(
-        _ record: PendingUtteranceRecord,
-        entries: inout [TranscriptEntry]
-    ) async -> LiveSessionIssue? {
-        do {
-            try await replaySentences(record, entries: &entries)
-            try await dependencies.recoveryStore.markCompleted(record.id)
-            return nil
-        } catch is IgnoredUtterance {
-            return await completeIgnored(record)
-        } catch let failure as UtteranceProcessingFailure {
-            return issue(
-                stage: failure.stage,
-                sequence: record.id.sequenceNumber,
-                message: failure.message
-            )
-        } catch {
-            return issue(
-                sequence: record.id.sequenceNumber,
-                message: error.localizedDescription
-            )
-        }
-    }
+struct RecoveryCursorCloseResult: Sendable {
+    let issues: [LiveSessionIssue]
+    let isBlocked: Bool
 
-    private func replaySentences(
-        _ record: PendingUtteranceRecord,
-        entries: inout [TranscriptEntry]
-    ) async throws {
-        let context = contextEntries(from: entries, before: record.id.sequenceNumber)
-        let inputs = try await processor.recognize(
-            record.segment,
-            discourseContext: context.discourse
-        )
-        var translationContext = context.translation
-        for (ordinal, input) in inputs.enumerated() {
-            if let existing = entries.first(where: {
-                $0.id == input.utterance.sourceSegmentID
-            }) {
-                appendContext(existing, to: &translationContext)
-                continue
-            }
-            let entry = try await processor.recoverEntry(
-                record,
-                input: input,
-                translationContext: translationContext,
-                presentationSequence: context.presentationSequence + ordinal
-            )
-            entries.append(entry)
-            appendContext(entry, to: &translationContext)
-        }
-    }
-
-    private func appendContext(
-        _ entry: TranscriptEntry,
-        to context: inout [TranslationContextEntry]
-    ) {
-        context.append(
-            TranslationContextEntry(
-                sourceText: entry.sourceText,
-                targetText: entry.targetText
-            )
-        )
-        if context.count > 2 {
-            context.removeFirst(context.count - 2)
-        }
-    }
-
-    private func completeIgnored(
-        _ record: PendingUtteranceRecord
-    ) async -> LiveSessionIssue? {
-        do {
-            try await dependencies.recoveryStore.markCompleted(record.id)
-            return nil
-        } catch {
-            return issue(
-                stage: .persistence,
-                sequence: record.id.sequenceNumber,
-                message: error.localizedDescription
-            )
-        }
-    }
+    static let closedWithoutIssue = Self(issues: [], isBlocked: false)
 }

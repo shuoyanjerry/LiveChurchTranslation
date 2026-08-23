@@ -90,6 +90,6 @@ public enum TranscriptBufferError: LocalizedError, Sendable {
     case noActiveSession
 
     public var errorDescription: String? {
-        "A transcript entry cannot be created without an active session."
+        "没有进行中的会议，无法创建听抄条目。"
     }
 }

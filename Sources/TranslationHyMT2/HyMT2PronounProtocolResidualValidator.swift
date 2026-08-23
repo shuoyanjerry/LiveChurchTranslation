@@ -7,10 +7,20 @@ enum HyMT2PronounProtocolResidualValidator {
         plan: HyMT2PronounPlan
     ) throws {
         let remainder = outputRemoving(ranges, from: output)
-        let inspection = HyMT2ReservedProtocolText.inspectionForm(remainder).uppercased()
-        guard !containsProtocolFragment(inspection, plan: plan) else {
+        guard !containsProtocolFragment(in: remainder, plan: plan) else {
             throw OutputValidationFailure(issues: [.malformedPronounMarker])
         }
+    }
+
+    static func containsProtocolFragment(
+        in value: String,
+        plan: HyMT2PronounPlan?
+    ) -> Bool {
+        let normalized = HyMT2ReservedProtocolText.inspectionForm(value).uppercased()
+        let inspection =
+            normalized
+            .filter { !$0.isWhitespace }
+        return containsProtocolFragment(inspection, normalized: normalized, plan: plan)
     }
 
     private static func outputRemoving(
@@ -29,39 +39,39 @@ enum HyMT2PronounProtocolResidualValidator {
 
     private static func containsProtocolFragment(
         _ value: String,
-        plan: HyMT2PronounPlan
+        normalized: String,
+        plan: HyMT2PronounPlan?
     ) -> Bool {
-        let containsIdentifier =
-            value.contains("QLR")
-            || containsOrdinalFragment(value)
-            || containsNonceFragment(value)
-        if containsIdentifier {
+        if HyMT2ReservedProtocolText.containsPrefix(in: value)
+            || ["<QLR", "</QLR", "&LT;QLR", "&LT;/QLR"].contains(where: value.contains)
+        {
             return true
         }
-        if ["<Q", "</Q", "&LT;Q", "&LT;/Q"].contains(where: value.contains) {
+        guard let plan else { return false }
+        if value.contains("QLR") { return true }
+        if identifiers(in: plan).contains(where: { containsToken($0, in: normalized) }) {
             return true
         }
         return namespaces(in: plan).contains(where: value.contains)
     }
 
-    private static func containsOrdinalFragment(_ value: String) -> Bool {
-        guard let expression = try? NSRegularExpression(pattern: #"P[0-9]{1,4}"#) else {
-            return true
-        }
+    private static func containsToken(_ token: String, in value: String) -> Bool {
+        let escaped = token.uppercased().map {
+            NSRegularExpression.escapedPattern(for: String($0))
+        }.joined(separator: #"\s*"#)
+        guard
+            let expression = try? NSRegularExpression(
+                pattern: "(?<![A-Z0-9])\(escaped)(?![A-Z0-9])"
+            )
+        else { return true }
         return expression.firstMatch(
             in: value,
             range: NSRange(value.startIndex..., in: value)
         ) != nil
     }
 
-    private static func containsNonceFragment(_ value: String) -> Bool {
-        guard let expression = try? NSRegularExpression(pattern: #"[A-F0-9]{12}"#) else {
-            return true
-        }
-        return expression.firstMatch(
-            in: value,
-            range: NSRange(value.startIndex..., in: value)
-        ) != nil
+    private static func identifiers(in plan: HyMT2PronounPlan) -> Set<String> {
+        Set(plan.occurrences.map(\.identifier))
     }
 
     private static func namespaces(in plan: HyMT2PronounPlan) -> Set<String> {

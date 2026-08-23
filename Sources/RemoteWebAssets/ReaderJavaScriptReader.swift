@@ -1,37 +1,12 @@
 enum ReaderJavaScriptReader {
     static let value = #"""
-        (() => {
-          "use strict";
-          const main = document.querySelector("main");
-          const transcript = document.querySelector("#transcript");
-          const empty = document.querySelector("#empty");
-          const connection = document.querySelector("#connection");
-          const jump = document.querySelector("#jump");
-          const unseenLabel = document.querySelector("#unseen");
-          const pairing = document.querySelector("#pairing");
-          const operator = document.querySelector("#operator");
-          const entries = new Map();
-          const seen = new Set();
-          let socket;
-          let retry = 0;
-          let heartbeatAt = Date.now();
-          let revision = 0;
-          let sessionID = null;
-          let following = true;
-          let unseen = 0;
-          let fontSize = Number(localStorage.getItem("readerSize") || 30);
-
-          const setConnection = (label, state = "") => {
-            connection.textContent = label;
-            connection.className = `connection ${state}`;
-          };
           const nearBottom = () => main.scrollHeight - main.scrollTop - main.clientHeight < 100;
           const visibleAnchor = () => [...transcript.children].find(
             node => node.getBoundingClientRect().bottom > 80
           );
           const updateJump = () => {
             jump.hidden = following;
-            unseenLabel.textContent = unseen ? `· ${unseen} new` : "";
+            unseenLabel.textContent = unseen ? `· ${unseen} 条新内容` : "";
           };
           const scrollLive = () => {
             main.scrollTop = main.scrollHeight;
@@ -86,24 +61,32 @@ enum ReaderJavaScriptReader {
               entries.set(entry.id, entry);
               seen.add(`${sessionID}:${entry.id}:${entry.revision}`);
             });
+            setDirectionFromEntries(snapshot.entries);
             render();
-            setConnection(snapshot.statusMessage || snapshot.phase, "live");
+            setConnection(
+              connectionLabel(snapshot.statusMessage, snapshot.phase),
+              connectionState(snapshot.phase)
+            );
           };
           const applyEnvelope = envelope => {
             const payload = envelope.payload;
             heartbeatAt = Date.now();
             if (payload.type === "snapshot") return applySnapshot(payload.snapshot);
             if (payload.type === "resyncRequired") return fetchSnapshot();
-        if (payload.type === "heartbeat") return;
-        revision = Math.max(revision, payload.revision || 0);
-        if (payload.type === "stateChanged") {
-          if (payload.sessionID && payload.sessionID !== sessionID) {
-            sessionID = payload.sessionID;
-            entries.clear();
-            seen.clear();
-            render();
-          }
-          setConnection(payload.message || payload.phase, "live");
+            if (payload.type === "heartbeat") return;
+            revision = Math.max(revision, payload.revision || 0);
+            if (payload.type === "stateChanged") {
+              if (payload.sessionID && payload.sessionID !== sessionID) {
+                sessionID = payload.sessionID;
+                entries.clear();
+                seen.clear();
+                setDirection(null, null);
+                render();
+              }
+              setConnection(
+                connectionLabel(payload.message, payload.phase),
+                connectionState(payload.phase)
+              );
             }
             if (payload.type === "entryUpsert") {
               const key = `${payload.sessionID}:${payload.entry.id}:${payload.entry.revision}`;
@@ -111,6 +94,9 @@ enum ReaderJavaScriptReader {
               seen.add(key);
               sessionID = payload.sessionID;
               entries.set(payload.entry.id, payload.entry);
+              if (payload.entry.sourceLanguage && payload.entry.targetLanguage) {
+                setDirection(payload.entry.sourceLanguage, payload.entry.targetLanguage);
+              }
               if (!following) unseen += 1;
               render();
               updateJump();

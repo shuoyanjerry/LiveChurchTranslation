@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "教会实时翻译";
+"CFBundleName" = "教会实时翻译";
+"NSMicrophoneUsageDescription" = "确认现场参与者知悉后，本应用会使用所选麦克风进行实时听抄和翻译，并在本机保存会议完整录音和听抄稿。录音期间会持续显示红色提示。";
+"NSLocalNetworkUsageDescription" = "本应用仅通过本地网络向你明确配对的设备共享实时听抄和翻译内容。";

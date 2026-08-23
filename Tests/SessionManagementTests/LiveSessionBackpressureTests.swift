@@ -30,9 +30,9 @@ import Testing
         #expect(completed.count + pending.count == frames.count)
         #expect(!pending.isEmpty)
         #expect((await harness.asr.receivedRequests()).count <= 1)
-        #expect(events.recoverableErrors.contains { $0.contains("stored on disk") })
-        #expect(snapshot.issues.contains { $0.message.contains("complete meeting recording") })
-        #expect(snapshot.statusMessage.contains("unfinished sentence"))
+        #expect(events.recoverableErrors.contains { $0.contains("保存到磁盘") })
+        #expect(snapshot.issues.contains { $0.message.contains("会议完整录音") })
+        #expect(snapshot.statusMessage.contains("句等待恢复"))
         #expect(
             snapshot.finalizationOutcome
                 == .savedWithUnresolvedUtterances(count: pending.count)
@@ -59,7 +59,7 @@ import Testing
             guard case .stateChanged(let snapshot) = event else { return nil }
             return snapshot.statusMessage
         }
-        #expect(statuses.contains { $0.contains("saved meeting audio") })
+        #expect(statuses.contains { $0.contains("会议录音重试") })
     }
 
     @Test func firstInferenceFailureDefersLaterAudioWithoutRetryStorm() async throws {

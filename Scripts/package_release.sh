@@ -6,11 +6,16 @@ REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPOSITORY_ROOT/dist"
 APP="$DIST_DIR/Quiet Liturgy Reader.app"
 RUNTIME="$REPOSITORY_ROOT/.artifacts/llama-b10549"
+MODELS="${RELEASE_MODELS_DIR:-$REPOSITORY_ROOT/.artifacts/release-models}"
 IDENTITY="${DEVELOPER_ID_APPLICATION:--}"
 VERSION="${APP_VERSION:-1.0.0}"
 BUILD_NUMBER="${APP_BUILD_NUMBER:-1}"
 
 "$SCRIPT_DIR/check_app_store_packaging.sh"
+[[ "$VERSION" =~ ^[0-9]+([.][0-9]+){0,2}$ ]] \
+  || { echo "APP_VERSION must contain one to three numeric components." >&2; exit 1; }
+[[ "$BUILD_NUMBER" =~ ^[0-9]+([.][0-9]+){0,2}$ ]] \
+  || { echo "APP_BUILD_NUMBER must contain one to three numeric components." >&2; exit 1; }
 
 if [[ "$IDENTITY" != "-" ]]; then
   MATCHING_IDENTITY="$({ security find-identity -v -p codesigning || true; } \
@@ -29,6 +34,7 @@ cd "$REPOSITORY_ROOT"
 swift build -c release --product LiveChurchTranslation
 BIN_DIR="$(swift build -c release --show-bin-path)"
 "$SCRIPT_DIR/fetch_llama_runtime.sh" "$RUNTIME"
+"$SCRIPT_DIR/fetch_release_models.sh" "$MODELS"
 
 mkdir -p "$DIST_DIR"
 if [[ -e "$APP" ]]; then
@@ -51,6 +57,13 @@ ditto "$REPOSITORY_ROOT/Assets/AppIconQuiet.icns" \
 ditto "$RUNTIME/LICENSE" "$APP/Contents/Resources/llama.cpp-LICENSE"
 ditto "$REPOSITORY_ROOT/Packaging/PrivacyInfo.xcprivacy" \
   "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
+ditto "$REPOSITORY_ROOT/Packaging/zh-Hans.lproj" \
+  "$APP/Contents/Resources/zh-Hans.lproj"
+ditto "$REPOSITORY_ROOT/Packaging/Licenses" \
+  "$APP/Contents/Resources/Licenses"
+ditto "$MODELS" "$APP/Contents/Resources/Models"
+"$SCRIPT_DIR/check_bundled_models.sh" "$APP"
+"$SCRIPT_DIR/check_bundled_licenses.sh" "$APP/Contents/Resources/Licenses"
 
 for file in "$RUNTIME"/llama-server "$RUNTIME"/*.dylib; do
   ditto "$file" "$APP/Contents/MacOS/$(basename "$file")"
@@ -74,6 +87,8 @@ plutil -lint "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
 codesign -d --entitlements :- "$APP" >/dev/null
 codesign -d --entitlements :- "$APP/Contents/MacOS/llama-server" >/dev/null
+"$SCRIPT_DIR/check_bundled_models.sh" "$APP"
+"$SCRIPT_DIR/audit_release_app.sh" "$APP" "$IDENTITY"
 otool -L "$APP/Contents/MacOS/LiveChurchTranslation"
 echo "Created Developer ID/engineering artifact $APP"
 echo "This artifact is not a Mac App Store archive or upload package."

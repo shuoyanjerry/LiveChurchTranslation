@@ -16,6 +16,15 @@ struct RecoveryLayout: Sendable {
         sessionDirectory(sessionID).appending(path: "quarantine", directoryHint: .isDirectory)
     }
 
+    func rejectedDirectory(_ sessionID: UUID) -> URL {
+        resolvedRootDirectory
+            .appending(path: sessionID.uuidString.lowercased(), directoryHint: .isDirectory)
+    }
+
+    var resolvedRootDirectory: URL {
+        root.appending(path: ".resolved", directoryHint: .isDirectory)
+    }
+
     var rootQuarantineDirectory: URL {
         root.appending(path: ".quarantine", directoryHint: .isDirectory)
     }
@@ -29,14 +38,19 @@ struct RecoveryLayout: Sendable {
             .appending(path: recordName(id), directoryHint: .isDirectory)
     }
 
+    func rejectedRecordDirectory(_ id: PendingUtteranceID) -> URL {
+        rejectedDirectory(id.sessionID)
+            .appending(path: recordName(id), directoryHint: .isDirectory)
+    }
+
     func stagingDirectory(_ sessionID: UUID) -> URL {
         pendingDirectory(sessionID)
             .appending(path: ".staging-\(UUID().uuidString.lowercased())", directoryHint: .isDirectory)
     }
 
-    func completionDirectory(_ sessionID: UUID) -> URL {
-        pendingDirectory(sessionID)
-            .appending(path: ".completed-\(UUID().uuidString.lowercased())", directoryHint: .isDirectory)
+    func completionDirectory(_ id: PendingUtteranceID) -> URL {
+        pendingDirectory(id.sessionID)
+            .appending(path: ".completed-\(recordName(id))", directoryHint: .isDirectory)
     }
 
     func metadataURL(in recordDirectory: URL) -> URL {
@@ -45,5 +59,9 @@ struct RecoveryLayout: Sendable {
 
     func audioURL(in recordDirectory: URL) -> URL {
         recordDirectory.appending(path: "audio.wav")
+    }
+
+    func rejectionReceiptURL(in recordDirectory: URL) -> URL {
+        recordDirectory.appending(path: "rejection.json")
     }
 }

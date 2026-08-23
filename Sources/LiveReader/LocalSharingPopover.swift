@@ -20,7 +20,7 @@ struct LocalSharingPopover: View {
     private var title: some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Local Reader")
+                Text("听众共享")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(ChurchTheme.ink)
                 Text(LocalSharingPresentation.subtitle)
@@ -45,7 +45,7 @@ struct LocalSharingPopover: View {
         case .starting:
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small)
-                Text("Starting local sharing…")
+                Text("正在启动局域网共享…")
             }
         case .localNetworkPermissionDenied:
             Text(LocalSharingPresentation.localNetworkPermissionMessage)
@@ -56,21 +56,21 @@ struct LocalSharingPopover: View {
                 Label("打开系统设置", systemImage: "gear")
             }
             .buttonStyle(ChurchPrimaryButtonStyle())
-            actionButton("Try Again", icon: "arrow.clockwise", intent: .toggle)
+            actionButton("重试", icon: "arrow.clockwise", intent: .toggle)
         case .on(let endpoint, let connectionCount, let invitation, let peers):
             activeContent(endpoint, connectionCount, invitation, peers)
         case .failed(let message):
             Text(message).foregroundStyle(ChurchTheme.danger)
-            actionButton("Try Again", icon: "arrow.clockwise", intent: .toggle)
+            actionButton("重试", icon: "arrow.clockwise", intent: .toggle)
         }
     }
 
     private var offContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Sharing is off. Turn it on only when people in the room need a reader.")
+            Text("共享目前已关闭。仅在现场听众需要查看时开启。")
                 .font(.callout)
                 .foregroundStyle(ChurchTheme.muted)
-            actionButton("Turn On Local Sharing", icon: "antenna.radiowaves.left.and.right", intent: .toggle)
+            actionButton("开启局域网共享", icon: "antenna.radiowaves.left.and.right", intent: .toggle)
         }
     }
 
@@ -81,7 +81,7 @@ struct LocalSharingPopover: View {
         _ peers: [LocalSharingPeer]
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("\(connectionCount) connected · \(peers.count) paired")
+            Text("\(connectionCount) 台已连接 · \(peers.count) 台已配对")
                 .font(.callout.weight(.medium))
             Text(endpoint.absoluteString)
                 .font(.caption.monospaced())
@@ -91,7 +91,7 @@ struct LocalSharingPopover: View {
                 invitationView(invitation)
             }
             actionButton(
-                "Invite a Viewer",
+                "邀请听众",
                 icon: "person.badge.plus",
                 intent: .createInvitation(role: LocalSharingPresentation.invitationRole)
             )
@@ -99,25 +99,25 @@ struct LocalSharingPopover: View {
                 Divider()
                 LocalSharingPeerRow(peer: peer, onIntent: onIntent)
             }
-            Button("Stop Sharing", role: .destructive) { onIntent(.toggle) }
+            Button("停止共享", role: .destructive) { onIntent(.toggle) }
         }
     }
 
     private func invitationView(_ invitation: LocalSharingInvitation) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(invitation.role.displayName) invitation")
+            Text("\(invitation.role.displayName)邀请")
                 .font(.caption.weight(.semibold))
             VStack(alignment: .leading, spacing: 3) {
                 Text(invitation.url.absoluteString)
                     .font(.caption.monospaced())
                     .lineLimit(2)
                     .textSelection(.enabled)
-                Text("Expires in \(Text(invitation.expiresAt, style: .timer))")
+                Text("链接将在 \(Text(invitation.expiresAt, style: .timer)) 后失效")
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
             }
             ShareLink(item: invitation.url) {
-                Label("Share Invite Link", systemImage: "square.and.arrow.up")
+                Label("分享邀请链接", systemImage: "square.and.arrow.up")
             }
         }
         .padding(12)

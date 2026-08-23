@@ -2,7 +2,9 @@ import AppKit
 import Combine
 import Foundation
 import PersistenceAPI
+import SettingsAPI
 import TranscriptAPI
+import UtteranceRecoveryAPI
 
 @MainActor
 public final class SessionLibraryViewModel: ObservableObject {
@@ -15,9 +17,14 @@ public final class SessionLibraryViewModel: ObservableObject {
     @Published public private(set) var isImporting = false
 
     private let store: any TranscriptStore
+    private let recoveryArtifacts: any SessionRecoveryArtifactDeleting
 
-    public init(store: any TranscriptStore) {
+    public init(
+        store: any TranscriptStore,
+        recoveryArtifacts: any SessionRecoveryArtifactDeleting
+    ) {
         self.store = store
+        self.recoveryArtifacts = recoveryArtifacts
     }
 
     public var filteredSessions: [StoredSessionSummary] {
@@ -55,6 +62,7 @@ public final class SessionLibraryViewModel: ObservableObject {
                 selectedSessionIsActive = true
                 throw TranscriptStoreError.sessionActive
             }
+            try await recoveryArtifacts.deleteArtifacts(for: id)
             try await store.delete(sessionID: id)
             selectedSessionID = nil
             selectedSession = nil
@@ -135,7 +143,39 @@ extension StoredSessionSummary {
     }
 
     var languagePair: String {
-        "\(sourceLanguage.localizedLanguageName) → \(targetLanguage.localizedLanguageName)"
+        if let mode = TranslationMode(
+            sourceLanguageTag: sourceLanguage,
+            targetLanguageTag: targetLanguage
+        ) {
+            return mode.displayName
+        }
+        return "\(sourceLanguage.localizedLanguageName) → \(targetLanguage.localizedLanguageName)"
+    }
+
+    var integrityLabel: String? {
+        switch integrity {
+        case .complete:
+            nil
+        case .active:
+            "处理中"
+        case .incomplete:
+            "内容不完整"
+        case .recoveredAfterInterruption:
+            "中断后恢复 · 请核对"
+        }
+    }
+
+    var integrityDetail: String? {
+        switch integrity {
+        case .complete:
+            nil
+        case .active:
+            "这场会议尚未完成保存。"
+        case .incomplete:
+            "部分内容未能完成处理，请结合完整录音核对。"
+        case .recoveredAfterInterruption:
+            "听抄稿在应用意外中断后自动恢复，建议结合录音核对。"
+        }
     }
 }
 
@@ -143,6 +183,6 @@ extension String {
     fileprivate var nonEmpty: String? { isEmpty ? nil : self }
 
     fileprivate var localizedLanguageName: String {
-        Locale.current.localizedString(forLanguageCode: self) ?? self
+        Locale(identifier: "zh-Hans").localizedString(forLanguageCode: self) ?? self
     }
 }

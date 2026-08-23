@@ -9,7 +9,7 @@ struct SessionEventHub {
         onTermination: @escaping @Sendable (UUID) -> Void
     ) -> AsyncStream<LiveSessionEvent> {
         let id = UUID()
-        return AsyncStream { continuation in
+        return AsyncStream(bufferingPolicy: .bufferingNewest(256)) { continuation in
             continuations[id] = continuation
             continuation.yield(.stateChanged(initial))
             continuation.onTermination = { _ in onTermination(id) }

@@ -27,15 +27,15 @@ public enum TranslationMode: String, CaseIterable, Codable, Identifiable, Sendab
 
     public var sourceDisplayName: String {
         switch self {
-        case .mandarinToEnglish: "中文"
-        case .englishToSimplifiedChinese: "English"
+        case .mandarinToEnglish: "普通话"
+        case .englishToSimplifiedChinese: "英语"
         }
     }
 
     public var targetDisplayName: String {
         switch self {
-        case .mandarinToEnglish: "English"
-        case .englishToSimplifiedChinese: "中文"
+        case .mandarinToEnglish: "英语"
+        case .englishToSimplifiedChinese: "简体中文"
         }
     }
 
@@ -45,8 +45,8 @@ public enum TranslationMode: String, CaseIterable, Codable, Identifiable, Sendab
 
     public var compactDisplayName: String {
         switch self {
-        case .mandarinToEnglish: "中 → EN"
-        case .englishToSimplifiedChinese: "EN → 中"
+        case .mandarinToEnglish: "中 → 英"
+        case .englishToSimplifiedChinese: "英 → 中"
         }
     }
 

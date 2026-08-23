@@ -11,9 +11,9 @@ advertising or tracking, or send meeting content to the developer or an AI servi
 When a user starts a meeting, the app saves the complete audio recording, recognized
 source text, translation, timestamps, and correction audit in the app's sandboxed
 Application Support container. Imported audio is decoded and processed locally. Model
-weights are downloaded from their pinned publishers, verified by size and SHA-256, and
-stored locally. Meeting content remains until the user deletes the meeting or removes the
-app's data.
+weights are sealed into the signed release app, verified by size and SHA-256 before use,
+and loaded locally without a first-run download. Meeting content remains until the user
+deletes the meeting or removes the app's data.
 
 ## Local network sharing
 

@@ -83,11 +83,15 @@ struct SessionTestComponents {
         recognizedText: String,
         recognizedTexts: [String]? = nil,
         translationFails: Bool,
+        translationRejectsFirstOutput: Bool,
+        translationRejectedRequestIndices: Set<Int>,
+        translationReviewedRequestIndices: Set<Int>,
         storageFails: Bool,
         finishFails: Bool,
         modelLoadFails: Bool,
         recognitionFails: Bool,
         recognitionError: ASRError? = nil,
+        recognitionErrorsByIndex: [Int: ASRError] = [:],
         recognitionDelay: Duration? = nil,
         recoveryStageFails: Bool = false,
         recordingAppendFails: Bool = false,
@@ -113,17 +117,22 @@ struct SessionTestComponents {
             emitsOnlyOnFlush: emitsOnlyOnFlush,
             emitsEveryFrame: emitsEveryFrame
         )
-        asr = Self.makeASR(
-            texts: recognizedTexts,
-            configuration: FakeASRInputs(
-                text: recognizedText,
-                loadFails: modelLoadFails,
-                recognitionFails: recognitionFails,
-                recognitionError: recognitionError,
-                recognitionDelay: recognitionDelay
-            )
+        let asrInputs = FakeASRInputs(
+            text: recognizedText,
+            loadFails: modelLoadFails,
+            recognitionFails: recognitionFails,
+            recognitionError: recognitionError,
+            recognitionErrorsByIndex: recognitionErrorsByIndex,
+            recognitionDelay: recognitionDelay
         )
-        translator = FakeHyTranslationProvider(shouldFail: translationFails)
+        asr = Self.makeASR(texts: recognizedTexts, configuration: asrInputs)
+        let rejectedIndices = translationRejectedRequestIndices
+        translator = Self.makeTranslator(
+            translationFails,
+            translationRejectsFirstOutput,
+            rejectedIndices,
+            translationReviewedRequestIndices
+        )
         downloader = FakeModelDownloader(delay: modelPreparationDelay)
         reporter = FakeModelRuntimeReporter()
         transcript = LiveTranscriptBuffer()
@@ -149,10 +158,25 @@ struct SessionTestComponents {
                 loadFails: configuration.loadFails,
                 recognitionFails: configuration.recognitionFails,
                 recognitionError: configuration.recognitionError,
+                recognitionErrorsByIndex: configuration.recognitionErrorsByIndex,
                 recognitionDelay: configuration.recognitionDelay
             )
         }
         return FakeMandarinASRProvider(texts: texts)
+    }
+
+    private static func makeTranslator(
+        _ shouldFail: Bool,
+        _ rejectsFirstOutput: Bool,
+        _ rejectedRequestIndices: Set<Int>,
+        _ reviewedRequestIndices: Set<Int>
+    ) -> FakeHyTranslationProvider {
+        FakeHyTranslationProvider(
+            shouldFail: shouldFail,
+            rejectsFirstOutput: rejectsFirstOutput,
+            rejectedRequestIndices: rejectedRequestIndices,
+            reviewedRequestIndices: reviewedRequestIndices
+        )
     }
 }
 
@@ -161,5 +185,6 @@ private struct FakeASRInputs {
     let loadFails: Bool
     let recognitionFails: Bool
     let recognitionError: ASRError?
+    let recognitionErrorsByIndex: [Int: ASRError]
     let recognitionDelay: Duration?
 }

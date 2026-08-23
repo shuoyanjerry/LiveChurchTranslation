@@ -8,7 +8,7 @@ struct StartupFailureView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.orange)
-            Text("Quiet Liturgy Reader could not start")
+            Text("教会实时翻译无法启动")
                 .font(.title2.weight(.semibold))
             Text(message)
                 .foregroundStyle(.secondary)

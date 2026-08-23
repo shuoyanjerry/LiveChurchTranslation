@@ -102,7 +102,7 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
         publish(
             ModelPreparationSnapshot(
                 phase: .checking,
-                message: "正在检查本地模型并自动补齐所需文件…"
+                message: "正在校验并载入随应用安装的本地模型…"
             )
         )
         let token = UUID()

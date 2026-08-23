@@ -21,10 +21,9 @@ import Testing
     @Test func warnsThatGeneratedAidIsNotAnExactQuotation() {
         let notice = ScriptureSettingsPresentation.notice
 
-        #expect(notice.contains(ScriptureEditionPair.terminologyBaselineNotice))
-        #expect(notice.contains(ScriptureEditionPair.exactQuotationNotice))
-        #expect(notice.contains("not an exact Bible quotation"))
-        #expect(notice.contains("tester-supplied, edition-pinned source"))
-        #expect(notice.contains("他/祂"))
+        #expect(notice.contains("不是圣经逐字引文"))
+        #expect(notice.contains("已锁定版本"))
+        #expect(notice.contains("来源与哈希校验"))
+        #expect(notice.contains("他／祂"))
     }
 }

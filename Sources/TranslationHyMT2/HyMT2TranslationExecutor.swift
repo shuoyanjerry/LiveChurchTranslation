@@ -12,7 +12,7 @@ struct HyMT2TranslationExecutor: Sendable {
         _ input: HyMT2TranslationInput,
         endpoint: LlamaServerEndpoint,
         requestID: UUID
-    ) async throws -> String {
+    ) async throws -> HyMT2AssessedOutput {
         let prepared = try prepare(input, requestID: requestID)
         let first = try await observedCompletion(
             prompt(prepared, strict: false),
@@ -34,6 +34,11 @@ struct HyMT2TranslationExecutor: Sendable {
                 input: prepared,
                 failure: failure
             )
+            let fallback = HyMT2BestEffortExtractor.assess(
+                first,
+                failure: failure,
+                input: prepared
+            )
             return try await strictRetry(
                 prepared,
                 endpoint: endpoint,
@@ -43,7 +48,8 @@ struct HyMT2TranslationExecutor: Sendable {
                     plan: prepared.pronounPlan,
                     source: prepared.source
                 ),
-                flatRetryCapability: flatRetryCapability
+                flatRetryCapability: flatRetryCapability,
+                fallback: fallback
             )
         }
     }
@@ -53,14 +59,23 @@ struct HyMT2TranslationExecutor: Sendable {
         endpoint: LlamaServerEndpoint,
         requestID: UUID,
         pronounCorrection: HyMT2PronounRetryCorrection?,
-        flatRetryCapability: HyMT2FlatPronounRetryCapability?
-    ) async throws -> String {
-        let output = try await observedCompletion(
-            prompt(input, strict: true, pronounCorrection: pronounCorrection),
-            endpoint: endpoint,
-            requestID: requestID,
-            phase: .strictRetry
-        )
+        flatRetryCapability: HyMT2FlatPronounRetryCapability?,
+        fallback: HyMT2AssessedOutput?
+    ) async throws -> HyMT2AssessedOutput {
+        let output: String
+        do {
+            output = try await observedCompletion(
+                prompt(input, strict: true, pronounCorrection: pronounCorrection),
+                endpoint: endpoint,
+                requestID: requestID,
+                phase: .strictRetry
+            )
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            if let fallback { return fallback }
+            throw error
+        }
         do {
             return try await acceptedTarget(
                 output,
@@ -71,6 +86,17 @@ struct HyMT2TranslationExecutor: Sendable {
             )
         } catch let failure as OutputValidationFailure {
             await recordRejection(failure, requestID: requestID, phase: .strictRetry)
+            if let assessed = HyMT2BestEffortExtractor.assess(
+                output,
+                failure: failure,
+                input: input
+            ) {
+                guard let fallback else { return assessed }
+                return assessed.validationIssueCount <= fallback.validationIssueCount
+                    ? assessed
+                    : fallback
+            }
+            if let fallback { return fallback }
             throw HyMT2Error.invalidOutput(failure.issues.map(\.description))
         }
     }
@@ -81,7 +107,7 @@ struct HyMT2TranslationExecutor: Sendable {
         requestID: UUID,
         phase: HyMT2AttemptPhase,
         flatRetryCapability: HyMT2FlatPronounRetryCapability? = nil
-    ) async throws -> String {
+    ) async throws -> HyMT2AssessedOutput {
         let target = try validate(
             output,
             input: input,
@@ -90,7 +116,7 @@ struct HyMT2TranslationExecutor: Sendable {
         )
         await record(requestID, phase: phase, outcome: .accepted)
         await recordPronouns(target, requestID: requestID, phase: phase)
-        return target.target
+        return .approved(target: target.target)
     }
 
     private func prompt(

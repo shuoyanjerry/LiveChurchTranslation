@@ -4,7 +4,9 @@ import UtteranceRecoveryAPI
 extension FileUtteranceRecoveryStore {
     public func recoverPending(for sessionID: UUID) async throws -> UtteranceRecoveryBatch {
         do {
-            try prepareSessionDirectory(sessionID)
+            guard fileManager.fileExists(atPath: layout.sessionDirectory(sessionID).path) else {
+                return UtteranceRecoveryBatch(pending: [], quarantined: [])
+            }
             return try sessionScanner().scan(sessionID: sessionID)
         } catch {
             throw fileSystemError("recoverPending", error)
@@ -44,22 +46,6 @@ extension FileUtteranceRecoveryStore {
             }
         } catch {
             throw fileSystemError("recoverAllPendingPages", error)
-        }
-    }
-
-    public func markCompleted(_ id: PendingUtteranceID) async throws {
-        let record = layout.recordDirectory(id)
-        guard fileManager.fileExists(atPath: record.path) else {
-            throw UtteranceRecoveryError.recordNotFound(id)
-        }
-        let tombstone = layout.completionDirectory(id.sessionID)
-        do {
-            try fileManager.moveItem(at: record, to: tombstone)
-            try writer.synchronizeDirectory(layout.pendingDirectory(id.sessionID))
-            try fileManager.removeItem(at: tombstone)
-            try writer.synchronizeDirectory(layout.pendingDirectory(id.sessionID))
-        } catch {
-            throw fileSystemError("markCompleted", error)
         }
     }
 

@@ -24,18 +24,18 @@ struct GlossaryEditorView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Theological Glossary").font(.title2.bold())
-                    Text("Longer phrases take priority. ASR aliases repair known mishearings.")
+                    Text("属灵术语表").font(.title2.bold())
+                    Text("较长短语优先；识别别名可纠正常见误听。")
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Restore Defaults") {
+                Button("恢复默认") {
                     restoreDefaults()
                 }
                 Button {
                     entries.append(GlossaryEntry(source: "", target: ""))
                 } label: {
-                    Label("Add", systemImage: "plus")
+                    Label("添加", systemImage: "plus")
                 }
             }
             .padding()
@@ -50,14 +50,14 @@ struct GlossaryEditorView: View {
             Divider()
             HStack {
                 if operationFailed {
-                    Text("Could not save. Review the highlighted issue and try again.")
+                    Text("无法保存。请检查标出的问题后重试。")
                         .font(.caption)
                         .foregroundStyle(ChurchTheme.danger)
                 }
                 Spacer()
-                Button("Cancel") { dismiss() }
+                Button("取消") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save") {
+                Button("保存") {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)

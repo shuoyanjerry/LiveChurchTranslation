@@ -81,23 +81,46 @@ public struct TranslationResult: Identifiable, Equatable, Sendable {
     public let sourceText: String
     public let targetText: String
     public let duration: Duration
+    public let review: TranslationReview?
 
     public init(
         id: UUID = UUID(),
         requestID: UUID,
         sourceText: String,
         targetText: String,
-        duration: Duration
+        duration: Duration,
+        review: TranslationReview? = nil
     ) {
         self.id = id
         self.requestID = requestID
         self.sourceText = sourceText
         self.targetText = targetText
         self.duration = duration
+        self.review = review
     }
 }
 
-public enum TranslationProviderError: LocalizedError, Sendable {
+/// Non-blocking quality evidence attached when useful model text is shown despite a warning.
+public struct TranslationReview: Codable, Equatable, Hashable, Sendable {
+    public let issueCodes: [String]
+
+    public init(issueCodes: [String]) {
+        self.issueCodes = Array(Set(issueCodes.filter { !$0.isEmpty })).sorted()
+    }
+}
+
+public enum TranslationFailureImpact: Equatable, Sendable {
+    case terminalUtterance
+    case retryableUtterance
+    case runtime
+}
+
+public protocol TranslationFailureImpactProviding: Error, Sendable {
+    var translationFailureImpact: TranslationFailureImpact { get }
+    var translationFailureCode: String { get }
+}
+
+public enum TranslationProviderError: LocalizedError, TranslationFailureImpactProviding, Sendable {
     case languageModelUnavailable
     case runtimeNotAttached
     case emptySource
@@ -106,11 +129,32 @@ public enum TranslationProviderError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .languageModelUnavailable: "The on-device Chinese–English language pack is unavailable."
-        case .runtimeNotAttached: "The on-device translation runtime is still preparing."
-        case .emptySource: "There is no source text to translate."
-        case .invalidOutput: "The translation model returned an invalid response."
-        case .translationFailed(let message): "Translation failed: \(message)"
+        case .languageModelUnavailable: "本地中英翻译语言包不可用。"
+        case .runtimeNotAttached: "本地翻译服务仍在准备中。"
+        case .emptySource: "没有可翻译的原文。"
+        case .invalidOutput: "翻译模型没有返回可安全显示的译文，原文已保留等待重译。"
+        case .translationFailed(let message): "翻译失败：\(message)"
+        }
+    }
+
+    public var translationFailureImpact: TranslationFailureImpact {
+        switch self {
+        case .emptySource:
+            .terminalUtterance
+        case .invalidOutput:
+            .retryableUtterance
+        case .languageModelUnavailable, .runtimeNotAttached, .translationFailed:
+            .runtime
+        }
+    }
+
+    public var translationFailureCode: String {
+        switch self {
+        case .languageModelUnavailable: "translation.model_unavailable"
+        case .runtimeNotAttached: "translation.runtime_not_attached"
+        case .emptySource: "translation.empty_source"
+        case .invalidOutput: "translation.invalid_output"
+        case .translationFailed: "translation.failed"
         }
     }
 }

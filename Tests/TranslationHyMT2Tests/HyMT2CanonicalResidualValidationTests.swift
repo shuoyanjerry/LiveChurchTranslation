@@ -115,10 +115,9 @@ private struct CanonicalResidualFixture {
         let nonce = String(occurrence.markerName.prefix(12))
         return [
             " \(occurrence.identifier)",
+            " \(occurrence.identifier.map(String.init).joined(separator: " "))",
             " QLR_REPLAY",
             " \(nonce)",
-            " <QL",
-            " </Q",
             " &lt;/QLR",
         ]
     }

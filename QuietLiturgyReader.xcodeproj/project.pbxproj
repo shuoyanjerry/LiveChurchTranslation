@@ -11,13 +11,19 @@
 		3A1A460F0E180EA9453A8B28 /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24CAF09D6258FB4F39B4BBE7 /* AppIcon.xcassets */; };
 		7FDA5BE3516756150BAA8206 /* QuietLiturgyReaderMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D07141B4C899A80BA0330BC /* QuietLiturgyReaderMain.swift */; };
 		8CEED09E027E90EFDFFD0163 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = BB207223A31AA8406F956833 /* PRIVACY.md */; };
+		BC06FC814D071DA292FA61EC /* zh-Hans.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 41988691A3DBDD94D3BF3AC2 /* zh-Hans.lproj */; };
 		CE2D332E98CF03416A670A85 /* ChurchTranslatorApp in Frameworks */ = {isa = PBXBuildFile; productRef = 8F4AEF114F8544E0E48E4F77 /* ChurchTranslatorApp */; };
 		E46722C57E2CD8BC519161B9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		05D595543BADD047404C900B /* Hy-MT2-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Hy-MT2-LICENSE.txt"; sourceTree = "<group>"; };
 		24CAF09D6258FB4F39B4BBE7 /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
+		31D3B558C8AB33D262B4D63A /* ONNX-Runtime-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ONNX-Runtime-LICENSE.txt"; sourceTree = "<group>"; };
 		3B80A7ECC62EB42841D9CF7C /* Helper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Helper.entitlements; sourceTree = "<group>"; };
+		41988691A3DBDD94D3BF3AC2 /* zh-Hans.lproj */ = {isa = PBXFileReference; path = "zh-Hans.lproj"; sourceTree = "<group>"; };
+		5017C84D598F9A5FA3569F2D /* ProductionModels.sizes */ = {isa = PBXFileReference; path = ProductionModels.sizes; sourceTree = "<group>"; };
+		52A4DC2828B295AF87FD1346 /* libfvad-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "libfvad-LICENSE.txt"; sourceTree = "<group>"; };
 		5C806A99E717C83867F5F671 /* LlamaRuntime.sha256 */ = {isa = PBXFileReference; path = LlamaRuntime.sha256; sourceTree = "<group>"; };
 		6BF7A35BE430916BCA61C8B3 /* LiveChurchTranslation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LiveChurchTranslation.entitlements; sourceTree = "<group>"; };
 		82FEBF407C24527AD14AFDAC /* embed_app_store_runtime.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = embed_app_store_runtime.sh; sourceTree = "<group>"; };
@@ -29,7 +35,14 @@
 		A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB207223A31AA8406F956833 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
 		BD0BAC2266D1784A697D98DD /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
+		CBA3D8CA62FD1B048B278D98 /* Qwen3-ASR-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Qwen3-ASR-LICENSE.txt"; sourceTree = "<group>"; };
+		CC8A122D182B620B52260BA2 /* Qwen3-ASR-NOTICE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Qwen3-ASR-NOTICE.txt"; sourceTree = "<group>"; };
+		D4D205D46ED5847E380C06CF /* LicenseFiles.sha256 */ = {isa = PBXFileReference; path = LicenseFiles.sha256; sourceTree = "<group>"; };
 		DFE1FFFE992D378D30CB04AA /* AppStoreSubmission.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AppStoreSubmission.md; sourceTree = "<group>"; };
+		F02EBBEC8997012A99701AFD /* ProductionModels.sha256 */ = {isa = PBXFileReference; path = ProductionModels.sha256; sourceTree = "<group>"; };
+		F16022E5545B705BF957BF91 /* libfvad-AUTHORS.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "libfvad-AUTHORS.txt"; sourceTree = "<group>"; };
+		F1FDA61E574EE6648D37AFE9 /* sherpa-onnx-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sherpa-onnx-LICENSE.txt"; sourceTree = "<group>"; };
+		F9C8713B4FF2B30D441CDF91 /* libfvad-PATENTS.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "libfvad-PATENTS.txt"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +89,21 @@
 			path = Docs;
 			sourceTree = "<group>";
 		};
+		396B9D77E44C73C0EC2B507D /* Licenses */ = {
+			isa = PBXGroup;
+			children = (
+				05D595543BADD047404C900B /* Hy-MT2-LICENSE.txt */,
+				F16022E5545B705BF957BF91 /* libfvad-AUTHORS.txt */,
+				52A4DC2828B295AF87FD1346 /* libfvad-LICENSE.txt */,
+				F9C8713B4FF2B30D441CDF91 /* libfvad-PATENTS.txt */,
+				31D3B558C8AB33D262B4D63A /* ONNX-Runtime-LICENSE.txt */,
+				CBA3D8CA62FD1B048B278D98 /* Qwen3-ASR-LICENSE.txt */,
+				CC8A122D182B620B52260BA2 /* Qwen3-ASR-NOTICE.txt */,
+				F1FDA61E574EE6648D37AFE9 /* sherpa-onnx-LICENSE.txt */,
+			);
+			path = Licenses;
+			sourceTree = "<group>";
+		};
 		5661F0B9867817BFFF192994 /* XcodeGen */ = {
 			isa = PBXGroup;
 			children = (
@@ -89,10 +117,15 @@
 			children = (
 				3B80A7ECC62EB42841D9CF7C /* Helper.entitlements */,
 				86F9FB5AED16B9559A1C540D /* Info.plist */,
+				D4D205D46ED5847E380C06CF /* LicenseFiles.sha256 */,
 				6BF7A35BE430916BCA61C8B3 /* LiveChurchTranslation.entitlements */,
 				5C806A99E717C83867F5F671 /* LlamaRuntime.sha256 */,
 				A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */,
+				F02EBBEC8997012A99701AFD /* ProductionModels.sha256 */,
+				5017C84D598F9A5FA3569F2D /* ProductionModels.sizes */,
+				41988691A3DBDD94D3BF3AC2 /* zh-Hans.lproj */,
 				0CC9F0B451C0CD796E649AE3 /* AppHost */,
+				396B9D77E44C73C0EC2B507D /* Licenses */,
 				5661F0B9867817BFFF192994 /* XcodeGen */,
 			);
 			path = Packaging;
@@ -168,11 +201,11 @@
 				};
 			};
 			buildConfigurationList = 012A3BFFE38780F7F92AB189 /* Build configuration list for PBXProject "QuietLiturgyReader" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				"zh-Hans",
 			);
 			mainGroup = F93A2DA098111F5934F10769;
 			minimizedProjectReferenceProxies = 1;
@@ -198,6 +231,7 @@
 				8CEED09E027E90EFDFFD0163 /* PRIVACY.md in Resources */,
 				E46722C57E2CD8BC519161B9 /* PrivacyInfo.xcprivacy in Resources */,
 				2D58945CF1FFDAD203130C38 /* THIRD_PARTY_NOTICES.md in Resources */,
+				BC06FC814D071DA292FA61EC /* zh-Hans.lproj in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,8 +249,21 @@
 			inputPaths = (
 				"$(SRCROOT)/Package.swift",
 				"$(SRCROOT)/Scripts/embed_app_store_runtime.sh",
+				"$(SRCROOT)/Scripts/check_release_models.sh",
+				"$(SRCROOT)/Scripts/check_bundled_licenses.sh",
 				"$(SRCROOT)/Packaging/Helper.entitlements",
 				"$(SRCROOT)/Packaging/LlamaRuntime.sha256",
+				"$(SRCROOT)/Packaging/ProductionModels.sha256",
+				"$(SRCROOT)/Packaging/ProductionModels.sizes",
+				"$(SRCROOT)/Packaging/LicenseFiles.sha256",
+				"$(SRCROOT)/Packaging/Licenses/Hy-MT2-LICENSE.txt",
+				"$(SRCROOT)/Packaging/Licenses/ONNX-Runtime-LICENSE.txt",
+				"$(SRCROOT)/Packaging/Licenses/Qwen3-ASR-LICENSE.txt",
+				"$(SRCROOT)/Packaging/Licenses/Qwen3-ASR-NOTICE.txt",
+				"$(SRCROOT)/Packaging/Licenses/libfvad-AUTHORS.txt",
+				"$(SRCROOT)/Packaging/Licenses/libfvad-LICENSE.txt",
+				"$(SRCROOT)/Packaging/Licenses/libfvad-PATENTS.txt",
+				"$(SRCROOT)/Packaging/Licenses/sherpa-onnx-LICENSE.txt",
 				"$(SRCROOT)/.artifacts/llama-b10549/llama-server",
 				"$(SRCROOT)/.artifacts/llama-b10549/libllama-server-impl.dylib",
 				"$(SRCROOT)/.artifacts/llama-b10549/libllama-common.0.dylib",
@@ -229,6 +276,13 @@
 				"$(SRCROOT)/.artifacts/llama-b10549/libggml-rpc.0.dylib",
 				"$(SRCROOT)/.artifacts/llama-b10549/libggml-base.0.dylib",
 				"$(SRCROOT)/.artifacts/llama-b10549/LICENSE",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json",
+				"$(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json",
+				"$(SRCROOT)/.artifacts/release-models/hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf",
 			);
 			name = "Embed and Sign Pinned llama.cpp Runtime";
 			outputFileListPaths = (
@@ -246,10 +300,25 @@
 				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-rpc.0.dylib",
 				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-base.0.dylib",
 				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/llama.cpp-LICENSE",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Hy-MT2-LICENSE.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/ONNX-Runtime-LICENSE.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Qwen3-ASR-LICENSE.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Qwen3-ASR-NOTICE.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-AUTHORS.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-LICENSE.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-PATENTS.txt",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/sherpa-onnx-LICENSE.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "#!/bin/bash\nset -euo pipefail\n\nfail() {\n  echo \"Pinned runtime embedding failed: $*\" >&2\n  exit 1\n}\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\nif [[ -n \"${SRCROOT:-}\" ]]; then\n  REPOSITORY_ROOT=\"$(cd \"$SRCROOT\" && pwd)\"\nelse\n  REPOSITORY_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"\nfi\n[[ -f \"$REPOSITORY_ROOT/Package.swift\" ]] \\\n  || fail \"SRCROOT does not identify the application repository\"\nRUNTIME=\"$REPOSITORY_ROOT/.artifacts/llama-b10549\"\nMANIFEST=\"$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256\"\nHELPER_ENTITLEMENTS=\"$REPOSITORY_ROOT/Packaging/Helper.entitlements\"\n: \"${TARGET_BUILD_DIR:?Xcode TARGET_BUILD_DIR is required}\"\n: \"${CONTENTS_FOLDER_PATH:?Xcode CONTENTS_FOLDER_PATH is required}\"\nCONTENTS=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nEXECUTABLES=\"$CONTENTS/MacOS\"\nRESOURCES=\"$CONTENTS/Resources\"\n\n[[ -d \"$RUNTIME\" && ! -L \"$RUNTIME\" ]] \\\n  || fail \"run Scripts/fetch_llama_runtime.sh before building the app target\"\n[[ -f \"$MANIFEST\" && -f \"$HELPER_ENTITLEMENTS\" ]] \\\n  || fail \"runtime verification metadata is missing\"\nif ! (cd \"$RUNTIME\" && shasum -a 256 -c \"$MANIFEST\" >/dev/null); then\n  fail \"runtime file verification failed\"\nfi\n\nFILES=(\n  llama-server\n  libllama-server-impl.dylib\n  libllama-common.0.dylib\n  libmtmd.0.dylib\n  libllama.0.dylib\n  libggml.0.dylib\n  libggml-cpu.0.dylib\n  libggml-blas.0.dylib\n  libggml-metal.0.dylib\n  libggml-rpc.0.dylib\n  libggml-base.0.dylib\n)\nfor name in \"${FILES[@]}\"; do\n  [[ -f \"$RUNTIME/$name\" && ! -L \"$RUNTIME/$name\" ]] \\\n    || fail \"runtime member is missing or unsafe: $name\"\ndone\nfile \"$RUNTIME/llama-server\" | grep -q 'arm64' \\\n  || fail \"llama-server is not an arm64 executable\"\notool -L \"$RUNTIME/llama-server\" | grep -q '@rpath/libllama-server-impl.dylib' \\\n  || fail \"llama-server dependency layout is unexpected\"\n\nmkdir -p \"$EXECUTABLES\" \"$RESOURCES\"\nfor name in \"${FILES[@]}\"; do\n  ditto \"$RUNTIME/$name\" \"$EXECUTABLES/$name\"\ndone\nditto \"$RUNTIME/LICENSE\" \"$RESOURCES/llama.cpp-LICENSE\"\nchmod 0755 \"$EXECUTABLES/llama-server\" \"$EXECUTABLES\"/*.dylib\nchmod 0644 \"$RESOURCES/llama.cpp-LICENSE\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-YES}\" != \"YES\" ]]; then\n  [[ \"${ACTION:-build}\" != \"install\" ]] \\\n    || fail \"archive action cannot disable nested-code signing\"\n  echo \"Nested runtime copied without signing for a non-archive engineering build.\"\n  exit 0\nfi\n\nIDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:--}\"\nif [[ \"${ACTION:-build}\" == \"install\" && \"$IDENTITY\" == \"-\" ]]; then\n  fail \"archive action requires a resolved Apple signing identity\"\nfi\nSIGN_ARGS=(--force --sign \"$IDENTITY\" --generate-entitlement-der)\nif [[ \"${ENABLE_HARDENED_RUNTIME:-NO}\" == \"YES\" && \"$IDENTITY\" != \"-\" ]]; then\n  SIGN_ARGS+=(--options runtime)\nfi\nfor library in \"$EXECUTABLES\"/*.dylib; do\n  codesign \"${SIGN_ARGS[@]}\" \"$library\"\ndone\ncodesign \"${SIGN_ARGS[@]}\" --entitlements \"$HELPER_ENTITLEMENTS\" \\\n  \"$EXECUTABLES/llama-server\"\nfor code in \"$EXECUTABLES\"/*.dylib \"$EXECUTABLES/llama-server\"; do\n  codesign --verify --strict --verbose=2 \"$code\"\ndone\n";
+			shellScript = "#!/bin/bash\nset -euo pipefail\n\nfail() {\n  echo \"Pinned runtime embedding failed: $*\" >&2\n  exit 1\n}\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\nif [[ -n \"${SRCROOT:-}\" ]]; then\n  REPOSITORY_ROOT=\"$(cd \"$SRCROOT\" && pwd)\"\nelse\n  REPOSITORY_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"\nfi\n[[ -f \"$REPOSITORY_ROOT/Package.swift\" ]] \\\n  || fail \"SRCROOT does not identify the application repository\"\nRUNTIME=\"$REPOSITORY_ROOT/.artifacts/llama-b10549\"\nMODELS=\"$REPOSITORY_ROOT/.artifacts/release-models\"\nLICENSES=\"$REPOSITORY_ROOT/Packaging/Licenses\"\nMANIFEST=\"$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256\"\nHELPER_ENTITLEMENTS=\"$REPOSITORY_ROOT/Packaging/Helper.entitlements\"\n: \"${TARGET_BUILD_DIR:?Xcode TARGET_BUILD_DIR is required}\"\n: \"${CONTENTS_FOLDER_PATH:?Xcode CONTENTS_FOLDER_PATH is required}\"\nCONTENTS=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nEXECUTABLES=\"$CONTENTS/MacOS\"\nRESOURCES=\"$CONTENTS/Resources\"\n\n[[ -d \"$RUNTIME\" && ! -L \"$RUNTIME\" ]] \\\n  || fail \"run Scripts/fetch_llama_runtime.sh before building the app target\"\n[[ -f \"$MANIFEST\" && -f \"$HELPER_ENTITLEMENTS\" ]] \\\n  || fail \"runtime verification metadata is missing\"\nif ! (cd \"$RUNTIME\" && shasum -a 256 -c \"$MANIFEST\" >/dev/null); then\n  fail \"runtime file verification failed\"\nfi\n\"$REPOSITORY_ROOT/Scripts/check_release_models.sh\" \"$MODELS\"\n\"$REPOSITORY_ROOT/Scripts/check_bundled_licenses.sh\" \"$LICENSES\"\n\nFILES=(\n  llama-server\n  libllama-server-impl.dylib\n  libllama-common.0.dylib\n  libmtmd.0.dylib\n  libllama.0.dylib\n  libggml.0.dylib\n  libggml-cpu.0.dylib\n  libggml-blas.0.dylib\n  libggml-metal.0.dylib\n  libggml-rpc.0.dylib\n  libggml-base.0.dylib\n)\nfor name in \"${FILES[@]}\"; do\n  [[ -f \"$RUNTIME/$name\" && ! -L \"$RUNTIME/$name\" ]] \\\n    || fail \"runtime member is missing or unsafe: $name\"\ndone\nfile \"$RUNTIME/llama-server\" | grep -q 'arm64' \\\n  || fail \"llama-server is not an arm64 executable\"\notool -L \"$RUNTIME/llama-server\" | grep -q '@rpath/libllama-server-impl.dylib' \\\n  || fail \"llama-server dependency layout is unexpected\"\n\nmkdir -p \"$EXECUTABLES\" \"$RESOURCES\"\nfor name in \"${FILES[@]}\"; do\n  ditto \"$RUNTIME/$name\" \"$EXECUTABLES/$name\"\ndone\nditto \"$RUNTIME/LICENSE\" \"$RESOURCES/llama.cpp-LICENSE\"\nditto \"$MODELS\" \"$RESOURCES/Models\"\nditto \"$LICENSES\" \"$RESOURCES/Licenses\"\n\"$REPOSITORY_ROOT/Scripts/check_release_models.sh\" \"$RESOURCES/Models\"\n\"$REPOSITORY_ROOT/Scripts/check_bundled_licenses.sh\" \"$RESOURCES/Licenses\"\nchmod 0755 \"$EXECUTABLES/llama-server\" \"$EXECUTABLES\"/*.dylib\nchmod 0644 \"$RESOURCES/llama.cpp-LICENSE\" \"$RESOURCES/Licenses\"/*\n\nif [[ \"${CODE_SIGNING_ALLOWED:-YES}\" != \"YES\" ]]; then\n  [[ \"${ACTION:-build}\" != \"install\" ]] \\\n    || fail \"archive action cannot disable nested-code signing\"\n  echo \"Nested runtime copied without signing for a non-archive engineering build.\"\n  exit 0\nfi\n\nIDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:--}\"\nif [[ \"${ACTION:-build}\" == \"install\" && \"$IDENTITY\" == \"-\" ]]; then\n  fail \"archive action requires a resolved Apple signing identity\"\nfi\nSIGN_ARGS=(--force --sign \"$IDENTITY\" --generate-entitlement-der)\nif [[ \"${ENABLE_HARDENED_RUNTIME:-NO}\" == \"YES\" && \"$IDENTITY\" != \"-\" ]]; then\n  SIGN_ARGS+=(--options runtime)\nfi\nfor library in \"$EXECUTABLES\"/*.dylib; do\n  codesign \"${SIGN_ARGS[@]}\" \"$library\"\ndone\ncodesign \"${SIGN_ARGS[@]}\" --entitlements \"$HELPER_ENTITLEMENTS\" \\\n  \"$EXECUTABLES/llama-server\"\nfor code in \"$EXECUTABLES\"/*.dylib \"$EXECUTABLES/llama-server\"; do\n  codesign --verify --strict --verbose=2 \"$code\"\ndone\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

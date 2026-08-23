@@ -94,22 +94,22 @@ public enum GlossaryError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .emptySource: "A glossary source term cannot be empty."
-        case .emptyTarget: "A glossary translation cannot be empty."
+        case .emptySource: "术语原文不能为空。"
+        case .emptyTarget: "术语译文不能为空。"
         case .emptySourceAlias(let term):
-            "A source alias for \(term) cannot be empty."
+            "\(term) 的原文别名不能为空。"
         case .emptyRecognitionAlias(let term):
-            "A recognition alias for \(term) cannot be empty."
+            "\(term) 的识别别名不能为空。"
         case .emptyTargetVariant(let term):
-            "A target variant for \(term) cannot be empty."
-        case .duplicateSource(let term): "The glossary already contains \(term)."
+            "\(term) 的可接受译法不能为空。"
+        case .duplicateSource(let term): "术语表中已经包含 \(term)。"
         case .duplicateSourceAlias(let alias):
-            "The source alias \(alias) appears more than once."
+            "原文别名 \(alias) 重复出现。"
         case .duplicateRecognitionAlias(let alias):
-            "The recognition alias \(alias) appears more than once."
+            "识别别名 \(alias) 重复出现。"
         case .conflictingAlias(let alias):
-            "The recognition alias \(alias) conflicts with a source term or alias."
-        case .persistenceFailed(let message): "Could not save the glossary: \(message)"
+            "识别别名 \(alias) 与原文术语或别名冲突。"
+        case .persistenceFailed(let message): "无法保存术语表：\(message)"
         }
     }
 }

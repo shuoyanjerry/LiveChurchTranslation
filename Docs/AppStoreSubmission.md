@@ -79,13 +79,14 @@ root in the local Swift package, and satisfies this contract:
 | Translation helper | executable at `Contents/MacOS/llama-server` |
 | Helper entitlements | exactly App Sandbox plus inheritance from `Packaging/Helper.entitlements` |
 | llama.cpp libraries | copied beside the helper and signed as nested code |
+| Third-party licenses | verified files copied to `Contents/Resources/Licenses` |
 | App icon | compiled `AppIcon` from `Assets/AppIcon.xcassets/AppIcon.appiconset` |
 | Install behavior | macOS Application target; archive under `Products/Applications` |
 
 The target's declared-input/output post-build phase runs
 `Scripts/embed_app_store_runtime.sh`. It copies the pinned helper and dynamic
-libraries into `Contents/MacOS`, copies the llama.cpp license into Resources, signs
-each nested binary with the expanded build identity, and applies only
+libraries into `Contents/MacOS`, copies the verified model/runtime dependency licenses into
+Resources, signs each nested binary with the expanded build identity, and applies only
 `Packaging/Helper.entitlements` to the helper. Xcode signs the main app last. The
 phase refuses an Archive action with a missing or ad-hoc identity. Do not move the
 helper to the legacy `Contents/Helpers` path, give it independent
@@ -106,7 +107,7 @@ The app uses only the following sandbox surface:
 | `com.apple.security.app-sandbox` | Required containment for a Mac App Store app. |
 | `com.apple.security.device.microphone` | Live speech recognition and user-confirmed meeting recording. |
 | `com.apple.security.device.audio-input` | Audio-input compatibility for the current capture stack; validate it against the shipping SDK before each submission. |
-| `com.apple.security.network.client` | Revision-pinned HTTPS model downloads and authenticated loopback calls to the local translation helper. |
+| `com.apple.security.network.client` | Authenticated loopback calls to the local translation helper; debug source builds may also use the pinned model installer. |
 | `com.apple.security.network.server` | Opt-in Bonjour HTTP/WebSocket reader for explicitly paired LAN devices. |
 | `com.apple.security.files.user-selected.read-only` | Immediate read-only transcription of audio selected in the system file picker. |
 
@@ -187,11 +188,10 @@ The current production architecture processes microphone audio, imported audio,
 speech recognition, translation, transcripts, glossary terms, diagnostics, and saved
 meeting recordings on the Mac. It has no account system, analytics SDK, advertising,
 tracking domain, or developer-operated content server. Opt-in LAN sharing sends the
-live translation only to explicitly paired devices on the same network. First use
-downloads approximately 2.12 GB of revision-pinned model data over HTTPS from
-Hugging Face; audio, transcript, and glossary content are not part of those requests.
-The artifact host necessarily observes ordinary connection metadata such as an IP
-address.
+live translation only to explicitly paired devices on the same network. The seven
+revision-pinned model files are sealed into the signed app and load locally; the submitted
+release does not download model data on first use. Debug source builds may use the pinned
+Hugging Face installer, but that development behavior is not part of the submitted binary.
 
 Based on that architecture, `PrivacyInfo.xcprivacy` declares no tracking and no app
 data collection. It also declares the app-only `CA92.1` reason for the production
@@ -199,7 +199,7 @@ code's `UserDefaults` settings and `C617.1` for file metadata used only inside t
 app container. The App Store Connect answer is expected to be **Data Not Collected**
 for user audio and transcript content. Before every submission, the Account Holder
 must still compare the exact shipping binary, Xcode privacy report, dependency
-privacy manifests, Hugging Face/vendor policies, diagnostics behavior, and current
+privacy manifests, bundled-model licenses and vendor policies, diagnostics behavior, and current
 Apple definitions. Update both the manifest and App Store Connect if reality differs.
 
 Publish `PRIVACY.md` at a stable public HTTPS URL and enter that URL in App Store
@@ -208,8 +208,8 @@ policy URL. Suggested short disclosure:
 
 > Quiet Liturgy Reader processes speech, imported audio, translations, transcripts,
 > and saved meeting recordings locally on your Mac. It does not use ads, analytics,
-> or tracking. Live LAN sharing is off until you enable it and pair a device. Model
-> files are downloaded over HTTPS; your audio and transcript are not uploaded.
+> or tracking. Live LAN sharing is off until you enable it and pair a device. The speech
+> and translation models are bundled with the app; your audio and transcript are not uploaded.
 
 The current `ITSAppUsesNonExemptEncryption=false` declaration is based on the app
 using Apple-provided HTTPS/network security and one-way hashes rather than shipping
@@ -222,9 +222,9 @@ Paste and adapt this text for the exact submitted build:
 
 > Quiet Liturgy Reader is a local-first macOS live transcription and translation
 > tool. No account or test credentials are required. Choose Chinese to English or
-> English to Simplified Chinese on the Live screen. On first use the app downloads
-> approximately 2.12 GB of revision-pinned ASR and translation model data over HTTPS;
-> inference then runs locally. Before microphone capture begins, the host must confirm
+> English to Simplified Chinese on the Live screen. The revision-pinned ASR and translation
+> models are bundled in the signed app, verified before loading, and run locally without a
+> first-use download. Before microphone capture begins, the host must confirm
 > that participants have been informed that complete meeting audio and a transcript
 > will be saved. A persistent red recording indicator remains visible until capture
 > stops. The Library screen plays and deletes locally saved sessions and imports
@@ -236,8 +236,8 @@ Paste and adapt this text for the exact submitted build:
 > sandbox-inheriting child process used only through authenticated IPv4 loopback.
 
 Attach a short review video if the review environment cannot provide a second LAN
-device. Give the reviewer exact first-use download timing measured on the release
-candidate; do not promise translation perfection or theological infallibility.
+device. Give the reviewer exact bundled-model verification and load timing measured on the
+release candidate; do not promise translation perfection or theological infallibility.
 
 ## Submission checklist
 
@@ -255,7 +255,7 @@ candidate; do not promise translation perfection or theological infallibility.
       entitlements, privacy manifest, Bundle ID, version, and build.
 - [ ] The sandboxed release candidate passes microphone denial/regrant, recording
       consent/indicator, long-session recording, import, playback, delete, app relaunch,
-      model download/resume, and disk-full/interruption tests.
+      bundled-model verification/failure, network-disabled first launch, and disk-full/interruption tests.
 - [ ] LAN sharing is off by default and passes pairing, revocation, hostile Host/Origin,
       network loss, and a real phone/tablet/computer matrix on a trusted network.
 - [ ] VoiceOver, keyboard-only use, Reduce Motion, Increase Contrast, text scaling,

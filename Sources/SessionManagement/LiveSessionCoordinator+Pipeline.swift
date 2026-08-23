@@ -66,11 +66,15 @@ extension LiveSessionCoordinator {
             if isActive, inferenceIsReady {
                 state.transition(
                     to: .listening,
-                    message: captureStatusMessage(normal: "Speech detected")
+                    message: captureStatusMessage(normal: "已检测到语音")
                 )
                 publishState()
             }
         case .speechEnded(let segment):
+            guard diskRecoveryMode != .recoveryStoreFailure else {
+                incrementUnresolvedUtteranceCount()
+                return
+            }
             do {
                 let record = try await dependencies.recoveryStore.stage(segment, for: sessionID)
                 await process(record, sessionID: sessionID)
@@ -120,7 +124,7 @@ extension LiveSessionCoordinator {
             if isActive {
                 state.transition(
                     to: .listening,
-                    message: captureStatusMessage(normal: "Listening")
+                    message: captureStatusMessage(normal: "正在聆听")
                 )
                 publishState()
             }
@@ -136,6 +140,7 @@ extension LiveSessionCoordinator {
         guard state.sessionID == sessionID else { return }
         let incompleteImport = processingPolicy.requiresCompleteCapture && !sourceWasExhausted
         if let message = failure ?? (incompleteImport ? incompleteImportMessage : nil) {
+            hasUnrecoverableSessionFailure = true
             terminalFailureMessage = terminalFailureMessage ?? message
             recordIssue(stage: .audioProcessing, message: message, isRecoverable: true)
             Task { [weak self] in
@@ -153,6 +158,6 @@ extension LiveSessionCoordinator {
     }
 
     private var incompleteImportMessage: String {
-        "Audio import ended before the complete file was transcribed. Retry the original file."
+        "音频导入在完整听抄前中断，请重新处理原始文件。"
     }
 }

@@ -18,21 +18,21 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Translation") {
-                Picker("Mode", selection: $draftSettings.translationMode) {
+            Section("翻译") {
+                Picker("语言方向", selection: $draftSettings.translationMode) {
                     ForEach(TranslationMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
                 .disabled(viewModel.sessionControlsLocked)
-                Text("The selected language pair applies to live speech and new audio imports.")
+                Text("所选语言方向同时用于实时语音和之后导入的音频。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Section("Audio Input") {
-                Picker("Microphone", selection: $draftInputID) {
-                    Text("System Default").tag(AudioInputID?.none)
+            Section("音频输入") {
+                Picker("麦克风", selection: $draftInputID) {
+                    Text("系统默认麦克风").tag(AudioInputID?.none)
                     ForEach(viewModel.devices) { device in
                         Text(device.name).tag(Optional(device.id))
                     }
@@ -40,53 +40,52 @@ struct SettingsView: View {
                 .disabled(viewModel.sessionControlsLocked)
                 if viewModel.sessionControlsLocked {
                     Text(
-                        "Finish the current live session or audio import "
-                            + "before changing its mode or microphone."
+                        "请先结束当前实时会议或音频导入，再更改语言方向或麦克风。"
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
             }
-            Section("Live Reader") {
+            Section("实时阅读") {
                 HStack {
-                    Text("Translation text size")
+                    Text("译文大小")
                     Slider(value: $draftSettings.readerFontSize, in: 18...44, step: 1)
                     Text("\(Int(draftSettings.readerFontSize)) pt")
                         .monospacedDigit()
                         .frame(width: 48)
                 }
-                Toggle("Show recognized source below translation", isOn: $draftSettings.showSourceText)
+                Toggle("在译文下方显示识别原文", isOn: $draftSettings.showSourceText)
             }
-            Section("On-device Models") {
-                LabeledContent("Multilingual ASR", value: "Qwen3-ASR 0.6B · ONNX INT8")
-                LabeledContent("Chinese ↔ English", value: "Hy-MT2 1.8B · Metal Q4")
-                Text("About 2.1 GB downloads once; inference then stays on this Mac.")
+            Section("本机模型") {
+                LabeledContent("中英语音识别", value: "Qwen3-ASR 0.6B · ONNX INT8")
+                LabeledContent("中英双向翻译", value: "Hy-MT2 1.8B · Metal Q4")
+                Text("约 2.1 GB 模型已随应用安装；首次启动只需校验并载入，断网也可使用。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Section("Scripture terminology") {
+            Section("经文与属灵术语") {
                 LabeledContent(
-                    "English baseline",
+                    "英语经文基线",
                     value: ScriptureSettingsPresentation.englishBaseline
                 )
                 LabeledContent(
-                    "Chinese baseline",
+                    "中文经文基线",
                     value: ScriptureSettingsPresentation.simplifiedChineseBaseline
                 )
                 Text(ScriptureSettingsPresentation.notice)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Section("Privacy") {
-                Text("Meeting audio, transcripts, and translations stay on this Mac.")
+            Section("隐私") {
+                Text("会议录音、听抄稿和翻译仅保存在此 Mac。")
                     .foregroundStyle(.secondary)
-                Button("Privacy & Data…") { showsPrivacy = true }
+                Button("隐私与数据…") { showsPrivacy = true }
             }
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }
+                Button("取消") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save") {
+                Button("保存") {
                     Task {
                         let previousSettings = viewModel.settings
                         let previousInputID = viewModel.selectedInputID

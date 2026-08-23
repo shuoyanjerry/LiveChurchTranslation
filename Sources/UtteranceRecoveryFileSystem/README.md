@@ -10,6 +10,8 @@ WAV audio and versioned JSON metadata.
 
 - `FileUtteranceRecoveryStore`: actor-isolated stage, demand-driven paged
   recovery, legacy one-shot recovery, and complete adapter.
+- Terminal quality rejections retain a typed receipt under the private
+  per-session `rejected` directory and never reenter the retry queue.
 - `UtteranceRecoveryLimits`: injected sample-count, file-size, metadata-size,
   and sample-rate bounds.
 
@@ -31,7 +33,9 @@ only canonical UUID-named, non-symbolic-link directories. Audio and metadata are
 written to private temporary files, synchronized, renamed inside a staging
 directory, and committed by an atomic same-directory rename. Completion first
 renames to a tombstone, preventing a completed record from being replayed after
-a crash. Corrupt, partial, orphaned, and oversized artifacts move to a private
+a crash. Terminal rejection writes a stable receipt before moving the record
+out of `pending`; its redundant sentence WAV is then removed because the complete
+meeting recording remains authoritative. Corrupt, partial, orphaned, and oversized artifacts move to a private
 quarantine directory without exposing sample contents.
 Paged recovery first indexes only bounded metadata and paths. WAV payloads are
 decoded on iterator demand, never more than the requested page size, and each

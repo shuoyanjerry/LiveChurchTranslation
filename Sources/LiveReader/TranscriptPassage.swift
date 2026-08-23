@@ -15,7 +15,7 @@ struct TranscriptPassage: View {
                 .font(.system(size: 13, weight: .regular, design: .monospaced))
                 .foregroundStyle(ChurchTheme.muted.opacity(0.78))
                 .frame(width: 70, alignment: .trailing)
-                .accessibilityLabel("Timestamp")
+                .accessibilityLabel("时间点")
             VStack(alignment: .leading, spacing: 10) {
                 Text(entry.targetText)
                     .font(.system(size: settings.readerFontSize, weight: .regular, design: .serif))
@@ -23,21 +23,13 @@ struct TranscriptPassage: View {
                     .lineSpacing(7)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if let notice = unresolvedPronounNotice {
-                    Text(notice.text)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(ChurchTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityLabel(notice.accessibilityLabel)
-                        .accessibilityHint(UnresolvedPronounNotice.accessibilityHint)
-                }
                 if settings.showSourceText {
                     Text(entry.sourceText)
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(ChurchTheme.muted)
                         .lineSpacing(3)
                         .textSelection(.enabled)
-                        .accessibilityLabel("Recognized source: \(entry.sourceText)")
+                        .accessibilityLabel("识别原文：\(entry.sourceText)")
                 }
             }
         }
@@ -50,15 +42,9 @@ struct TranscriptPassage: View {
                     .accessibilityHidden(true)
             }
         }
-        .accessibilityValue(isLatest ? "Latest translation" : "")
+        .accessibilityValue(isLatest ? "最新翻译" : "")
     }
 
-    private var unresolvedPronounNotice: UnresolvedPronounNotice? {
-        let count = entry.sourcePronounDecisions.filter {
-            $0.resolution == .unresolvedSpokenMandarin
-        }.count
-        return UnresolvedPronounNotice(unresolvedCount: count)
-    }
 }
 
 enum TranscriptTimestamp {

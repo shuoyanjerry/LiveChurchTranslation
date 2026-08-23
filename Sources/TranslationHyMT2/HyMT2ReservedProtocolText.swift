@@ -2,7 +2,9 @@ import Foundation
 
 enum HyMT2ReservedProtocolText {
     static func containsPrefix(in value: String) -> Bool {
-        inspectionForm(value).range(of: "QLR_", options: .caseInsensitive) != nil
+        inspectionForm(value)
+            .filter { !$0.isWhitespace }
+            .range(of: "QLR_", options: .caseInsensitive) != nil
     }
 
     static func inspectionForm(_ value: String) -> String {

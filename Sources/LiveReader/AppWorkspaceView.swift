@@ -109,7 +109,7 @@ public struct AppWorkspaceView: View {
                 .frame(width: 34, height: 34)
                 .background(ChurchTheme.surface, in: Circle())
             VStack(alignment: .leading, spacing: 1) {
-                Text("Quiet Liturgy")
+                Text("教会实时翻译")
                     .font(.system(size: 15, weight: .semibold, design: .serif))
                 Text("本地语音翻译")
                     .font(.caption2)

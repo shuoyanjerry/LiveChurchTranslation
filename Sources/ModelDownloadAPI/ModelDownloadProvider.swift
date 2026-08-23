@@ -6,6 +6,10 @@ public protocol ModelDownloadProvider: Sendable {
     func cancelDownload(for modelID: ModelID) async
 }
 
+public protocol ModelPreparationUserFacingError: Error, Sendable {
+    var modelPreparationMessage: String { get }
+}
+
 public enum ModelDownloadError: LocalizedError, Equatable, Sendable {
     case downloadFailed(String)
     case insufficientDiskSpace(requiredBytes: Int64, availableBytes: Int64)
@@ -14,12 +18,11 @@ public enum ModelDownloadError: LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .downloadFailed(let message): "Model download failed: \(message)"
+        case .downloadFailed(let message): "模型修复下载失败：\(message)"
         case .insufficientDiskSpace(let requiredBytes, let availableBytes):
-            "Model preparation requires \(requiredBytes) bytes, but only "
-                + "\(availableBytes) bytes are available."
-        case .invalidArtifact: "The downloaded model is incomplete or invalid."
-        case .cancelled: "Model download was cancelled."
+            "模型准备需要 \(requiredBytes) 字节空间，但当前只有 \(availableBytes) 字节可用。"
+        case .invalidArtifact: "模型文件不完整或无效。"
+        case .cancelled: "模型修复已取消。"
         }
     }
 }

@@ -1,0 +1,7 @@
+44148281 qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx
+182491662 qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx
+755914231 qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx
+1671853 qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt
+12487 qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json
+2776833 qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json
+1133080448 hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf

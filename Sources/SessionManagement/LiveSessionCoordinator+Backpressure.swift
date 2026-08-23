@@ -87,7 +87,18 @@ extension LiveSessionCoordinator {
     }
 
     func captureStatusMessage(normal: String) -> String {
-        guard diskRecoveryMode != nil else { return normal }
+        guard diskRecoveryMode != nil else {
+            let recovery =
+                unresolvedUtteranceCount > 0
+                ? "\(unresolvedUtteranceCount) 句等待恢复"
+                : nil
+            let rejected =
+                terminalRejectedSentenceCount > 0
+                ? "\(terminalRejectedSentenceCount) 句未通过质量校验"
+                : nil
+            let details = [recovery, rejected].compactMap { $0 }
+            return details.isEmpty ? normal : "\(normal) · \(details.joined(separator: " · "))"
+        }
         return recoveryCaptureStatusMessage
     }
 
@@ -99,19 +110,18 @@ extension LiveSessionCoordinator {
     }
 
     private var backlogRecoveryMessage: String {
-        "Live translation paused because its safe in-memory backlog was reached. "
-            + "Unfinished sentences are stored on disk for automatic recovery, "
-            + "and the complete meeting recording continues."
+        "实时翻译因待处理内容达到安全上限而暂停。"
+            + "未完成的语句已保存到磁盘，稍后会自动恢复；会议完整录音仍在继续。"
     }
 
     private var recoveryCaptureStatusMessage: String {
         switch diskRecoveryMode {
         case .recoveryStoreFailure:
-            "Recording continues. Use the saved meeting audio to retry unfinished transcription."
+            "录音继续进行。请稍后使用已保存的会议录音重试未完成的听抄。"
         case .backlog, .processingFailure:
-            "Recording continues. Unfinished sentences will recover automatically next time."
+            "录音继续进行。未完成的语句将在下次启动时自动恢复。"
         case nil:
-            "Listening"
+            "正在聆听"
         }
     }
 }

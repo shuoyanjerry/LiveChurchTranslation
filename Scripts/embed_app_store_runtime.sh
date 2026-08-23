@@ -15,6 +15,8 @@ fi
 [[ -f "$REPOSITORY_ROOT/Package.swift" ]] \
   || fail "SRCROOT does not identify the application repository"
 RUNTIME="$REPOSITORY_ROOT/.artifacts/llama-b10549"
+MODELS="$REPOSITORY_ROOT/.artifacts/release-models"
+LICENSES="$REPOSITORY_ROOT/Packaging/Licenses"
 MANIFEST="$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256"
 HELPER_ENTITLEMENTS="$REPOSITORY_ROOT/Packaging/Helper.entitlements"
 : "${TARGET_BUILD_DIR:?Xcode TARGET_BUILD_DIR is required}"
@@ -30,6 +32,8 @@ RESOURCES="$CONTENTS/Resources"
 if ! (cd "$RUNTIME" && shasum -a 256 -c "$MANIFEST" >/dev/null); then
   fail "runtime file verification failed"
 fi
+"$REPOSITORY_ROOT/Scripts/check_release_models.sh" "$MODELS"
+"$REPOSITORY_ROOT/Scripts/check_bundled_licenses.sh" "$LICENSES"
 
 FILES=(
   llama-server
@@ -58,8 +62,12 @@ for name in "${FILES[@]}"; do
   ditto "$RUNTIME/$name" "$EXECUTABLES/$name"
 done
 ditto "$RUNTIME/LICENSE" "$RESOURCES/llama.cpp-LICENSE"
+ditto "$MODELS" "$RESOURCES/Models"
+ditto "$LICENSES" "$RESOURCES/Licenses"
+"$REPOSITORY_ROOT/Scripts/check_release_models.sh" "$RESOURCES/Models"
+"$REPOSITORY_ROOT/Scripts/check_bundled_licenses.sh" "$RESOURCES/Licenses"
 chmod 0755 "$EXECUTABLES/llama-server" "$EXECUTABLES"/*.dylib
-chmod 0644 "$RESOURCES/llama.cpp-LICENSE"
+chmod 0644 "$RESOURCES/llama.cpp-LICENSE" "$RESOURCES/Licenses"/*
 
 if [[ "${CODE_SIGNING_ALLOWED:-YES}" != "YES" ]]; then
   [[ "${ACTION:-build}" != "install" ]] \

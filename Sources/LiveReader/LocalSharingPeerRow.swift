@@ -21,7 +21,7 @@ struct LocalSharingPeerRow: View {
             }
             Spacer()
             Menu {
-                Button("Revoke Access", role: .destructive) {
+                Button("撤销访问", role: .destructive) {
                     onIntent(.revoke(peerID: peer.id))
                 }
             } label: {
@@ -29,7 +29,7 @@ struct LocalSharingPeerRow: View {
                     .frame(width: 28, height: 28)
             }
             .menuStyle(.borderlessButton)
-            .accessibilityLabel("Actions for \(peer.name)")
+            .accessibilityLabel("\(peer.name) 的操作")
         }
         .accessibilityElement(children: .contain)
     }

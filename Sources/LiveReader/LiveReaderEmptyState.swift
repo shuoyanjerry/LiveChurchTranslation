@@ -14,8 +14,7 @@ struct LiveReaderEmptyState: View {
                 .font(.system(size: 28, weight: .regular, design: .serif))
                 .foregroundStyle(ChurchTheme.ink)
             Text(
-                "Choose an audio input and start translation. "
-                    + "The complete transcript remains available here and is saved automatically."
+                "选择麦克风并开始翻译。完整录音、听抄稿和翻译会自动保存在此 Mac。"
             )
             .font(.callout)
             .foregroundStyle(ChurchTheme.muted)
@@ -27,8 +26,8 @@ struct LiveReaderEmptyState: View {
 
     private var emptyTitle: String {
         switch mode {
-        case .mandarinToEnglish: "A quiet place for the English translation."
-        case .englishToSimplifiedChinese: "安静、清晰地阅读中文翻译。"
+        case .mandarinToEnglish: "清楚呈现英语翻译。"
+        case .englishToSimplifiedChinese: "清楚呈现简体中文翻译。"
         }
     }
 }

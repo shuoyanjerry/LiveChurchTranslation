@@ -141,12 +141,13 @@ The sentence path is ordered deliberately:
    stereotypes and permits singular `they` when evidence is absent. This mechanism reduces
    silent gender substitution; it does not make the still-failing translation corpus
    production-qualified.
-5. Output guards reject empty, implausibly sized, meta-text, required-term, number,
-   structurally detectable negation, or Scripture-reference failures. Negation cue checks
-   are defect detectors only: neither prompt markers nor JSON-Schema constrained decoding
-   has passed the independent semantic qualification needed to replace bilingual review.
-6. The accepted entry is appended and synchronized in the transcript store. Only then is
-   it admitted to rolling context and published to readers.
+5. Output guards withhold only empty output, exact source echo, explicit model refusal, and
+   prompt/protocol leakage. Length, script, glossary, number, structurally detectable negation,
+   Scripture-reference, and pronoun findings trigger one strict retry; a safe non-empty candidate
+   is still returned in full with backend-only review codes. These checks are defect detectors,
+   not substitutes for bilingual review.
+6. Every safe entry is appended and synchronized before publication. Only entries without review
+   findings enter the rolling translation context; review metadata is never rendered to readers.
 7. The recovery record is marked complete. A crash before this step causes idempotent
    replay on the next preparation; unreadable artifacts move to quarantine and surface as
    recoverable issues.

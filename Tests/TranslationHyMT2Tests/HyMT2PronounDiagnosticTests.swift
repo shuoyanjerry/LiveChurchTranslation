@@ -59,9 +59,8 @@ import TranslationAPI
         )
         defer { harness.model.remove() }
 
-        let reasons = await invalidOutputReasons(
-            harness.provider,
-            request: TranslationRequest(
+        let result = try await harness.provider.translate(
+            TranslationRequest(
                 id: pronounTestRequestID,
                 sourceText: source,
                 glossary: [],
@@ -69,12 +68,8 @@ import TranslationAPI
             )
         )
 
-        #expect(
-            reasons == [
-                "pronoun marker P0001 expected verifiedFemale, observed singleOtherToken"
-            ])
-        #expect(!reasons.joined().contains(source))
-        #expect(!reasons.joined().contains("private secret"))
+        #expect(result.targetText == "private secret continued sharing.")
+        #expect(result.review?.issueCodes == ["quality.pronoun_alignment"])
         let observations = await observer.observations()
         #expect(observations.map(\.phase) == [.initial, .strictRetry])
         #expect(observations.map(\.expectedResolution) == [.verifiedFemale, .verifiedFemale])
@@ -96,25 +91,6 @@ import TranslationAPI
         #expect(issues.first?.description == "pronoun marker P0001 expected verifiedFemale, observed missing")
     }
 
-    private func invalidOutputReasons(
-        _ provider: HyMT2TranslationProvider,
-        request: TranslationRequest
-    ) async -> [String] {
-        do {
-            _ = try await provider.translate(request)
-            Issue.record("Expected invalid output")
-            return []
-        } catch let error as HyMT2Error {
-            guard case .invalidOutput(let reasons) = error else {
-                Issue.record("Unexpected error: \(error)")
-                return []
-            }
-            return reasons
-        } catch {
-            Issue.record("Unexpected error: \(error)")
-            return []
-        }
-    }
 }
 
 private actor PronounDiagnosticRecorder: HyMT2PronounDiagnosticObserving {

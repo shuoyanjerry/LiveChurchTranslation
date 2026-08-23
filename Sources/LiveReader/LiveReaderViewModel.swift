@@ -13,7 +13,7 @@ public final class LiveReaderViewModel: ObservableObject {
         phase: .idle,
         transcript: [],
         modelStatus: nil,
-        statusMessage: "Ready"
+        statusMessage: "可以开始"
     )
     @Published public private(set) var devices: [AudioInputDevice] = []
     @Published public var selectedInputID: AudioInputID?
@@ -145,7 +145,7 @@ extension LiveReaderViewModel {
                 phase: .idle,
                 transcript: DesignQAPreviewFixture.transcript,
                 modelStatus: nil,
-                statusMessage: "Transcript saved"
+                statusMessage: "听抄稿已保存"
             )
             return true
         }

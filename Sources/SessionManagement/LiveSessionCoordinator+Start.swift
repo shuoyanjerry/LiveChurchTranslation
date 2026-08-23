@@ -17,10 +17,12 @@ extension LiveSessionCoordinator {
         inferenceIsReady = false
         captureEndedBeforeInference = false
         terminalFailureMessage = nil
+        hasUnrecoverableSessionFailure = false
         sentenceAudioTimelineAnchor = nil
         segmentQueue.removeAll()
         pendingUtterances.removeAll(keepingCapacity: false)
         unresolvedUtteranceCount = 0
+        terminalRejectedSentenceCount = 0
         diskRecoveryMode = nil
         await utteranceProcessor.resetContext()
         beginSession(id: id)
@@ -54,7 +56,7 @@ extension LiveSessionCoordinator {
             )
         } catch is CancellationError {
             guard isActive, state.sessionID == sessionID else { return }
-            await requestFailure("Session preparation was cancelled.", stage: .preparation)
+            await requestFailure("会话准备已取消。", stage: .preparation)
         } catch {
             guard isActive, state.sessionID == sessionID else { return }
             await requestFailure(error.localizedDescription, stage: .preparation)
@@ -68,7 +70,7 @@ extension LiveSessionCoordinator {
     ) async throws {
         switch processingPolicy {
         case .boundedLive:
-            state.transition(to: .preparingModel, message: "Starting secure recording…")
+            state.transition(to: .preparingModel, message: "正在启动安全录音…")
             publishState()
             guard
                 try await startCapture(
@@ -80,12 +82,12 @@ extension LiveSessionCoordinator {
             else { return }
             state.transition(
                 to: .preparingModel,
-                message: "Recording · preparing on-device models…"
+                message: "录音中 · 正在准备本地模型…"
             )
             publishState()
             _ = try await prepareInference(mode: mode, sessionID: sessionID)
         case .completeImport:
-            state.transition(to: .preparingModel, message: "Preparing on-device models…")
+            state.transition(to: .preparingModel, message: "正在准备本地模型…")
             publishState()
             guard try await prepareInference(mode: mode, sessionID: sessionID) else { return }
             _ = try await startCapture(
@@ -137,7 +139,7 @@ extension LiveSessionCoordinator {
         inferenceIsReady = true
         prepared.recoveryIssues.forEach { state.record($0) }
         state.setModelStatus(prepared.modelStatus)
-        state.transition(to: .listening, message: captureStatusMessage(normal: "Listening"))
+        state.transition(to: .listening, message: captureStatusMessage(normal: "正在聆听"))
         publishState()
         startWorkerIfNeeded(sessionID: sessionID)
         if captureEndedBeforeInference {
