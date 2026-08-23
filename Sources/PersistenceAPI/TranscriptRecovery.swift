@@ -55,9 +55,12 @@ public struct TranscriptFinalization: Equatable, Sendable {
     public static let complete = TranscriptFinalization()
 
     public var integrity: StoredTranscriptIntegrity {
-        if pendingRecordCount > 0 || !rejections.isEmpty || quarantinedArtifactCount > 0
+        let hasIncompleteWork =
+            pendingRecordCount > 0
+            || !rejections.isEmpty
+            || quarantinedArtifactCount > 0
             || hasUnrecoverableFailure
-        {
+        if hasIncompleteWork {
             return .incomplete
         }
         return kind == .recoveredAfterInterruption ? .recoveredAfterInterruption : .complete

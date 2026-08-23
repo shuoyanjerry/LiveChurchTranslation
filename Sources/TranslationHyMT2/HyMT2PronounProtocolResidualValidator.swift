@@ -42,9 +42,10 @@ enum HyMT2PronounProtocolResidualValidator {
         normalized: String,
         plan: HyMT2PronounPlan?
     ) -> Bool {
-        if HyMT2ReservedProtocolText.containsPrefix(in: value)
+        let containsReservedTag =
+            HyMT2ReservedProtocolText.containsPrefix(in: value)
             || ["<QLR", "</QLR", "&LT;QLR", "&LT;/QLR"].contains(where: value.contains)
-        {
+        if containsReservedTag {
             return true
         }
         guard let plan else { return false }

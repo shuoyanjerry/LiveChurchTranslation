@@ -104,9 +104,8 @@ extension UtteranceRecoveryReplayer {
                     presentationSequence: presentationSequence
                 )
             )
-        } catch let failure as UtteranceProcessingFailure
-            where failure.impact == .terminalUtterance
-        {
+        } catch let failure as UtteranceProcessingFailure {
+            guard failure.impact == .terminalUtterance else { throw failure }
             return .rejection(
                 TerminalSentenceRejection(
                     receipt: rejectionReceipt(
@@ -135,7 +134,6 @@ extension UtteranceRecoveryReplayer {
             context.removeFirst(context.count - 2)
         }
     }
-
 }
 
 private enum RecoveredSentenceResult {

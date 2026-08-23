@@ -132,7 +132,10 @@ import TranscriptAPI
         #expect(message.contains("完整听抄前中断"))
     }
 
-    private static func frames(count: Int) -> [AudioFrame] {
+}
+
+extension ImportedAudioCompletenessTests {
+    fileprivate static func frames(count: Int) -> [AudioFrame] {
         (0..<count).map { index in
             AudioFrame(
                 samples: SessionTestHarness.audioFrame.samples,

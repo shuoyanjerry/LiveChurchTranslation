@@ -91,24 +91,36 @@ extension UtteranceProcessor {
     ) -> UtteranceProcessingFailure.Impact {
         switch stage {
         case .recognition:
-            guard let classified = error as? any ASRFailureImpactProviding else {
-                return .pipeline
-            }
-            switch classified.asrFailureImpact {
-            case .terminalUtterance: return .terminalUtterance
-            case .ignoredUtterance, .runtime: return .pipeline
-            }
+            recognitionFailureImpact(error)
         case .translation:
-            guard let classified = error as? any TranslationFailureImpactProviding else {
-                return .pipeline
-            }
-            switch classified.translationFailureImpact {
-            case .terminalUtterance: return .terminalUtterance
-            case .retryableUtterance: return .retryableUtterance
-            case .runtime: return .pipeline
-            }
+            translationFailureImpact(error)
         case .preparation, .audioProcessing, .persistence, .finalization:
+            .pipeline
+        }
+    }
+
+    private func recognitionFailureImpact(
+        _ error: any Error
+    ) -> UtteranceProcessingFailure.Impact {
+        guard let classified = error as? any ASRFailureImpactProviding else {
             return .pipeline
+        }
+        switch classified.asrFailureImpact {
+        case .terminalUtterance: .terminalUtterance
+        case .ignoredUtterance, .runtime: .pipeline
+        }
+    }
+
+    private func translationFailureImpact(
+        _ error: any Error
+    ) -> UtteranceProcessingFailure.Impact {
+        guard let classified = error as? any TranslationFailureImpactProviding else {
+            return .pipeline
+        }
+        switch classified.translationFailureImpact {
+        case .terminalUtterance: .terminalUtterance
+        case .retryableUtterance: .retryableUtterance
+        case .runtime: .pipeline
         }
     }
 
