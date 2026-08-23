@@ -13,6 +13,25 @@ report_gate_failure() {
         printf '::error title=Quality gate failed::%s\n' "$active_gate"
     fi
 }
+
+run_logged_gate() {
+    label="$1"
+    shift
+    log_file="$(mktemp "${TMPDIR:-/tmp}/live-church-quality.XXXXXX")"
+    set +e
+    "$@" 2>&1 | tee "$log_file"
+    result=${PIPESTATUS[0]}
+    set -e
+    if [[ "$result" -ne 0 && "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        details="$(tail -n 40 "$log_file")"
+        details="${details//'%'/'%25'}"
+        details="${details//$'\r'/'%0D'}"
+        details="${details//$'\n'/'%0A'}"
+        printf '::error title=%s::%s\n' "$label" "$details"
+    fi
+    rm -f "$log_file"
+    return "$result"
+}
 trap report_gate_failure EXIT
 
 active_gate="architecture"
@@ -50,9 +69,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
     -s Tests/EndpointHumanLabelPacketTests -p 'test_*.py' -v
 
 active_gate="Swift build"
-swift build -Xswiftc -warnings-as-errors
+run_logged_gate "$active_gate" swift build -Xswiftc -warnings-as-errors
 active_gate="Swift tests"
-swift test -Xswiftc -warnings-as-errors
+run_logged_gate "$active_gate" swift test -Xswiftc -warnings-as-errors
 active_gate="dead-code analysis"
 "$SCRIPT_DIR/check_dead_code.sh"
 
