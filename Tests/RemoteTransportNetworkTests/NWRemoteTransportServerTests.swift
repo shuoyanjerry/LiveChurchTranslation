@@ -75,14 +75,14 @@ struct NWRemoteTransportServerTests {
         let (assetData, response) = try await fixture.session.data(from: fixture.endpoint.baseURL)
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
         let assetText = try #require(String(bytes: assetData, encoding: .utf8))
-        #expect(assetText.contains("Quiet Liturgy"))
+        #expect(assetText.contains(#"<html lang="zh-CN">"#), "Chinese locale marker is missing")
+        #expect(assetText.contains("<title>教会实时翻译</title>"), "Chinese title is missing")
     }
 
     private func verifyWebSocket(_ fixture: ServerFixture) async throws {
         let socket = webSocket(for: fixture)
         socket.resume()
         try await verifyInitialSnapshot(socket)
-        try await Task.sleep(for: .milliseconds(1_250))
         await fixture.projection.beginSession(id: UUID(), message: "Listening")
         _ = try await fixture.projection.upsert(
             .init(

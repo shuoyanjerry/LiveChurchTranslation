@@ -69,14 +69,12 @@ import TranscriptAPI
             Issue.record("Expected the recoverable import to be incomplete")
             return
         }
-        #expect(message.contains("听抄不完整"))
-        #expect(
-            snapshot.finalizationOutcome
-                == .savedWithIncompleteTranscript(
-                    rejectedUtteranceCount: 0,
-                    recoverableUtteranceCount: 1
-                )
-        )
+        #expect(message == "音频听抄未完成。未完成的片段已保留，稍后可自动恢复。")
+        #expect(snapshot.statusMessage == message)
+        #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
+        #expect(snapshot.issues.count == 1)
+        #expect(snapshot.issues.first?.stage == .translation)
+        #expect(snapshot.issues.first?.isRecoverable == true)
         #expect((await harness.asr.receivedRequests()).count == frames.count)
         #expect((await harness.translator.receivedRequests()).count == frames.count)
         #expect((await harness.store.persistedEntries()).count == frames.count - 1)

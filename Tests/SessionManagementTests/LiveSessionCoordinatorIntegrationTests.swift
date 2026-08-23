@@ -109,7 +109,10 @@ import TranslationAPI
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
     }
 
-    @Test func filteredPromptEchoIsAcknowledgedWithoutPublishingOrRetrying() async throws {
+}
+
+extension LiveSessionCoordinatorIntegrationTests {
+    @Test func promptEchoIsTerminallyRejectedWithoutPublishingOrRetrying() async throws {
         let harness = SessionTestHarness(recognitionError: .promptOnlyHallucination)
 
         let events = try await harness.run()
@@ -117,15 +120,32 @@ import TranslationAPI
         #expect(events.appendedEntries.isEmpty)
         #expect(events.recoverableErrors.isEmpty)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
-        #expect((await harness.recoveryStore.completedIDs()).count == 1)
+        #expect((await harness.recoveryStore.completedIDs()).isEmpty)
+        let rejections = await harness.recoveryStore.terminalRejections()
+        #expect(rejections.count == 1)
+        #expect(rejections.first?.0.sequenceNumber == 1)
+        #expect(rejections.first?.1.count == 1)
+        #expect(rejections.first?.1.first?.sentenceOrdinal == 0)
+        #expect(rejections.first?.1.first?.stage == .recognition)
+        #expect(rejections.first?.1.first?.failureCode == "asr.prompt_only_hallucination")
         #expect((await harness.store.persistedEntries()).isEmpty)
         let snapshot = await harness.coordinator.currentSnapshot()
-        #expect(snapshot.issues.isEmpty)
-        #expect(snapshot.finalizationOutcome == .saved)
+        #expect(snapshot.phase == .idle)
+        #expect(snapshot.statusMessage == "听抄稿已保存，其中 1 句未通过质量校验")
+        #expect(snapshot.issues.count == 1)
+        #expect(snapshot.issues.first?.stage == .recognition)
+        #expect(snapshot.issues.first?.utteranceSequence == 1)
+        #expect(snapshot.issues.first?.message == "识别结果仅包含提示词，已拒绝该句。")
+        #expect(snapshot.issues.first?.isRecoverable == false)
+        #expect(
+            snapshot.finalizationOutcome
+                == .savedWithIncompleteTranscript(
+                    rejectedUtteranceCount: 1,
+                    recoverableUtteranceCount: 0
+                )
+        )
     }
-}
 
-extension LiveSessionCoordinatorIntegrationTests {
     @Test func observedQwenErrorsAreNormalizedBeforeTranslationAndPersistence() async throws {
         let raw = "休恩、恩典、因信生义、圣灵，并在圣灵里承受。"
         let expected = "救恩、恩典、因信称义、圣灵，并在圣灵里承受。"

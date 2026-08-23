@@ -15,7 +15,7 @@ import Testing
         let events = try await harness.run()
 
         await verifyLiveContinuation(harness, events: events)
-        await verifyIncompleteOutcome(harness, events: events)
+        await verifyRecoverableOutcome(harness)
     }
 
     private func verifyLiveContinuation(
@@ -35,21 +35,14 @@ import Testing
         #expect(events.recoverableErrors.count == 1)
     }
 
-    private func verifyIncompleteOutcome(
-        _ harness: SessionTestHarness,
-        events: [LiveSessionEvent]
-    ) async {
+    private func verifyRecoverableOutcome(_ harness: SessionTestHarness) async {
         let snapshot = await harness.coordinator.currentSnapshot()
         #expect(snapshot.issues.count == 1)
         #expect(snapshot.issues.first?.stage == .translation)
         #expect(snapshot.issues.first?.isRecoverable == true)
-        #expect(
-            snapshot.finalizationOutcome
-                == .savedWithIncompleteTranscript(
-                    rejectedUtteranceCount: 0,
-                    recoverableUtteranceCount: 1
-                )
-        )
+        #expect(snapshot.phase == .idle)
+        #expect(snapshot.statusMessage == "听抄稿已保存，仍有 1 句待恢复")
+        #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
     }
 
     @Test func retryableMiddleSentenceDoesNotBlockLaterSentenceOrPolluteContext() async throws {
