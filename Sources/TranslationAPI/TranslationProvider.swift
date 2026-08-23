@@ -16,6 +16,7 @@ public struct TranslationRequest: Identifiable, Equatable, Sendable {
     public let targetLanguage: String
     public let glossary: [TranslationTerm]
     public let context: [TranslationContextEntry]
+    public let pronounGuidance: [TranslationPronounGuidance]
 
     public init(
         id: UUID = UUID(),
@@ -23,7 +24,8 @@ public struct TranslationRequest: Identifiable, Equatable, Sendable {
         sourceLanguage: String = "zh-Hans",
         targetLanguage: String = "en",
         glossary: [TranslationTerm],
-        context: [TranslationContextEntry] = []
+        context: [TranslationContextEntry] = [],
+        pronounGuidance: [TranslationPronounGuidance] = []
     ) {
         self.id = id
         self.sourceText = sourceText
@@ -31,6 +33,7 @@ public struct TranslationRequest: Identifiable, Equatable, Sendable {
         self.targetLanguage = targetLanguage
         self.glossary = glossary
         self.context = context
+        self.pronounGuidance = pronounGuidance
     }
 }
 

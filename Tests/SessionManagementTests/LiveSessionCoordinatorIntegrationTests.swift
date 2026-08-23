@@ -17,6 +17,8 @@ import TranslationAPI
         #expect((await harness.capture.capturedRequests()).count == 1)
         #expect((await harness.processor.frames()).count == 1)
         #expect((await harness.vad.frames()).count == 1)
+        #expect((await harness.recordingStore.recordedFrames()) == [SessionTestHarness.audioFrame])
+        #expect((await harness.recordingStore.completedSessionCount()) == 1)
 
         try await verifyRecognitionRequest(from: harness)
         try await verifyTranslationRequest(from: harness)
@@ -43,6 +45,7 @@ import TranslationAPI
         #expect((await harness.capture.capturedRequests()).isEmpty)
         #expect((await harness.downloader.requestedDescriptors()).isEmpty)
         #expect((await harness.store.begunSessions()).isEmpty)
+        #expect((await harness.recordingStore.recordedFrames()).isEmpty)
         #expect((await harness.asr.receivedRequests()).isEmpty)
         let snapshot = await harness.coordinator.currentSnapshot()
         guard case .failed(let message) = snapshot.phase else {
@@ -76,7 +79,7 @@ import TranslationAPI
         #expect(controllerSnapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
         let pending = await harness.coordinator.pendingUtterances
         #expect(pending.count == 1)
-        #expect(pending.first?.segment.samples.count == 320)
+        #expect(pending.first?.sampleCount == 320)
         #expect(pending.first?.translatedEntry == nil)
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
     }
@@ -154,27 +157,4 @@ extension LiveSessionCoordinatorIntegrationTests {
             )
         )
     }
-}
-
-private func verifyRecognitionRequest(from harness: SessionTestHarness) async throws {
-    let requests = await harness.asr.receivedRequests()
-    let recognition = try #require(requests.first)
-    #expect(requests.count == 1)
-    #expect(recognition.segment.samples.count == 320)
-    #expect(recognition.contextPrompt.contains("因信称义"))
-    #expect(recognition.contextPrompt.contains("恩典"))
-    #expect(!recognition.contextPrompt.contains("我们"))
-}
-
-private func verifyTranslationRequest(from harness: SessionTestHarness) async throws {
-    let requests = await harness.translator.receivedRequests()
-    let translation = try #require(requests.first)
-    #expect(requests.count == 1)
-    #expect(translation.context.isEmpty)
-    #expect(
-        translation.glossary == [
-            TranslationTerm(source: "因信称义", target: "justification by faith"),
-            TranslationTerm(source: "恩典", target: "grace"),
-        ]
-    )
 }

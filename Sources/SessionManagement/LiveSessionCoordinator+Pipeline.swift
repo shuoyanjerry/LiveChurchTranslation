@@ -13,17 +13,30 @@ extension LiveSessionCoordinator {
         do {
             for try await frame in stream {
                 guard acceptsFrames(for: sessionID) else { break }
+                try await dependencies.recordingStore.append(frame, to: sessionID)
                 let events = try await process(frame)
                 guard acceptsFrames(for: sessionID) else { break }
                 for event in events {
                     await handle(event, sessionID: sessionID)
                 }
             }
-            captureDidEnd(sessionID: sessionID, failure: nil)
+            captureDidEnd(
+                sessionID: sessionID,
+                failure: nil,
+                sourceWasExhausted: isActive
+            )
         } catch is CancellationError {
-            captureDidEnd(sessionID: sessionID, failure: nil)
+            captureDidEnd(
+                sessionID: sessionID,
+                failure: nil,
+                sourceWasExhausted: false
+            )
         } catch {
-            captureDidEnd(sessionID: sessionID, failure: error.localizedDescription)
+            captureDidEnd(
+                sessionID: sessionID,
+                failure: error.localizedDescription,
+                sourceWasExhausted: false
+            )
         }
     }
 
@@ -36,15 +49,17 @@ extension LiveSessionCoordinator {
         guard state.sessionID == sessionID else { return }
         switch event {
         case .speechStarted:
-            if isActive {
-                state.transition(to: .listening, message: "Speech detected")
+            if isActive, inferenceIsReady {
+                state.transition(
+                    to: .listening,
+                    message: captureStatusMessage(normal: "Speech detected")
+                )
                 publishState()
             }
         case .speechEnded(let segment):
             do {
                 let record = try await dependencies.recoveryStore.stage(segment, for: sessionID)
-                segmentQueue.append(record)
-                startWorkerIfNeeded(sessionID: sessionID)
+                await process(record, sessionID: sessionID)
             } catch {
                 preserve(
                     segment,
@@ -58,76 +73,72 @@ extension LiveSessionCoordinator {
         }
     }
 
-    private func startWorkerIfNeeded(sessionID: UUID) {
-        guard workerTask == nil else { return }
+    private func process(
+        _ record: PendingUtteranceRecord,
+        sessionID: UUID
+    ) async {
+        switch processingPolicy {
+        case .boundedLive:
+            enqueueOrDefer(record, sessionID: sessionID)
+        case .completeImport:
+            guard inferenceIsReady else {
+                enqueueOrDefer(record, sessionID: sessionID)
+                return
+            }
+            guard diskRecoveryMode == nil else {
+                deferToDiskRecovery(record)
+                return
+            }
+            await processQueuedRecord(record, sessionID: sessionID)
+        }
+    }
+
+    func startWorkerIfNeeded(sessionID: UUID) {
+        guard inferenceIsReady, workerTask == nil, !segmentQueue.isEmpty else { return }
         workerTask = Task { [weak self] in
             await self?.drainSegments(sessionID: sessionID)
         }
     }
 
     private func drainSegments(sessionID: UUID) async {
-        while !segmentQueue.isEmpty {
-            let record = segmentQueue.removeFirst()
+        while let record = segmentQueue.dequeue() {
             await processQueuedRecord(record, sessionID: sessionID)
             if isActive {
-                state.transition(to: .listening, message: "Listening")
+                state.transition(
+                    to: .listening,
+                    message: captureStatusMessage(normal: "Listening")
+                )
                 publishState()
             }
         }
         workerTask = nil
     }
 
-    private func processQueuedRecord(
-        _ record: PendingUtteranceRecord,
-        sessionID: UUID
-    ) async {
-        let segment = record.segment
-        transitionWhileActive(to: .recognizing, message: "Recognizing Mandarin…")
-        do {
-            let entry = try await translate(segment, sessionID: sessionID)
-            try await completeRecovery(record, translatedEntry: entry)
-        } catch let ignored as IgnoredUtterance {
-            await discardFiltered(record, reason: ignored.message)
-        } catch let failure as UtteranceProcessingFailure {
-            preserve(segment, after: failure, recoveryID: record.id)
-        } catch {
-            preserve(
-                segment,
-                after: UtteranceProcessingFailure(
-                    stage: .recognition,
-                    message: error.localizedDescription,
-                    pendingEntry: nil
-                ),
-                recoveryID: record.id
-            )
-        }
-    }
-
-    private func translate(
-        _ segment: SpeechSegment,
-        sessionID: UUID
-    ) async throws -> TranscriptEntry {
-        let recognized = try await utteranceProcessor.recognize(segment)
-        transitionWhileActive(to: .translating, message: "Translating faithfully…")
-        let entry = try await utteranceProcessor.translate(
-            recognized,
-            sessionID: sessionID
-        )
-        state.append(entry)
-        publish(.transcriptAppended(entry))
-        return entry
-    }
-
-    private func transitionWhileActive(to phase: LiveSessionPhase, message: String) {
-        guard isActive else { return }
-        state.transition(to: phase, message: message)
-        publishState()
-    }
-
-    private func captureDidEnd(sessionID: UUID, failure: String?) {
+    private func captureDidEnd(
+        sessionID: UUID,
+        failure: String?,
+        sourceWasExhausted: Bool
+    ) {
         guard state.sessionID == sessionID else { return }
-        Task { [weak self] in
-            await self?.finishAfterCaptureEnded(sessionID: sessionID, failure: failure)
+        let incompleteImport = processingPolicy.requiresCompleteCapture && !sourceWasExhausted
+        if let message = failure ?? (incompleteImport ? incompleteImportMessage : nil) {
+            terminalFailureMessage = terminalFailureMessage ?? message
+            recordIssue(stage: .audioProcessing, message: message, isRecoverable: true)
+            Task { [weak self] in
+                await self?.stop()
+            }
+            return
         }
+        guard inferenceIsReady else {
+            captureEndedBeforeInference = true
+            return
+        }
+        Task { [weak self] in
+            await self?.stop()
+        }
+    }
+
+    private var incompleteImportMessage: String {
+        "Audio import ended before the complete file was transcribed. Retry the original file."
     }
 }

@@ -2,7 +2,11 @@
 
 @MainActor
 func makeTranslationHarness(
-    responses: [Result<String, HyMT2Error>]
+    responses: [Result<String, HyMT2Error>],
+    attemptObserver: any HyMT2AttemptObserving = HyMT2NoOpAttemptObserver(),
+    pronounTraceObserver: any HyMT2PronounTraceObserving = HyMT2NoOpPronounTraceObserver(),
+    pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving =
+        HyMT2NoOpPronounDiagnosticObserver()
 ) async throws -> TranslationHarness {
     let model = try TemporaryGGUF()
     let server = FakeLlamaServerController()
@@ -11,7 +15,10 @@ func makeTranslationHarness(
         configuration: HyMT2TestSupport.configuration(),
         server: server,
         transport: transport,
-        endpointFactory: { HyMT2TestSupport.endpoint }
+        endpointFactory: { HyMT2TestSupport.endpoint },
+        attemptObserver: attemptObserver,
+        pronounTraceObserver: pronounTraceObserver,
+        pronounDiagnosticObserver: pronounDiagnosticObserver
     )
     try await provider.loadModel(at: model.fileURL)
     return TranslationHarness(

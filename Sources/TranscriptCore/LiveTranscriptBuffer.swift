@@ -10,11 +10,27 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
     public init() {}
 
     public func begin(sessionID: UUID, at date: Date) async {
+        await begin(
+            sessionID: sessionID,
+            at: date,
+            configuration: TranscriptSessionConfiguration()
+        )
+    }
+
+    public func begin(
+        sessionID: UUID,
+        at date: Date,
+        configuration: TranscriptSessionConfiguration
+    ) async {
         let newSession = TranscriptSession(
             id: sessionID,
             startedAt: date,
             endedAt: nil,
-            entries: []
+            entries: [],
+            title: configuration.title,
+            kind: configuration.kind,
+            sourceLanguage: configuration.sourceLanguage,
+            targetLanguage: configuration.targetLanguage
         )
         session = newSession
         publish(.reset(newSession))
@@ -41,13 +57,32 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
         )
     }
 
+    public func makeEntry(
+        recognition: RecognizedUtterance,
+        translation: TranslationResult,
+        sourceAudit: TranscriptSourceAudit,
+        sourceSegmentSequence: UInt64
+    ) async throws -> TranscriptEntry {
+        guard session != nil else { throw TranscriptBufferError.noActiveSession }
+        return entry(
+            recognition: recognition,
+            translation: translation,
+            sourceAudit: sourceAudit,
+            sourceSegmentSequence: sourceSegmentSequence
+        )
+    }
+
     public func append(_ entry: TranscriptEntry) async {
         guard let current = session else { return }
         session = TranscriptSession(
             id: current.id,
             startedAt: current.startedAt,
             endedAt: nil,
-            entries: current.entries + [entry]
+            entries: current.entries + [entry],
+            title: current.title,
+            kind: current.kind,
+            sourceLanguage: current.sourceLanguage,
+            targetLanguage: current.targetLanguage
         )
         publish(.appended(entry))
     }
@@ -62,7 +97,11 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
             id: current.id,
             startedAt: current.startedAt,
             endedAt: date,
-            entries: current.entries
+            entries: current.entries,
+            title: current.title,
+            kind: current.kind,
+            sourceLanguage: current.sourceLanguage,
+            targetLanguage: current.targetLanguage
         )
         session = finished
         publish(.finished(finished))
@@ -78,18 +117,23 @@ public actor LiveTranscriptBuffer: TranscriptBuffer {
             }
         }
     }
+}
 
+extension LiveTranscriptBuffer {
     private func entry(
         recognition: RecognizedUtterance,
         translation: TranslationResult,
-        sourceAudit: TranscriptSourceAudit? = nil
+        sourceAudit: TranscriptSourceAudit? = nil,
+        sourceSegmentSequence: UInt64? = nil
     ) -> TranscriptEntry {
         TranscriptEntry(
             id: recognition.sourceSegmentID,
             sequence: (session?.entries.count ?? 0) + 1,
+            sourceSegmentSequence: sourceSegmentSequence,
             rawSourceText: sourceAudit?.rawText,
             sourceText: recognition.text,
             sourceCorrections: sourceAudit?.corrections ?? [],
+            sourcePronounDecisions: sourceAudit?.pronounDecisions ?? [],
             targetText: translation.targetText,
             startedMilliseconds: recognition.startedAt.milliseconds,
             endedMilliseconds: recognition.endedAt.milliseconds,

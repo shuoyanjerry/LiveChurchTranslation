@@ -9,6 +9,9 @@ public actor HyMT2TranslationProvider: TranslationProvider {
     private let server: any LlamaServerControlling
     private let transport: any LlamaServerTransport
     private let endpointFactory: @Sendable () -> LlamaServerEndpoint
+    private let attemptObserver: any HyMT2AttemptObserving
+    private let pronounTraceObserver: any HyMT2PronounTraceObserving
+    private let pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving
     private var endpoint: LlamaServerEndpoint?
     private var loadedModelURL: URL?
 
@@ -20,18 +23,28 @@ public actor HyMT2TranslationProvider: TranslationProvider {
         server = FoundationLlamaServerController(executableURL: helperExecutableURL)
         transport = URLSessionLlamaServerTransport()
         endpointFactory = LlamaServerEndpoint.randomLocal
+        attemptObserver = HyMT2NoOpAttemptObserver()
+        pronounTraceObserver = HyMT2NoOpPronounTraceObserver()
+        pronounDiagnosticObserver = HyMT2NoOpPronounDiagnosticObserver()
     }
 
     init(
         configuration: HyMT2Configuration,
         server: any LlamaServerControlling,
         transport: any LlamaServerTransport,
-        endpointFactory: @escaping @Sendable () -> LlamaServerEndpoint
+        endpointFactory: @escaping @Sendable () -> LlamaServerEndpoint,
+        attemptObserver: any HyMT2AttemptObserving = HyMT2NoOpAttemptObserver(),
+        pronounTraceObserver: any HyMT2PronounTraceObserving = HyMT2NoOpPronounTraceObserver(),
+        pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving =
+            HyMT2NoOpPronounDiagnosticObserver()
     ) {
         self.configuration = configuration
         self.server = server
         self.transport = transport
         self.endpointFactory = endpointFactory
+        self.attemptObserver = attemptObserver
+        self.pronounTraceObserver = pronounTraceObserver
+        self.pronounDiagnosticObserver = pronounDiagnosticObserver
     }
 
     /// Loads a GGUF file or a directory containing the configured GGUF file.
@@ -70,29 +83,30 @@ public actor HyMT2TranslationProvider: TranslationProvider {
     }
 
     public func translate(_ request: TranslationRequest) async throws -> TranslationResult {
-        let source = request.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !source.isEmpty else { throw TranslationProviderError.emptySource }
+        let trimmedSource = request.sourceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSource.isEmpty else { throw TranslationProviderError.emptySource }
         guard let endpoint, await server.isRunning() else {
             self.endpoint = nil
             loadedModelURL = nil
             throw HyMT2Error.modelNotLoaded
         }
-        let terms = TranslationTermMatcher.matched(
-            in: source,
-            from: request.glossary,
-            limit: configuration.maximumGlossaryTerms
+        let input = HyMT2TranslationInputFactory.make(
+            request,
+            trimmedSource: trimmedSource,
+            maximumGlossaryTerms: configuration.maximumGlossaryTerms
         )
         let clock = ContinuousClock()
         let started = clock.now
         let target = try await HyMT2TranslationExecutor(
             configuration: configuration,
-            transport: transport
+            transport: transport,
+            attemptObserver: attemptObserver,
+            pronounTraceObserver: pronounTraceObserver,
+            pronounDiagnosticObserver: pronounDiagnosticObserver
         ).translate(
-            source: source,
-            targetLanguage: request.targetLanguage,
-            terms: terms,
-            context: request.context,
-            endpoint: endpoint
+            input,
+            endpoint: endpoint,
+            requestID: request.id
         )
         return TranslationResult(
             requestID: request.id,

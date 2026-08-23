@@ -13,6 +13,30 @@ import Testing
         #expect(TranscriptTimestamp.format(milliseconds: -1_000) == "00:00:00")
     }
 
+    @Test func unresolvedPronounNoticeIsHiddenWhenThereAreNoUnresolvedDecisions() {
+        #expect(UnresolvedPronounNotice(unresolvedCount: 0) == nil)
+    }
+
+    @Test func unresolvedPronounNoticeUsesRestrainedSingularCopy() throws {
+        let notice = try #require(UnresolvedPronounNotice(unresolvedCount: 1))
+
+        #expect(notice.text == "Pronoun context unresolved · neutral English")
+        #expect(
+            notice.accessibilityLabel
+                == "One spoken Mandarin pronoun remains unresolved. Neutral English was used."
+        )
+    }
+
+    @Test func unresolvedPronounNoticeCountsMultipleDecisions() throws {
+        let notice = try #require(UnresolvedPronounNotice(unresolvedCount: 3))
+
+        #expect(notice.text == "3 pronoun contexts unresolved · neutral English")
+        #expect(
+            notice.accessibilityLabel
+                == "3 spoken Mandarin pronouns remain unresolved. Neutral English was used."
+        )
+    }
+
     @Test func sharingStateCarriesOnlyImmutablePresentationValues() {
         let peer = LocalSharingPeer(
             id: "sanctuary-ipad",
@@ -42,5 +66,34 @@ import Testing
                     peers: [peer]
                 )
         )
+    }
+
+    @Test func localSharingCopyDisclosesScopeAndTransportRisk() {
+        #expect(
+            LocalSharingPresentation.subtitle
+                == "Nearby devices can read the live transcript and translation."
+        )
+        #expect(
+            LocalSharingPresentation.transportWarning
+                == "Trusted local network only · Traffic is not encrypted"
+        )
+    }
+
+    @Test func localSharingOffersOnlyViewerInvitations() {
+        #expect(LocalSharingPresentation.invitationRole == .viewer)
+
+        let viewerInvitation = LocalSharingInvitation(
+            role: .viewer,
+            url: URL(string: "http://quiet-reader.local:8123/#invite=viewer")!,
+            expiresAt: Date(timeIntervalSince1970: 1_800)
+        )
+        let operatorInvitation = LocalSharingInvitation(
+            role: .operator,
+            url: URL(string: "http://quiet-reader.local:8123/#invite=operator")!,
+            expiresAt: Date(timeIntervalSince1970: 1_800)
+        )
+
+        #expect(LocalSharingPresentation.visibleInvitation(viewerInvitation) == viewerInvitation)
+        #expect(LocalSharingPresentation.visibleInvitation(operatorInvitation) == nil)
     }
 }

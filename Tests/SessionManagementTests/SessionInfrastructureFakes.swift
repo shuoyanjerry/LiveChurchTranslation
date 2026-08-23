@@ -1,3 +1,4 @@
+import AudioCaptureAPI
 import DiagnosticsAPI
 import Foundation
 import GlossaryAPI
@@ -48,7 +49,11 @@ actor FakeTranscriptStore: TranscriptStore {
             id: session.id,
             startedAt: session.startedAt,
             endedAt: session.endedAt,
-            entries: appended
+            entries: appended,
+            title: session.title,
+            kind: session.kind,
+            sourceLanguage: session.sourceLanguage,
+            targetLanguage: session.targetLanguage
         )
     }
 
@@ -57,6 +62,8 @@ actor FakeTranscriptStore: TranscriptStore {
         finished.append(session)
     }
     func recentSessions(limit _: Int) -> [StoredSessionSummary] { [] }
+    func isSessionActive(sessionID _: UUID) -> Bool { false }
+    func delete(sessionID _: UUID) {}
 
     func begunSessions() -> [TranscriptSession] { begun }
     func seed(_ entry: TranscriptEntry) { appended.append(entry) }
@@ -66,7 +73,11 @@ actor FakeTranscriptStore: TranscriptStore {
 }
 
 actor FakeSettingsStore: SettingsStore {
-    private var settings = AppSettings.defaults
+    private var settings: AppSettings
+
+    init(settings: AppSettings = .defaults) {
+        self.settings = settings
+    }
 
     func load() -> AppSettings { settings }
     func save(_ settings: AppSettings) { self.settings = settings }

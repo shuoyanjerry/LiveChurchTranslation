@@ -10,17 +10,31 @@ public struct UnifiedLogger: AppLogger {
 
     public func write(_ record: LogRecord) {
         let logger = Logger(subsystem: subsystem, category: record.category)
+        let payload = UnifiedLogPayload(record).text
+        logger.log(level: record.level.osLogType, "\(payload, privacy: .private)")
+    }
+}
+
+struct UnifiedLogPayload: Equatable, Sendable {
+    let text: String
+
+    init(_ record: LogRecord) {
         let metadata = record.metadata
             .sorted { $0.key < $1.key }
             .map { "\($0.key)=\($0.value)" }
             .joined(separator: " ")
-        let message = metadata.isEmpty ? record.message : "\(record.message) [\(metadata)]"
-        switch record.level {
-        case .debug: logger.debug("\(message, privacy: .public)")
-        case .info: logger.info("\(message, privacy: .public)")
-        case .notice: logger.notice("\(message, privacy: .public)")
-        case .error: logger.error("\(message, privacy: .public)")
-        case .fault: logger.fault("\(message, privacy: .public)")
+        text = metadata.isEmpty ? record.message : "\(record.message) [\(metadata)]"
+    }
+}
+
+extension LogLevel {
+    fileprivate var osLogType: OSLogType {
+        switch self {
+        case .debug: .debug
+        case .info: .info
+        case .notice: .default
+        case .error: .error
+        case .fault: .fault
         }
     }
 }

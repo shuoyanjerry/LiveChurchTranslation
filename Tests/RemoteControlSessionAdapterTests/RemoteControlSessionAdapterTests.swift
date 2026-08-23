@@ -7,15 +7,26 @@ import Testing
 
 @Suite("Live session remote mutation adapter")
 struct RemoteControlSessionAdapterTests {
-    @Test("Remote Start uses the current Mac input and Stop forwards")
-    func forwardsNarrowCommands() async throws {
+    @Test("Remote Start is fail-closed while an authorized remote Stop remains available")
+    func startRequiresLocalNoticeAndStopForwards() async throws {
         let controller = SessionControllerFake()
         let settings = SettingsFake(deviceID: "microphone-2")
         let adapter = LiveSessionRemoteMutationTarget(controller: controller, settings: settings)
-        try await adapter.startRemoteSession()
+
+        await #expect(
+            throws: LiveSessionRemoteMutationError.localRecordingAuthorizationRequired
+        ) {
+            try await adapter.startRemoteSession()
+        }
+        #expect(await controller.startedInput() == nil)
+
+        await controller.start(inputDeviceID: AudioInputID(rawValue: "microphone-2"))
         try await adapter.stopRemoteSession()
         #expect(await controller.startedInput()?.rawValue == "microphone-2")
         #expect(await controller.stopCount() == 1)
+        await #expect(throws: LiveSessionRemoteMutationError.noActiveSession) {
+            try await adapter.stopRemoteSession()
+        }
     }
 }
 

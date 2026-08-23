@@ -60,15 +60,37 @@ fi
 if [ ! -d Sources/ChurchTranslatorApp ]; then
     report_failure "ChurchTranslatorApp composition-root target is missing"
 else
-    main_count="$(rg -l '@main\b' Sources/ChurchTranslatorApp -g '*.swift' | wc -l | tr -d ' ')"
-    [ "$main_count" -eq 1 ] || report_failure "ChurchTranslatorApp must contain exactly one @main declaration"
+    main_count="$({ rg -l '@main\b' Sources/ChurchTranslatorApp -g '*.swift' || true; } \
+        | wc -l | tr -d ' ')"
+    [ "$main_count" -eq 0 ] \
+        || report_failure "ChurchTranslatorApp library must not declare @main"
+    if ! rg -q '^public struct LiveChurchTranslationApp: App\b' \
+        Sources/ChurchTranslatorApp/LiveChurchTranslationApp.swift; then
+        report_failure "ChurchTranslatorApp must expose the production SwiftUI App"
+    fi
     if rg -n '^\s*(public\s+)?(actor|protocol)\b|@Published\b' \
         Sources/ChurchTranslatorApp -g '*.swift'; then
         report_failure "ChurchTranslatorApp may wire dependencies but must not define business services or state"
     fi
 fi
 
+for host in Sources/ChurchTranslatorCLI Packaging/AppHost; do
+    if [ ! -d "$host" ]; then
+        report_failure "$host entry-point directory is missing"
+        continue
+    fi
+    main_count="$(rg -l '@main\b' "$host" -g '*.swift' | wc -l | tr -d ' ')"
+    [ "$main_count" -eq 1 ] || report_failure "$host must contain exactly one @main declaration"
+    if ! rg -q 'LiveChurchTranslationApp[.]main[(][)]' "$host" -g '*.swift'; then
+        report_failure "$host must delegate to the production SwiftUI App"
+    fi
+done
+
 if ! swift package dump-package | swift "$SCRIPT_DIR/ArchitectureCheck.swift"; then
+    failures=$((failures + 1))
+fi
+
+if ! "$SCRIPT_DIR/check_private_qa_boundaries.sh" "$@"; then
     failures=$((failures + 1))
 fi
 

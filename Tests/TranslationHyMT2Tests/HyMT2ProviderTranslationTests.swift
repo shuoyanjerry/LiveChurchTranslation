@@ -50,6 +50,11 @@ import TranslationAPI
         #expect(result.targetText.contains("justification by faith"))
         let prompts = await harness.transport.completionRequests().map(\.prompt)
         #expect(prompts.count == 2)
+        #expect(
+            await harness.transport.completionRequests().allSatisfy {
+                $0.stopSequences == [HyMT2PromptControlDelimiter.currentSourceClosing]
+            }
+        )
         #expect(!prompts[0].contains("without summarizing"))
         #expect(prompts[1].contains("without summarizing"))
     }

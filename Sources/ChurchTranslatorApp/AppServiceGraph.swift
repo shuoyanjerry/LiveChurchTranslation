@@ -1,5 +1,6 @@
 import ASRNormalizationCore
 import ASRQwen3
+import AudioCaptureAPI
 import AudioCaptureAVFoundation
 import AudioProcessingCore
 import DiagnosticsCore
@@ -10,6 +11,7 @@ import LoggingOSLog
 import ModelDownloadHTTP
 import ModelRuntimeCore
 import PersistenceFileSystem
+import RecordingFileSystem
 import SessionManagement
 import SettingsUserDefaults
 import TranscriptCore
@@ -23,6 +25,8 @@ struct AppServiceGraph {
     let capture: AVFoundationAudioCaptureProvider
     let glossary: DefaultGlossaryService
     let settings: UserDefaultsSettingsStore
+    let transcripts: FileTranscriptStore
+    let recordings: FileSessionRecordingStore
 
     private let logger: UnifiedLogger
     private let reporter: ModelRuntimeReporter
@@ -38,6 +42,8 @@ struct AppServiceGraph {
         settings = UserDefaultsSettingsStore(
             suiteName: "com.shuoyan.LiveChurchTranslation"
         )
+        transcripts = FileTranscriptStore(root: directories.transcripts)
+        recordings = try FileSessionRecordingStore(root: directories.transcripts)
         self.logger = logger
         self.reporter = reporter
         downloader = try HTTPModelDownloader(
@@ -49,10 +55,11 @@ struct AppServiceGraph {
     }
 
     func makeSessionDependencies(
-        directories: AppDirectories
+        directories: AppDirectories,
+        capture captureOverride: (any AudioCaptureProvider)? = nil
     ) throws -> LiveSessionDependencies {
         LiveSessionDependencies(
-            capture: capture,
+            capture: captureOverride ?? capture,
             audioProcessor: try MonoResamplingAudioProcessor(),
             vad: try CalibratedVoiceActivityDetector(
                 classifier: try WebRTCVoiceActivityClassifier()
@@ -67,7 +74,8 @@ struct AppServiceGraph {
             modelDownloader: downloader,
             modelReporter: reporter,
             transcript: LiveTranscriptBuffer(),
-            transcriptStore: FileTranscriptStore(root: directories.transcripts),
+            transcriptStore: transcripts,
+            recordingStore: recordings,
             recoveryStore: try FileUtteranceRecoveryStore(root: directories.recovery),
             settings: settings,
             logger: logger,

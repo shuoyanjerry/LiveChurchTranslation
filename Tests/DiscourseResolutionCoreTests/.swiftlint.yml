@@ -1,0 +1,22 @@
+strict: true
+included:
+  - .
+line_length:
+  warning: 110
+  error: 130
+file_length:
+  warning: 180
+  error: 200
+type_body_length:
+  warning: 120
+  error: 160
+function_body_length:
+  warning: 35
+  error: 50
+cyclomatic_complexity:
+  warning: 8
+  error: 12
+identifier_name:
+  min_length: 2
+disabled_rules:
+  - trailing_comma

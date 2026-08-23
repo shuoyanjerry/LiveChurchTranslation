@@ -1,4 +1,5 @@
 import Foundation
+import SettingsAPI
 import TranscriptAPI
 import TranslationAPI
 import UtteranceRecoveryAPI
@@ -16,7 +17,8 @@ extension UtteranceProcessor {
         let entry = makeRecoveredEntry(
             record: record,
             input: input,
-            translation: translation
+            translation: translation,
+            presentationSequence: context.presentationSequence
         )
         return try await persistRecovered(entry, sessionID: record.id.sessionID)
     }
@@ -29,11 +31,15 @@ extension UtteranceProcessor {
             return try await dependencies.translator.translate(
                 TranslationRequest(
                     sourceText: input.utterance.text,
+                    sourceLanguage: mode.sourceLanguageTag,
+                    targetLanguage: mode.targetLanguageTag,
                     glossary: matchedTerms(
                         in: input.utterance.text,
-                        entries: input.glossary
+                        entries: input.glossary,
+                        mode: mode
                     ),
-                    context: context
+                    context: context,
+                    pronounGuidance: input.pronounGuidance
                 )
             )
         } catch {
@@ -48,14 +54,17 @@ extension UtteranceProcessor {
     private func makeRecoveredEntry(
         record: PendingUtteranceRecord,
         input: RecognizedInput,
-        translation: TranslationResult
+        translation: TranslationResult,
+        presentationSequence: Int
     ) -> TranscriptEntry {
         TranscriptEntry(
             id: record.segment.id,
-            sequence: Int(clamping: record.id.sequenceNumber),
+            sequence: presentationSequence,
+            sourceSegmentSequence: record.id.sequenceNumber,
             rawSourceText: input.sourceAudit.rawText,
             sourceText: input.utterance.text,
             sourceCorrections: input.sourceAudit.corrections,
+            sourcePronounDecisions: input.sourceAudit.pronounDecisions,
             targetText: translation.targetText,
             startedMilliseconds: milliseconds(input.utterance.startedAt),
             endedMilliseconds: milliseconds(input.utterance.endedAt),

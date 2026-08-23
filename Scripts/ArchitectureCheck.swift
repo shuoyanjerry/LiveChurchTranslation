@@ -43,7 +43,7 @@ func isAPI(_ name: String) -> Bool {
 
 func isAllowed(_ source: TargetNode, dependency: String) -> Bool {
     if source.name == "ChurchTranslatorApp" { return true }
-    if source.name == "SemanticEndpointSmartTurn" && dependency == "SmartTurnOnnxRuntimeC" {
+    if source.name == "ChurchTranslatorCLI" && dependency == "ChurchTranslatorApp" {
         return true
     }
     if source.name == "VADWebRTC" && dependency == "WebRTCVADC" {

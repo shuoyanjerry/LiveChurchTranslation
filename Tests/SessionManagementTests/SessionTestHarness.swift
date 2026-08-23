@@ -6,7 +6,11 @@ import GlossaryAPI
 import ModelRuntimeAPI
 import SessionManagement
 import SessionManagementAPI
+import SettingsAPI
+import Testing
+import TranscriptAPI
 import TranscriptCore
+import TranslationAPI
 
 struct SessionTestHarness {
     let capture: FakeAudioCaptureProvider
@@ -17,6 +21,7 @@ struct SessionTestHarness {
     let downloader: FakeModelDownloader
     let transcript: LiveTranscriptBuffer
     let store: FakeTranscriptStore
+    let recordingStore: FakeSessionRecordingStore
     let recoveryStore: FakeUtteranceRecoveryStore
     let coordinator: LiveSessionCoordinator
 
@@ -30,30 +35,52 @@ struct SessionTestHarness {
         modelLoadFails: Bool = false,
         recognitionFails: Bool = false,
         recognitionError: ASRError? = nil,
+        recognitionDelay: Duration? = nil,
+        recoveryStageFails: Bool = false,
+        recordingAppendFails: Bool = false,
+        recordingFinishFails: Bool = false,
+        recordingRepairFails: Bool = false,
         modelPreparationDelay: Duration? = nil,
         holdsPermissionRequest: Bool = false,
         holdsCaptureOpen: Bool = false,
         emitsOnlyOnFlush: Bool = false,
         emitsEveryFrame: Bool = false,
-        audioFrames: [AudioFrame]? = nil
+        translationMode: TranslationMode = .mandarinToEnglish,
+        audioFrames: [AudioFrame]? = nil,
+        sessionKind: TranscriptSessionKind = .live
     ) {
-        let components = SessionTestComponents(
-            permission: permission,
-            recognizedText: recognizedText,
-            recognizedTexts: recognizedTexts,
-            translationFails: translationFails,
-            storageFails: storageFails,
-            finishFails: finishFails,
-            modelLoadFails: modelLoadFails,
-            recognitionFails: recognitionFails,
-            recognitionError: recognitionError,
-            modelPreparationDelay: modelPreparationDelay,
-            audioFrames: audioFrames ?? [Self.audioFrame],
-            holdsPermissionRequest: holdsPermissionRequest,
-            holdsCaptureOpen: holdsCaptureOpen,
-            emitsOnlyOnFlush: emitsOnlyOnFlush,
-            emitsEveryFrame: emitsEveryFrame
+        self.init(
+            components: SessionTestComponents(
+                permission: permission,
+                recognizedText: recognizedText,
+                recognizedTexts: recognizedTexts,
+                translationFails: translationFails,
+                storageFails: storageFails,
+                finishFails: finishFails,
+                modelLoadFails: modelLoadFails,
+                recognitionFails: recognitionFails,
+                recognitionError: recognitionError,
+                recognitionDelay: recognitionDelay,
+                recoveryStageFails: recoveryStageFails,
+                recordingAppendFails: recordingAppendFails,
+                recordingFinishFails: recordingFinishFails,
+                recordingRepairFails: recordingRepairFails,
+                modelPreparationDelay: modelPreparationDelay,
+                audioFrames: audioFrames ?? [Self.audioFrame],
+                holdsPermissionRequest: holdsPermissionRequest,
+                holdsCaptureOpen: holdsCaptureOpen,
+                emitsOnlyOnFlush: emitsOnlyOnFlush,
+                emitsEveryFrame: emitsEveryFrame,
+                translationMode: translationMode
+            ),
+            sessionKind: sessionKind
         )
+    }
+
+    private init(
+        components: SessionTestComponents,
+        sessionKind: TranscriptSessionKind
+    ) {
         let dependencies = SessionDependencyFactory.make(components)
 
         capture = components.capture
@@ -64,10 +91,12 @@ struct SessionTestHarness {
         downloader = components.downloader
         transcript = components.transcript
         store = components.store
+        recordingStore = components.recordingStore
         recoveryStore = components.recoveryStore
         coordinator = LiveSessionCoordinator(
             dependencies: dependencies,
-            models: Self.models
+            models: Self.models,
+            sessionKind: sessionKind
         )
     }
 
@@ -99,4 +128,37 @@ struct SessionTestHarness {
             license: "Apache-2.0"
         )
     }
+}
+
+func verifyRecognitionRequest(from harness: SessionTestHarness) async throws {
+    let requests = await harness.asr.receivedRequests()
+    let recognition = try #require(requests.first)
+    #expect(requests.count == 1)
+    #expect(recognition.segment.samples.count == 320)
+    #expect(recognition.contextPrompt.contains("因信称义"))
+    #expect(recognition.contextPrompt.contains("恩典"))
+    #expect(!recognition.contextPrompt.contains("我们"))
+}
+
+func verifyTranslationRequest(from harness: SessionTestHarness) async throws {
+    let requests = await harness.translator.receivedRequests()
+    let translation = try #require(requests.first)
+    #expect(requests.count == 1)
+    #expect(translation.context.isEmpty)
+    #expect(
+        translation.glossary == [
+            TranslationTerm(source: "因信称义", target: "justification by faith"),
+            TranslationTerm(source: "恩典", target: "grace"),
+        ]
+    )
+}
+
+func waitUntil(
+    _ condition: @escaping @Sendable () async -> Bool
+) async throws {
+    for _ in 0..<100 {
+        if await condition() { return }
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    throw SessionEventWaitError.timedOut
 }

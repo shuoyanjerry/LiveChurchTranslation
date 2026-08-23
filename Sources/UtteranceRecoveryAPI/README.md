@@ -8,8 +8,8 @@ marks completion only after the transcript is durable.
 
 ## Public API
 
-- `UtteranceRecoveryStore`: stage, one-session/all-session recovery, and complete
-  lifecycle.
+- `UtteranceRecoveryStore`: stage, bounded all-session recovery pages, legacy
+  one-shot recovery, and complete lifecycle.
 - `PendingUtteranceID` and `PendingUtteranceRecord`: immutable retry identity and
   exact `SpeechSegment` data.
 - `UtteranceRecoveryBatch`: ordered recoverable records plus quarantined-artifact
@@ -24,6 +24,12 @@ Depends only on `VADAPI`. It has no model, UI, logging, or filesystem dependency
 
 All values and protocols are `Sendable`. Implementations own mutation and
 serialization; callers never receive a shared mutable buffer.
+`UtteranceRecoveryPages` is demand-driven and single-pass. Filesystem adapters
+decode at most the requested number of records per page. The protocol default
+bridges existing adapters through the legacy one-shot method during migration.
+Paged records are session-contiguous: sessions follow their earliest staging
+time with UUID tie-breaking, and records within a session follow source sequence
+with segment UUID tie-breaking.
 
 ## Failure Modes
 

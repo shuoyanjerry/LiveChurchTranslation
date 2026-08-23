@@ -60,4 +60,21 @@ struct ASRInputGuardTests {
     @Test func keepsNaturalSentenceContainingSystem() {
         #expect(!ASRInputGuard.isKnownNonspeechHallucination("这个系统需要更新。"))
     }
+
+    @Test(arguments: [
+        String(repeating: "有", count: 80),
+        String(repeating: "我们有信心", count: 8),
+    ])
+    func rejectsPathologicalDecoderLoops(_ output: String) {
+        #expect(ASROutputGuard.hasPathologicalRepetition(output))
+    }
+
+    @Test(arguments: [
+        "有有，有的时候我们也会重复，但这是正常说话。",
+        "我们有信心，因为信心使我们继续向前。",
+        "圣哉，圣哉，圣哉，全能大主宰。",
+    ])
+    func keepsNaturalRhetoricalRepetition(_ output: String) {
+        #expect(!ASROutputGuard.hasPathologicalRepetition(output))
+    }
 }

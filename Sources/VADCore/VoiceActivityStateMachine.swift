@@ -7,7 +7,9 @@ struct VoiceActivityStateMachine {
     private var segmenter: SpeechWindowSegmenter
     private var analysisSamples: [Float] = []
     private var nextAnalysisTimestamp: Duration?
+    private var nextAnalysisSourceSample: Int64 = 0
     private(set) var lastFrameTimestamp: Duration?
+    private(set) var expectedNextFrameTimestamp: Duration?
 
     init(
         configuration: VoiceActivityConfiguration,
@@ -24,9 +26,10 @@ struct VoiceActivityStateMachine {
         )
     }
 
-    mutating func process(_ frame: ProcessedAudioFrame) -> [VoiceActivityEvent] {
+    mutating func process(_ frame: ProcessedAudioFrame) -> ObservedVoiceActivityBatch {
         lastFrameTimestamp = frame.timestamp
-        guard !frame.samples.isEmpty else { return [] }
+        expectedNextFrameTimestamp = frame.timestamp + frame.duration
+        guard !frame.samples.isEmpty else { return ObservedVoiceActivityBatch() }
         if nextAnalysisTimestamp == nil {
             nextAnalysisTimestamp = frame.timestamp
         }
@@ -34,47 +37,74 @@ struct VoiceActivityStateMachine {
         return consumeCompleteWindows()
     }
 
-    mutating func flush() -> [VoiceActivityEvent] {
-        var events: [VoiceActivityEvent] = []
+    mutating func flush() -> ObservedVoiceActivityBatch {
+        var voiceEvents: [VoiceActivityEvent] = []
+        var pauseEvents: [CandidatePauseTraceEvent] = []
         if !analysisSamples.isEmpty, let timestamp = nextAnalysisTimestamp {
+            let validSampleCount = analysisSamples.count
             analysisSamples.append(
                 contentsOf: repeatElement(
                     0,
                     count: windowSampleCount - analysisSamples.count
                 )
             )
-            events += segmenter.consume(analysisSamples, at: timestamp)
+            let partial = segmenter.consume(
+                analysisSamples,
+                at: timestamp,
+                sourceSampleStart: nextAnalysisSourceSample,
+                validSampleCount: validSampleCount
+            )
+            voiceEvents += partial.voiceEvents
+            pauseEvents += partial.pauseEvents
         }
-        events += segmenter.flush()
+        let flushed = segmenter.flush()
+        voiceEvents += flushed.voiceEvents
+        pauseEvents += flushed.pauseEvents
         clearStreamState(resetSequence: false)
-        return events
+        return ObservedVoiceActivityBatch(
+            voiceEvents: voiceEvents,
+            pauseEvents: pauseEvents
+        )
     }
 
     mutating func reset() {
         clearStreamState(resetSequence: true)
     }
 
-    private mutating func consumeCompleteWindows() -> [VoiceActivityEvent] {
-        var events: [VoiceActivityEvent] = []
+    private mutating func consumeCompleteWindows() -> ObservedVoiceActivityBatch {
+        var voiceEvents: [VoiceActivityEvent] = []
+        var pauseEvents: [CandidatePauseTraceEvent] = []
         while analysisSamples.count >= windowSampleCount {
             let window = Array(analysisSamples.prefix(windowSampleCount))
             analysisSamples.removeFirst(windowSampleCount)
             guard let timestamp = nextAnalysisTimestamp else { break }
-            events += segmenter.consume(window, at: timestamp)
+            let observed = segmenter.consume(
+                window,
+                at: timestamp,
+                sourceSampleStart: nextAnalysisSourceSample
+            )
+            voiceEvents += observed.voiceEvents
+            pauseEvents += observed.pauseEvents
             nextAnalysisTimestamp =
                 timestamp
                 + AudioTiming.duration(
                     sampleCount: window.count,
                     sampleRate: configuration.requiredSampleRate
                 )
+            nextAnalysisSourceSample += Int64(window.count)
         }
-        return events
+        return ObservedVoiceActivityBatch(
+            voiceEvents: voiceEvents,
+            pauseEvents: pauseEvents
+        )
     }
 
     private mutating func clearStreamState(resetSequence: Bool) {
         analysisSamples.removeAll(keepingCapacity: true)
         nextAnalysisTimestamp = nil
+        nextAnalysisSourceSample = 0
         lastFrameTimestamp = nil
+        expectedNextFrameTimestamp = nil
         segmenter.reset(resetSequence: resetSequence)
     }
 }

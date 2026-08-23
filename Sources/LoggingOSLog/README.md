@@ -19,10 +19,11 @@ logger and delegates synchronization to OSLog.
 
 ## Failure Modes
 
-Logging is nonthrowing by contract. Metadata is sorted and rendered as public
-text; this adapter does not redact values supplied by the caller.
+Logging is nonthrowing by contract. Dynamic messages and metadata values are
+private OSLog fields by default. Subsystem, category, and level remain stable
+routing data and must not contain user content.
 
 ## Tests
 
-There is no dedicated OSLog adapter test target. Callers are tested with
-`AppLogger` fakes.
+`LoggingOSLogTests` verifies deterministic payload formatting and enforces the
+single private OSLog interpolation policy at the source boundary.

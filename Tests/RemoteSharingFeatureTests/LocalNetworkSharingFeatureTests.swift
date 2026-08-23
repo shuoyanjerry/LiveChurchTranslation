@@ -40,6 +40,29 @@ struct LocalNetworkSharingFeatureTests {
         #expect(await transport.stopCount() == 1)
     }
 
+    @Test("Cleartext sharing does not issue operator invitations")
+    func rejectsOperatorInvitation() async {
+        let sharing = SharingFake()
+        let pairing = PairingManagerFake()
+        let transport = TransportFake()
+        let feature = LocalNetworkSharingFeature(
+            sharing: sharing,
+            pairing: pairing,
+            transport: transport,
+            configuration: configuration
+        )
+
+        await feature.send(.toggle)
+        await feature.send(.createInvitation(role: .operator))
+
+        #expect(await pairing.issuedRoles().isEmpty)
+        guard case .on(_, _, let invitation, _) = await feature.state() else {
+            Issue.record("Expected sharing to remain enabled")
+            return
+        }
+        #expect(invitation == nil)
+    }
+
     private var configuration: RemoteTransportConfiguration {
         RemoteTransportConfiguration(
             advertisedHostName: "quiet-reader.local",
@@ -73,11 +96,14 @@ private actor TransportFake: RemoteTransportServing {
 }
 
 private actor PairingManagerFake: RemotePairingManaging {
+    private var roles: [RemoteRole] = []
+
     func issueMacApprovedInvitation(
         role: RemoteRole,
         now: Date
     ) -> PairingInvitation {
-        PairingInvitation(
+        roles.append(role)
+        return PairingInvitation(
             id: UUID(),
             role: role,
             fragmentCredential: String(repeating: "a", count: 43),
@@ -92,4 +118,5 @@ private actor PairingManagerFake: RemotePairingManaging {
     func revokeAll(now _: Date) {}
     func auditLog() -> [PairingAuditRecord] { [] }
     func events() -> AsyncStream<RemotePairingEvent> { AsyncStream { _ in } }
+    func issuedRoles() -> [RemoteRole] { roles }
 }

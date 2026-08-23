@@ -34,8 +34,7 @@ public struct LiveReaderView: View {
                 LiveTranscriptReader(viewModel: viewModel)
             }
         }
-        .preferredColorScheme(.light)
-        .frame(minWidth: 1_080, minHeight: 640)
+        .frame(minWidth: 680, minHeight: 560)
         .task { await viewModel.load() }
         .task {
             sharingState = await sharingFeature.state()
@@ -63,6 +62,17 @@ public struct LiveReaderView: View {
             Button("OK") { viewModel.presentedError = nil }
         } message: {
             Text(viewModel.presentedError ?? "Unknown error")
+        }
+        .alert("开始录音和翻译？", isPresented: $viewModel.presentsRecordingNotice) {
+            Button("取消", role: .cancel) {}
+            Button("开始并录音") {
+                Task { await viewModel.startRecordingAndTranslation() }
+            }
+        } message: {
+            Text(
+                "本次会议的完整音频、听抄稿和翻译会保存在此 Mac。"
+                    + "开始前，请确认现场参与者已经知悉录音。"
+            )
         }
     }
 

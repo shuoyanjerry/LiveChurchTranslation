@@ -7,7 +7,10 @@ struct SpeechSegmentFinalizer {
         _ speech: ActiveSpeech,
         reason: SpeechSegmentEndReason
     ) -> SpeechSegment? {
-        guard speech.voicedSampleCount >= thresholds.minimumVoicedSampleCount else {
+        guard
+            speech.isConfirmedContinuation
+                || speech.voicedSampleCount >= thresholds.minimumVoicedSampleCount
+        else {
             return nil
         }
         let trailingSamplesToKeep =

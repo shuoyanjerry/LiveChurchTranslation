@@ -20,9 +20,15 @@ func target(
 
 func test(
     _ name: String,
-    dependencies: [Target.Dependency]
+    dependencies: [Target.Dependency],
+    exclude: [String] = []
 ) -> Target {
-    .testTarget(name: name, dependencies: dependencies, swiftSettings: strict)
+    .testTarget(
+        name: name,
+        dependencies: dependencies,
+        exclude: exclude,
+        swiftSettings: strict
+    )
 }
 
 let sherpaOnnx: Target.Dependency = .product(
@@ -30,37 +36,31 @@ let sherpaOnnx: Target.Dependency = .product(
     package: "sherpa-onnx"
 )
 
-let onnxRuntime: Target.Dependency = .product(
-    name: "OnnxRuntimeKit",
-    package: "onnxruntime-libs"
-)
-
 let package = Package(
     name: "LiveChurchTranslation",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "LiveChurchTranslation", targets: ["ChurchTranslatorApp"])
+        .library(name: "ChurchTranslatorApp", targets: ["ChurchTranslatorApp"]),
+        .executable(name: "LiveChurchTranslation", targets: ["ChurchTranslatorCLI"]),
     ],
     dependencies: [
         .package(
-            url: "https://github.com/csukuangfj/onnxruntime-libs",
-            exact: "1.27.1"
-        ),
-        .package(
             url: "https://github.com/k2-fsa/sherpa-onnx.git",
             exact: "1.13.6"
-        ),
+        )
     ],
     targets: [
         target("AudioCaptureAPI"),
+        target("RecordingAPI", dependencies: ["AudioCaptureAPI"]),
         target("AudioProcessingAPI", dependencies: ["AudioCaptureAPI"]),
         target("VADAPI", dependencies: ["AudioProcessingAPI"]),
-        target("SemanticEndpointAPI"),
         target("UtteranceRecoveryAPI", dependencies: ["VADAPI"]),
         target("ASRAPI", dependencies: ["VADAPI"]),
         target("ASRNormalizationAPI"),
+        target("ASRQualificationSupport"),
         target("DiscourseResolutionAPI"),
         target("TranslationAPI"),
+        target("TranslationQualificationSupport"),
         target("GlossaryAPI"),
         target("ModelRuntimeAPI"),
         target("ModelDownloadAPI", dependencies: ["ModelRuntimeAPI"]),
@@ -83,6 +83,11 @@ let package = Package(
             ]
         ),
         target("AudioCaptureAVFoundation", dependencies: ["AudioCaptureAPI"]),
+        target("AudioFileAVFoundation", dependencies: ["AudioCaptureAPI"]),
+        target(
+            "RecordingFileSystem",
+            dependencies: ["AudioCaptureAPI", "RecordingAPI"]
+        ),
         target("AudioProcessingCore", dependencies: ["AudioProcessingAPI"]),
         target("VADCore", dependencies: ["VADAPI"]),
         .target(
@@ -104,25 +109,6 @@ let package = Package(
             exclude: ["NOTICE", "README.md"],
             swiftSettings: strict
         ),
-        .target(
-            name: "SmartTurnOnnxRuntimeC",
-            dependencies: [onnxRuntime],
-            exclude: ["README.md"],
-            publicHeadersPath: "include",
-            cSettings: [
-                .unsafeFlags([
-                    "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
-                    "-Wno-incomplete-umbrella",
-                ])
-            ]
-        ),
-        .target(
-            name: "SemanticEndpointSmartTurn",
-            dependencies: ["SemanticEndpointAPI", "SmartTurnOnnxRuntimeC"],
-            exclude: ["NOTICE", "README.md"],
-            swiftSettings: strict,
-            linkerSettings: [.linkedFramework("Accelerate")]
-        ),
         target(
             "UtteranceRecoveryFileSystem",
             dependencies: ["UtteranceRecoveryAPI", "VADAPI"]
@@ -130,6 +116,10 @@ let package = Package(
         target(
             "ASRQwen3",
             dependencies: ["ASRAPI", "ModelRuntimeAPI", sherpaOnnx]
+        ),
+        target(
+            "ASRFunASRNano",
+            dependencies: ["ASRAPI", sherpaOnnx]
         ),
         target("ASRNormalizationCore", dependencies: ["ASRNormalizationAPI"]),
         target(
@@ -194,7 +184,7 @@ let package = Package(
                 "ASRAPI", "ASRNormalizationAPI", "AudioCaptureAPI", "AudioProcessingAPI",
                 "DiagnosticsAPI", "DiscourseResolutionAPI", "GlossaryAPI", "LoggingAPI", "ModelDownloadAPI",
                 "ModelRuntimeAPI", "PersistenceAPI", "SessionManagementAPI", "SettingsAPI",
-                "TranscriptAPI", "TranslationAPI", "VADAPI",
+                "RecordingAPI", "TranscriptAPI", "TranslationAPI", "VADAPI",
                 "UtteranceRecoveryAPI",
             ]
         ),
@@ -203,52 +193,88 @@ let package = Package(
             "LiveReader",
             dependencies: [
                 "AudioCaptureAPI", "GlossaryAPI", "ModelRuntimeAPI",
-                "RemoteSharingFeatureAPI", "SessionManagementAPI", "SettingsAPI",
+                "PersistenceAPI", "RemoteSharingFeatureAPI", "SessionManagementAPI", "SettingsAPI",
                 "TranscriptAPI", "UIDesignSystem",
             ]
         ),
-        .executableTarget(
-            name: "ChurchTranslatorApp",
+        target(
+            "ChurchTranslatorApp",
             dependencies: [
                 "ASRNormalizationCore", "ASRQwen3", "AudioCaptureAVFoundation",
-                "AudioProcessingCore", "DiagnosticsCore", "GlossaryCore",
+                "AudioFileAVFoundation", "AudioProcessingCore", "DiagnosticsCore", "GlossaryCore",
                 "GlossaryFileSystem", "LiveReader", "LoggingOSLog", "ModelDownloadHTTP",
                 "ModelRuntimeAPI", "ModelRuntimeCore", "PersistenceFileSystem",
                 "RemoteControlCore", "RemoteControlSessionAdapter", "RemoteDiscoveryBonjour",
                 "RemotePairingCore", "RemoteProjectionCore", "RemoteProjectionSessionAdapter",
+                "RecordingFileSystem",
                 "RemoteSharingFeature", "RemoteSharingFeatureAPI", "RemoteTransportAPI",
                 "RemoteTransportNetwork", "RemoteWebAssets", "SessionManagement", "SettingsAPI",
                 "SettingsUserDefaults", "TranscriptCore", "TranslationHyMT2", "VADCore",
                 "DiscourseResolutionCore", "UtteranceRecoveryFileSystem", "VADWebRTC",
-            ],
-            exclude: ["README.md"],
+            ]
+        ),
+        .executableTarget(
+            name: "ChurchTranslatorCLI",
+            dependencies: ["ChurchTranslatorApp"],
             swiftSettings: strict
         ),
         test("AudioProcessingCoreTests", dependencies: ["AudioCaptureAPI", "AudioProcessingCore"]),
         test(
+            "AudioFileAVFoundationTests",
+            dependencies: ["AudioCaptureAPI", "AudioFileAVFoundation"]
+        ),
+        test(
+            "RecordingFileSystemTests",
+            dependencies: ["AudioCaptureAPI", "RecordingAPI", "RecordingFileSystem"]
+        ),
+        test(
             "VADCoreTests",
             dependencies: ["AudioProcessingAPI", "VADCore", "VADWebRTC"]
         ),
+        .testTarget(
+            name: "VADEndpointBenchmarkTests",
+            dependencies: ["AudioProcessingAPI", "VADAPI", "VADCore", "VADWebRTC"],
+            exclude: ["README.md"],
+            swiftSettings: strict
+        ),
         test("VADWebRTCTests", dependencies: ["VADWebRTC"]),
         .testTarget(
-            name: "SemanticEndpointSmartTurnTests",
-            dependencies: ["SemanticEndpointAPI", "SemanticEndpointSmartTurn"],
-            resources: [.process("Fixtures")],
+            name: "ASRQwen3Tests",
+            dependencies: [
+                "ASRAPI", "ASRNormalizationCore", "ASRQualificationSupport", "ASRQwen3",
+                "GlossaryAPI", "SessionManagement", "SettingsAPI", "VADAPI", sherpaOnnx,
+            ],
+            exclude: ["README.md"],
             swiftSettings: strict
         ),
         test(
-            "ASRQwen3Tests",
+            "ASRFunASRNanoTests",
             dependencies: [
-                "ASRAPI", "ASRNormalizationCore", "ASRQwen3", "VADAPI", sherpaOnnx,
+                "ASRAPI", "ASRFunASRNano", "ASRNormalizationAPI",
+                "ASRNormalizationCore", "ASRQualificationSupport", "ASRQwen3",
+                "VADAPI", sherpaOnnx,
             ]
         ),
         test(
             "ASRNormalizationCoreTests",
             dependencies: ["ASRNormalizationAPI", "ASRNormalizationCore"]
         ),
+        test(
+            "ASRQualificationSupportTests",
+            dependencies: ["ASRQualificationSupport"]
+        ),
+        .testTarget(
+            name: "ASRQualificationManifestToolTests",
+            dependencies: ["ASRQualificationSupport"],
+            exclude: ["README.md"],
+            swiftSettings: strict
+        ),
         .testTarget(
             name: "DiscourseResolutionCoreTests",
-            dependencies: ["DiscourseResolutionAPI", "DiscourseResolutionCore"],
+            dependencies: [
+                "DiscourseResolutionAPI", "DiscourseResolutionCore",
+                "TranslationQualificationSupport",
+            ],
             exclude: ["README.md"],
             swiftSettings: strict
         ),
@@ -258,13 +284,22 @@ let package = Package(
             dependencies: ["ASRAPI", "TranscriptAPI", "TranscriptCore", "TranslationAPI"]
         ),
         test("PersistenceFileSystemTests", dependencies: ["PersistenceFileSystem", "TranscriptAPI"]),
+        test("LoggingOSLogTests", dependencies: ["LoggingAPI", "LoggingOSLog"]),
         test(
             "ModelDownloadHTTPTests",
             dependencies: ["ModelDownloadAPI", "ModelDownloadHTTP", "ModelRuntimeAPI"]
         ),
         test(
             "TranslationHyMT2Tests",
-            dependencies: ["TranslationAPI", "TranslationHyMT2"]
+            dependencies: [
+                "DiscourseResolutionAPI", "DiscourseResolutionCore", "GlossaryAPI",
+                "TranslationAPI", "TranslationHyMT2", "TranslationQualificationSupport",
+            ],
+            exclude: ["README.md"]
+        ),
+        test(
+            "TranslationQualificationSupportTests",
+            dependencies: ["TranslationQualificationSupport"]
         ),
         test("LiveReaderTests", dependencies: ["LiveReader", "RemoteSharingFeatureAPI"]),
         test(
@@ -327,7 +362,7 @@ let package = Package(
                 "DiscourseResolutionCore",
                 "DiagnosticsAPI", "GlossaryAPI", "LoggingAPI", "ModelDownloadAPI",
                 "ModelRuntimeAPI", "PersistenceAPI", "SessionManagement", "SettingsAPI",
-                "TranscriptAPI", "TranscriptCore", "TranslationAPI", "VADAPI",
+                "RecordingAPI", "TranscriptAPI", "TranscriptCore", "TranslationAPI", "VADAPI",
                 "UtteranceRecoveryAPI",
             ]
         ),

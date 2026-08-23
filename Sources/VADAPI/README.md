@@ -8,12 +8,26 @@ segments consumed by ASR.
 ## Public API
 
 - `VoiceActivityDetector`: process, flush, and reset lifecycle.
-- `VoiceActivityClassifying`: replaceable frame-level speech decisions.
+- `VoiceActivityClassifying`: replaceable frame-level speech decisions and
+  explicit analysis-window compatibility validation.
 - `VoiceActivityEvent`: explicit speech-start and speech-end events.
 - `SpeechSegment`: immutable samples, timing, sequence, and close reason,
   including long-utterance soft-silence, preferred-maximum, and hard-cap
   boundaries.
 - `VoiceActivityConfiguration` and `VoiceActivityError`.
+
+## Package Shadow Evidence
+
+The public detector protocol and `VoiceActivityEvent` are unchanged. Package
+targets may use `ObservedVoiceActivityBatch` and `CandidatePauseTraceEvent` to
+observe native endpoint-pause checkpoints without granting them boundary
+authority. A reached checkpoint carries its speech sequence, independent pause
+episode, 250/300/400 ms threshold, exact `Int64` source-sample positions,
+sample-clock timestamps, analysis window, and overshoot. A resolution records
+stable speech resumption or the production segment-end reason.
+
+These values are package-scoped so evaluation code can join evidence while app
+and external clients remain on the production lifecycle API.
 
 ## Sermon Profile
 
@@ -33,9 +47,11 @@ post-roll, requires 240 ms of raw voiced audio, and applies these boundaries:
 `maximumSegment` remains as a source-compatible property and initializer label.
 `maximumBoundaryGrace` controls the wait from the preference to the hard cap.
 
-`speechStarted` is published only after `minimumVoiced` is confirmed. Candidates
-that end earlier emit no lifecycle events; accepted candidates retain their
-original pre-roll timestamp and are closed by an end boundary or `flush()`.
+`speechStarted` is published after `minimumVoiced` is confirmed. Audio that
+continues across an accepted hard cap is already confirmed and starts its next
+segment immediately, even if that final tail is shorter than `minimumVoiced`.
+Other candidates that end earlier emit no lifecycle events; accepted candidates
+retain their original timestamp and close at a boundary or `flush()`.
 
 ## Dependencies
 
@@ -56,4 +72,5 @@ active segment.
 
 `VADCoreTests` verify the calibrated defaults, raw/smoothed decision separation,
 pause recovery, exact post-roll trimming, preferred and absolute maximums,
-minimum voiced audio, partial-window flushing, and reset behavior.
+minimum voiced audio, partial-window flushing, reset behavior, and shadow-event
+parity with the production lifecycle path.

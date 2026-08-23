@@ -1,25 +1,32 @@
 import LiveReader
 import SwiftUI
 
-@main
-struct LiveChurchTranslationApp: App {
+public struct LiveChurchTranslationApp: App {
+    @NSApplicationDelegateAdaptor(AppLifecycleDelegate.self) private var lifecycle
     private let startup: Startup
 
-    init() {
+    public init() {
         do {
-            startup = .ready(try AppComposition.build())
+            let dependencies = try AppComposition.build()
+            startup = .ready(dependencies)
+            lifecycle.configure(
+                controller: dependencies.controller,
+                audioImporter: dependencies.audioImporter
+            )
         } catch {
             startup = .failed(error.localizedDescription)
         }
     }
 
-    var body: some Scene {
+    public var body: some Scene {
         WindowGroup {
             switch startup {
             case .ready(let dependencies):
-                LiveReaderView(
-                    viewModel: dependencies.viewModel,
-                    sharingFeature: dependencies.sharingFeature
+                AppWorkspaceView(
+                    liveViewModel: dependencies.viewModel,
+                    libraryViewModel: dependencies.libraryViewModel,
+                    sharingFeature: dependencies.sharingFeature,
+                    audioImporter: dependencies.audioImporter
                 )
             case .failed(let message):
                 StartupFailureView(message: message)

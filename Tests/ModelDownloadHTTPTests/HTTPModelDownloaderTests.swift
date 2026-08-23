@@ -47,6 +47,7 @@ import Testing
         #expect(installedData == model.data)
         let requestCount = await transport.requestCount()
         #expect(requestCount == 1)
+        #expect(await transport.requestedMaximumBytes() == [Int64(model.data.count)])
         #expect(FileManager.default.fileExists(atPath: first.path + ".part") == false)
     }
 

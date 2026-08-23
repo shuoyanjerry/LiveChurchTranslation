@@ -5,26 +5,28 @@ import Testing
 @Suite struct DiscourseResolverCorrectionTests {
     private let resolver = DiscourseResolver()
 
-    @Test func resolvesFemalePronounFromPreviousVerifiedTurn() {
+    @Test func persistedFemaleTurnDoesNotConfirmNextReferent() {
         let result = resolve(
             "他今天会分享。",
             turns: [turn(9, "那位姐妹刚刚到了。")]
         )
 
-        #expect(result.resolvedText == "她今天会分享。")
-        #expect(result.corrections.first?.evidence.sequence == 9)
-        #expect(result.corrections.first?.confidence == 0.9)
+        #expect(result.resolvedText == result.originalText)
+        #expect(result.corrections.isEmpty)
+        #expect(result.ambiguities == [.noExplicitGenderAnchor])
+        #expect(result.pronounGuidance.count == 1)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
     }
 
-    @Test func resolvesMalePronounFromTwoTurnsBack() {
+    @Test func twoTurnOldMaleAppellationDoesNotConfirmReferent() {
         let result = resolve(
             "她今天会分享。",
             turns: [turn(9, "请大家安静。"), turn(8, "那位弟兄刚刚到了。")]
         )
 
-        #expect(result.resolvedText == "他今天会分享。")
-        #expect(result.corrections.first?.evidence.sequence == 8)
-        #expect(result.corrections.first?.confidence == 0.8)
+        #expect(result.resolvedText == result.originalText)
+        #expect(result.corrections.isEmpty)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
     }
 
     @Test func usesUniqueCurrentAnchorBeforePostConnectorPronoun() {
@@ -66,15 +68,15 @@ import Testing
         #expect(result.constraints == [.additionalPronounCandidatesProtected])
     }
 
-    @Test func doesNotPropagateContextEvidenceAcrossRepeatedCandidates() {
+    @Test func doesNotApplyPersistedAppellationToRepeatedCandidates() {
         let result = resolve(
             "他去过香港，因为他有亲人在当地。他了解情况，但是他没有多说。",
             turns: [turn(9, "那位老姐妹刚刚分享过。")]
         )
 
-        #expect(result.resolvedText == "她去过香港，因为他有亲人在当地。他了解情况，但是他没有多说。")
-        #expect(result.corrections.count == 1)
-        #expect(result.constraints == [.additionalPronounCandidatesProtected])
+        #expect(result.resolvedText == result.originalText)
+        #expect(result.corrections.isEmpty)
+        #expect(result.pronounGuidance.allSatisfy { $0.resolution == .unresolved })
     }
 
     @Test func doesNotRepairLaterCandidateWhenFirstAlreadyMatchesEvidence() {
@@ -85,17 +87,31 @@ import Testing
 
         #expect(result.resolvedText == result.originalText)
         #expect(result.corrections.isEmpty)
-        #expect(result.constraints == [.additionalPronounCandidatesProtected])
+        #expect(result.constraints.isEmpty)
+        #expect(result.pronounGuidance.count == 2)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
+        #expect(result.pronounGuidance.last?.resolution == .unresolved)
     }
 
-    @Test func acceptsVerifiedTurnsInEitherCollectionOrder() {
+    @Test func matchingGlyphDoesNotTurnPersistenceIntoEvidence() {
+        let result = resolve(
+            "他会继续。",
+            turns: [turn(9, "那位弟兄刚刚到了。")]
+        )
+
+        #expect(result.corrections.isEmpty)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
+    }
+
+    @Test func collectionOrderDoesNotTurnPersistedTextIntoEvidence() {
         let result = resolve(
             "他会继续。",
             turns: [turn(8, "那位姐妹到了。"), turn(9, "请大家安静。")]
         )
 
-        #expect(result.resolvedText == "她会继续。")
-        #expect(result.corrections.first?.evidence.sequence == 8)
+        #expect(result.resolvedText == result.originalText)
+        #expect(result.corrections.isEmpty)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
     }
 
     private func resolve(
@@ -115,4 +131,10 @@ import Testing
     private func turn(_ sequence: Int, _ text: String) -> VerifiedDiscourseTurn {
         VerifiedDiscourseTurn(sequence: sequence, text: text)
     }
+
+    private func isVerifiedFemale(_ resolution: DiscoursePronounResolution?) -> Bool {
+        guard case .verified(let gender, _, _, _) = resolution else { return false }
+        return gender == .female
+    }
+
 }

@@ -67,7 +67,9 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
             revision: revision,
             sourceText: input.sourceText,
             targetText: input.targetText,
-            createdAt: input.createdAt
+            createdAt: input.createdAt,
+            sourceLanguage: input.sourceLanguage,
+            targetLanguage: input.targetLanguage
         )
         entries[input.id] = entry
         evictIfNeeded()

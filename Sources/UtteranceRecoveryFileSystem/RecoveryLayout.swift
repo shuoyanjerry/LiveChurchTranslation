@@ -1,7 +1,7 @@
 import Foundation
 import UtteranceRecoveryAPI
 
-struct RecoveryLayout {
+struct RecoveryLayout: Sendable {
     let root: URL
 
     func sessionDirectory(_ sessionID: UUID) -> URL {

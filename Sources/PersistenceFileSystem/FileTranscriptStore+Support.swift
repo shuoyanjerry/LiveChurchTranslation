@@ -3,12 +3,32 @@ import PersistenceAPI
 import TranscriptAPI
 
 extension FileTranscriptStore {
+    func enforcePrivatePermissions(sessionID: UUID) throws {
+        for directory in [root, sessionDirectory(sessionID)] {
+            try fileManager.setAttributes(
+                [.posixPermissions: NSNumber(value: 0o700)],
+                ofItemAtPath: directory.path
+            )
+        }
+        for file in [manifestURL(sessionID), jsonLinesURL(sessionID), markdownURL(sessionID)]
+        where fileManager.fileExists(atPath: file.path) {
+            try fileManager.setAttributes(
+                [.posixPermissions: NSNumber(value: 0o600)],
+                ofItemAtPath: file.path
+            )
+        }
+    }
+
     func writeManifest(for session: TranscriptSession) throws {
         let manifest = SessionManifest(
             id: session.id,
             startedAt: session.startedAt,
             endedAt: session.endedAt,
-            entryCount: session.entries.count
+            entryCount: session.entries.count,
+            title: session.title,
+            kind: session.kind,
+            sourceLanguage: session.sourceLanguage,
+            targetLanguage: session.targetLanguage
         )
         try jsonEncoder.encode(manifest).write(to: manifestURL(session.id), options: .atomic)
     }
@@ -22,7 +42,11 @@ extension FileTranscriptStore {
             startedAt: manifest.startedAt,
             endedAt: manifest.endedAt,
             entryCount: manifest.entryCount,
-            location: directory
+            location: directory,
+            title: manifest.title,
+            kind: manifest.kind,
+            sourceLanguage: manifest.sourceLanguage,
+            targetLanguage: manifest.targetLanguage
         )
     }
 
@@ -32,6 +56,17 @@ extension FileTranscriptStore {
         try handle.seekToEnd()
         try handle.write(contentsOf: data)
         try handle.synchronize()
+    }
+
+    func writeEntries(_ entries: [TranscriptEntry], sessionID: UUID) throws {
+        let encoder = lineEncoder()
+        var payload = Data()
+        for entry in entries {
+            payload.append(try encoder.encode(entry))
+            payload.append(0x0A)
+        }
+        try payload.write(to: jsonLinesURL(sessionID), options: .atomic)
+        entryIDs[sessionID] = Set(entries.map(\.id))
     }
 
     func markdownHeader(for session: TranscriptSession) -> String {

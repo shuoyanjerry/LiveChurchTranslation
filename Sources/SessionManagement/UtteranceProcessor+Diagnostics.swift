@@ -21,13 +21,15 @@ extension UtteranceProcessor {
     func makeEntry(
         recognition: RecognizedUtterance,
         translation: TranslationResult,
-        sourceAudit: TranscriptSourceAudit
+        sourceAudit: TranscriptSourceAudit,
+        sourceSegmentSequence: UInt64
     ) async throws -> TranscriptEntry {
         do {
             return try await dependencies.transcript.makeEntry(
                 recognition: recognition,
                 translation: translation,
-                sourceAudit: sourceAudit
+                sourceAudit: sourceAudit,
+                sourceSegmentSequence: sourceSegmentSequence
             )
         } catch {
             throw failure(stage: .persistence, error: error)

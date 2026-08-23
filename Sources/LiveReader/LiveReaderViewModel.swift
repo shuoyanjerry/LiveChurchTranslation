@@ -17,14 +17,17 @@ public final class LiveReaderViewModel: ObservableObject {
     )
     @Published public private(set) var devices: [AudioInputDevice] = []
     @Published public var selectedInputID: AudioInputID?
-    @Published public private(set) var glossaryEntries: [GlossaryEntry] = []
+    @Published public internal(set) var glossaryEntries: [GlossaryEntry] = []
     @Published public var settings = AppSettings.defaults
     @Published public var presentedError: String?
+    @Published public var presentsRecordingNotice = false
+    @Published public private(set) var recordingStartedAt: Date?
+    @Published public private(set) var externalSessionControlLock = false
 
     private let controller: any LiveSessionController
     private let capture: any AudioCaptureProvider
-    private let glossary: any GlossaryService
-    private let settingsStore: any SettingsStore
+    let glossary: any GlossaryService
+    let settingsStore: any SettingsStore
     private var eventTask: Task<Void, Never>?
 
     public init(
@@ -47,6 +50,17 @@ public final class LiveReaderViewModel: ObservableObject {
         switch snapshot.phase {
         case .idle, .failed: false
         default: true
+        }
+    }
+
+    public var sessionControlsLocked: Bool {
+        isRunning || externalSessionControlLock
+    }
+
+    public func setExternalSessionControlLock(_ isLocked: Bool) {
+        externalSessionControlLock = isLocked
+        if isLocked {
+            presentsRecordingNotice = false
         }
     }
 
@@ -75,61 +89,58 @@ public final class LiveReaderViewModel: ObservableObject {
     public func toggleSession() async {
         if isRunning {
             await controller.stop()
+        } else if externalSessionControlLock {
+            presentedError = "Wait for the current audio import to finish before starting live capture."
         } else {
-            await saveSettings()
-            await controller.start(inputDeviceID: selectedInputID)
+            presentsRecordingNotice = true
+        }
+    }
+
+    public func startRecordingAndTranslation() async {
+        presentsRecordingNotice = false
+        guard !sessionControlsLocked else { return }
+        guard await saveSettings() else { return }
+        await controller.start(inputDeviceID: selectedInputID)
+    }
+
+    public func selectTranslationMode(_ mode: TranslationMode) async {
+        guard !sessionControlsLocked, mode != settings.translationMode else { return }
+        let previous = settings
+        settings.translationMode = mode
+        if !(await saveSettings()) {
+            settings = previous
+        }
+    }
+
+    public func selectAudioInput(_ id: AudioInputID?) async {
+        guard !sessionControlsLocked, id != selectedInputID else { return }
+        let previousID = selectedInputID
+        selectedInputID = id
+        if !(await saveSettings()) {
+            selectedInputID = previousID
         }
     }
 }
 
 extension LiveReaderViewModel {
-    @discardableResult
-    public func saveGlossary(_ entries: [GlossaryEntry]) async -> Bool {
-        do {
-            try await glossary.replace(with: entries)
-            glossaryEntries = try await glossary.snapshot().entries
-            return true
-        } catch {
-            presentedError = error.localizedDescription
-            return false
-        }
-    }
-
-    public func restoreGlossary() async -> [GlossaryEntry]? {
-        do {
-            try await glossary.restoreDefaults()
-            glossaryEntries = try await glossary.snapshot().entries
-            return glossaryEntries
-        } catch {
-            presentedError = error.localizedDescription
-            return nil
-        }
-    }
-
-    @discardableResult
-    public func saveSettings() async -> Bool {
-        settings.selectedAudioDeviceID = selectedInputID?.rawValue
-        do {
-            try await settingsStore.save(settings)
-            return true
-        } catch {
-            presentedError = error.localizedDescription
-            return false
-        }
-    }
-
     private func receive(_ event: LiveSessionEvent) {
         switch event {
         case .stateChanged(let snapshot):
             self.snapshot = snapshot
+            recordingStartedAt = snapshot.captureStartedAt
         case .transcriptAppended(let entry):
             guard !snapshot.transcript.contains(where: { $0.id == entry.id }) else { return }
             snapshot = LiveSessionSnapshot(
                 sessionID: snapshot.sessionID,
                 phase: snapshot.phase,
                 transcript: snapshot.transcript + [entry],
+                captureStartedAt: snapshot.captureStartedAt,
+                sourceLanguage: snapshot.sourceLanguage,
+                targetLanguage: snapshot.targetLanguage,
                 modelStatus: snapshot.modelStatus,
-                statusMessage: snapshot.statusMessage
+                statusMessage: snapshot.statusMessage,
+                issues: snapshot.issues,
+                finalizationOutcome: snapshot.finalizationOutcome
             )
         case .recoverableError(let message):
             presentedError = message

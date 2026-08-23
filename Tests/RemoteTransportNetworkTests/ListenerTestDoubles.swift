@@ -5,14 +5,23 @@ import RemoteSharingAPI
 
 actor ListenerPairingFake: RemotePairingServing, RemotePairingManaging {
     let credential = String(repeating: "L", count: 43)
-    private let peer = RemotePeer(
-        id: .init(),
-        grantID: .init(),
-        metadata: .init(displayName: "Test Safari", userAgentSummary: "Test"),
-        role: .viewer,
-        pairedAt: Date(timeIntervalSince1970: 1),
-        expiresAt: Date.distantFuture
-    )
+    let grantID = RemoteGrantID()
+    private let peer: RemotePeer
+    private let maximumAuthorizationCalls: Int?
+    private var authorizationCallCount = 0
+    private var revoked = false
+
+    init(maximumAuthorizationCalls: Int? = nil) {
+        self.maximumAuthorizationCalls = maximumAuthorizationCalls
+        peer = RemotePeer(
+            id: .init(),
+            grantID: grantID,
+            metadata: .init(displayName: "Test Safari", userAgentSummary: "Test"),
+            role: .viewer,
+            pairedAt: Date(timeIntervalSince1970: 1),
+            expiresAt: Date.distantFuture
+        )
+    }
 
     func redeem(_ redemption: PairingRedemption, now: Date) -> PairingGrant {
         PairingGrant(peer: peer, bearerCredential: credential)
@@ -23,7 +32,14 @@ actor ListenerPairingFake: RemotePairingServing, RemotePairingManaging {
         requiresMutation: Bool,
         now: Date
     ) throws -> RemotePairingAuthorization {
+        authorizationCallCount += 1
         guard bearerCredential == credential else { throw PairingError.invalidGrant }
+        guard !revoked else { throw PairingError.grantRevoked }
+        if let maximumAuthorizationCalls {
+            guard authorizationCallCount <= maximumAuthorizationCalls else {
+                throw PairingError.grantRevoked
+            }
+        }
         guard !requiresMutation else { throw PairingError.viewerIsReadOnly }
         return .init(peerID: peer.id, grantID: peer.grantID, role: peer.role)
     }
@@ -32,12 +48,14 @@ actor ListenerPairingFake: RemotePairingServing, RemotePairingManaging {
         .init(id: UUID(), role: role, fragmentCredential: credential, expiresAt: now.addingTimeInterval(60))
     }
 
-    func activePeers(now: Date) -> [RemotePeer] { [peer] }
+    func activePeers(now: Date) -> [RemotePeer] { revoked ? [] : [peer] }
     func snapshot(now: Date) -> RemotePairingSnapshot {
-        .init(activePeers: [peer], pendingInvitationCount: 0)
+        .init(activePeers: revoked ? [] : [peer], pendingInvitationCount: 0)
     }
-    func revoke(grantID: RemoteGrantID, now: Date) {}
-    func revokeAll(now: Date) {}
+    func revoke(grantID: RemoteGrantID, now: Date) {
+        if grantID == peer.grantID { revoked = true }
+    }
+    func revokeAll(now: Date) { revoked = true }
     func auditLog() -> [PairingAuditRecord] { [] }
     func events() -> AsyncStream<RemotePairingEvent> { AsyncStream { $0.finish() } }
 }

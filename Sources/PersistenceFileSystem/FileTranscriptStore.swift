@@ -7,6 +7,7 @@ public actor FileTranscriptStore: TranscriptStore {
     let fileManager: FileManager
     let jsonEncoder: JSONEncoder
     var entryIDs: [UUID: Set<UUID>] = [:]
+    var activeSessionIDs: Set<UUID> = []
 
     public init(root: URL, fileManager: FileManager = .default) {
         self.root = root
@@ -20,6 +21,7 @@ public actor FileTranscriptStore: TranscriptStore {
     public func begin(_ session: TranscriptSession) async throws {
         do {
             let directory = sessionDirectory(session.id)
+            try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             try writeManifest(for: session)
             try markdownHeader(for: session).write(
@@ -28,7 +30,9 @@ public actor FileTranscriptStore: TranscriptStore {
                 encoding: .utf8
             )
             try Data().write(to: jsonLinesURL(session.id), options: .atomic)
+            try enforcePrivatePermissions(sessionID: session.id)
             entryIDs[session.id] = []
+            activeSessionIDs.insert(session.id)
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
@@ -50,13 +54,16 @@ public actor FileTranscriptStore: TranscriptStore {
     }
 
     public func finish(_ session: TranscriptSession) async throws {
+        defer { activeSessionIDs.remove(session.id) }
         do {
+            try writeEntries(session.entries, sessionID: session.id)
             try writeManifest(for: session)
             try completeMarkdown(for: session).write(
                 to: markdownURL(session.id),
                 atomically: true,
                 encoding: .utf8
             )
+            try enforcePrivatePermissions(sessionID: session.id)
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
@@ -73,7 +80,11 @@ public actor FileTranscriptStore: TranscriptStore {
                 id: stored.id,
                 startedAt: stored.startedAt,
                 endedAt: stored.endedAt,
-                entries: entries.sorted { $0.sequence < $1.sequence }
+                entries: entries.sorted { $0.sequence < $1.sequence },
+                title: stored.title,
+                kind: stored.kind,
+                sourceLanguage: stored.sourceLanguage,
+                targetLanguage: stored.targetLanguage
             )
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
@@ -95,5 +106,41 @@ public actor FileTranscriptStore: TranscriptStore {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
         }
     }
+}
 
+extension FileTranscriptStore {
+    public func delete(sessionID: UUID) async throws {
+        guard !isSessionActive(sessionID: sessionID) else {
+            throw TranscriptStoreError.sessionActive
+        }
+        let directory = sessionDirectory(sessionID)
+        guard fileManager.fileExists(atPath: directory.path) else {
+            throw TranscriptStoreError.sessionNotFound
+        }
+        do {
+            let values = try directory.resourceValues(
+                forKeys: [.isDirectoryKey, .isSymbolicLinkKey]
+            )
+            guard values.isDirectory == true, values.isSymbolicLink != true else {
+                throw TranscriptStoreError.invalidSessionDirectory
+            }
+            try fileManager.removeItem(at: directory)
+            entryIDs.removeValue(forKey: sessionID)
+        } catch let error as TranscriptStoreError {
+            throw error
+        } catch {
+            throw TranscriptStoreError.fileSystem(error.localizedDescription)
+        }
+    }
+
+    public func isSessionActive(sessionID: UUID) -> Bool {
+        activeSessionIDs.contains(sessionID) || hasRecordingActivityArtifact(sessionID: sessionID)
+    }
+
+    private func hasRecordingActivityArtifact(sessionID: UUID) -> Bool {
+        let directory = sessionDirectory(sessionID)
+        return [".recording-active", "recording.partial.caf"].contains {
+            fileManager.fileExists(atPath: directory.appending(path: $0).path)
+        }
+    }
 }

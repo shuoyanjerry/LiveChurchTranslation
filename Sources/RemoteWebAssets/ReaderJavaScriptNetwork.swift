@@ -51,18 +51,18 @@ enum ReaderJavaScriptNetwork {
               throw new Error("Pairing invitation is invalid or expired");
             }
           };
-          const control = async command => {
+          const stopOnMac = async () => {
             const response = await fetch("/api/control", {
               method: "POST",
               headers: {"Content-Type": "application/json"},
               body: JSON.stringify({
                 requestID: crypto.randomUUID(),
-                command,
+                command: "stop",
                 expectedRevision: revision
               })
             });
             if (!response.ok) {
-              pairing.textContent = "The Mac did not accept this request. Refreshing live state.";
+              pairing.textContent = "The Mac did not accept the stop request.";
               pairing.hidden = false;
             }
             await fetchSnapshot();
@@ -80,8 +80,7 @@ enum ReaderJavaScriptNetwork {
           jump.addEventListener("click", scrollLive);
           document.querySelector("#smaller").onclick = () => setSize(fontSize - 2);
           document.querySelector("#larger").onclick = () => setSize(fontSize + 2);
-          document.querySelector("#start").onclick = () => control("start");
-          document.querySelector("#stop").onclick = () => control("stop");
+          document.querySelector("#stop").onclick = stopOnMac;
           setInterval(() => {
             if (socket?.readyState !== WebSocket.OPEN) return;
             if (Date.now() - heartbeatAt > 30000) socket.close();

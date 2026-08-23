@@ -97,6 +97,18 @@ import VADAPI
         }
     }
 
+    @Test func rejectsNegativePreferredBoundarySilence() {
+        #expect(
+            throws: VoiceActivityError.invalidConfiguration(
+                parameter: "preferredBoundarySilence"
+            )
+        ) {
+            try AdaptiveEnergyVoiceActivityDetector(
+                configuration: .init(preferredBoundarySilence: .milliseconds(-1))
+            )
+        }
+    }
+
     @Test func rejectsShortHoldBelowMinimumVoiced() {
         #expect(
             throws: VoiceActivityError.invalidConfiguration(

@@ -14,6 +14,9 @@ struct LiveReaderHeader: View {
         HStack(spacing: 14) {
             title
             StatusPill(text: modelStatusText, color: statusColor, pulses: viewModel.isRunning)
+            if let startedAt = viewModel.recordingStartedAt {
+                RecordingIndicator(startedAt: startedAt)
+            }
             Spacer(minLength: 24)
             sharingButton
             optionsMenu
@@ -96,6 +99,7 @@ struct LiveReaderHeader: View {
             }
         }
         .buttonStyle(ChurchSecondaryButtonStyle())
+        .disabled(viewModel.sessionControlsLocked)
         .accessibilityLabel("Audio input")
         .accessibilityValue(selectedInputName)
     }
@@ -107,7 +111,8 @@ struct LiveReaderHeader: View {
             Label(sessionButtonTitle, systemImage: sessionButtonIcon)
         }
         .buttonStyle(ChurchPrimaryButtonStyle())
+        .disabled(viewModel.externalSessionControlLock && !viewModel.isRunning)
         .keyboardShortcut(.return, modifiers: [.command])
-        .accessibilityHint("Starts or stops Chinese recognition and English translation")
+        .accessibilityHint("Starts or stops live speech recognition and translation")
     }
 }

@@ -5,15 +5,7 @@ import UIDesignSystem
 
 extension LiveReaderHeader {
     func selectInput(_ id: AudioInputID?) {
-        let previousID = viewModel.selectedInputID
-        let previousSettings = viewModel.settings
-        viewModel.selectedInputID = id
-        Task {
-            if !(await viewModel.saveSettings()) {
-                viewModel.selectedInputID = previousID
-                viewModel.settings = previousSettings
-            }
-        }
+        Task { await viewModel.selectAudioInput(id) }
     }
 
     var selectedInputName: String {
@@ -29,6 +21,7 @@ extension LiveReaderHeader {
     }
 
     var modelStatusText: String {
+        if viewModel.recordingStartedAt != nil { return "RECORDING · LOCAL" }
         guard let status = viewModel.snapshot.modelStatus else { return "LOCAL · ON-DEVICE" }
         switch status.state {
         case .missing: return "MODELS REQUIRED"
@@ -40,7 +33,8 @@ extension LiveReaderHeader {
     }
 
     var statusColor: Color {
-        switch viewModel.snapshot.phase {
+        if viewModel.recordingStartedAt != nil { return ChurchTheme.danger }
+        return switch viewModel.snapshot.phase {
         case .failed: ChurchTheme.danger
         case .idle: ChurchTheme.olive
         case .requestingPermission, .preparingModel: ChurchTheme.warning

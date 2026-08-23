@@ -103,7 +103,8 @@ struct ModelInstaller: Sendable {
     ) async throws -> ModelHTTPTransferResult {
         try await transport.download(
             from: pending.artifact.remoteURL,
-            to: pending.paths.part
+            to: pending.paths.part,
+            maximumBytes: pending.artifact.expectedBytes
         ) { received, _ in
             Task {
                 await progress.report(

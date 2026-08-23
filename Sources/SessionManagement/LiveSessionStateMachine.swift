@@ -7,6 +7,9 @@ struct LiveSessionStateMachine {
     private(set) var sessionID: UUID?
     private(set) var phase: LiveSessionPhase = .idle
     private(set) var transcript: [TranscriptEntry] = []
+    private(set) var captureStartedAt: Date?
+    private(set) var sourceLanguage: String?
+    private(set) var targetLanguage: String?
     private(set) var modelStatus: ModelRuntimeStatus?
     private(set) var statusMessage = "Ready"
     private(set) var issues: [LiveSessionIssue] = []
@@ -15,6 +18,9 @@ struct LiveSessionStateMachine {
     mutating func begin(sessionID: UUID) {
         self.sessionID = sessionID
         transcript = []
+        captureStartedAt = nil
+        sourceLanguage = nil
+        targetLanguage = nil
         issues = []
         finalizationOutcome = nil
         transition(to: .requestingPermission, message: "Requesting microphone access…")
@@ -29,10 +35,20 @@ struct LiveSessionStateMachine {
         modelStatus = status
     }
 
+    mutating func setLanguages(source: String, target: String) {
+        sourceLanguage = source
+        targetLanguage = target
+    }
+
+    mutating func markCaptureStarted(at date: Date) {
+        captureStartedAt = date
+    }
+
     mutating func receive(_ status: ModelRuntimeStatus) {
         setModelStatus(status)
         if phase == .preparingModel, let message = ModelStatusMessage.text(for: status) {
-            transition(to: .preparingModel, message: message)
+            let prefix = captureStartedAt == nil ? "" : "Recording · "
+            transition(to: .preparingModel, message: prefix + message)
         }
     }
 
@@ -49,6 +65,7 @@ struct LiveSessionStateMachine {
         message: String
     ) {
         sessionID = nil
+        captureStartedAt = nil
         finalizationOutcome = outcome
         transition(to: .idle, message: message)
     }
@@ -58,6 +75,7 @@ struct LiveSessionStateMachine {
         outcome: LiveSessionFinalizationOutcome? = nil
     ) {
         sessionID = nil
+        captureStartedAt = nil
         finalizationOutcome = outcome
         transition(to: .failed(message: message), message: message)
     }
@@ -67,6 +85,9 @@ struct LiveSessionStateMachine {
             sessionID: sessionID,
             phase: phase,
             transcript: transcript,
+            captureStartedAt: captureStartedAt,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage,
             modelStatus: modelStatus,
             statusMessage: statusMessage,
             issues: issues,

@@ -26,7 +26,11 @@ asynchronous, and the attached Translation session is owned by the provider.
 
 An unattached runtime, preparation failure, empty source, translation failure,
 unrestorable glossary markers, empty output, implausible output length, and
-model-style commentary are surfaced as `TranslationProviderError` values.
+model-style commentary are surfaced as `TranslationProviderError` values. The
+adapter also fails closed when a request carries occurrence-level Mandarin
+pronoun guidance: Apple's framework exposes no alignment contract with which to
+prove that the guidance was honored. The production Hy-MT2 adapter implements
+that contract.
 
 ## Tests
 

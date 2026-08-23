@@ -1,25 +1,43 @@
 import Foundation
 import UtteranceRecoveryAPI
 
+struct PendingRecordDescriptor: Sendable {
+    let directory: URL
+    let metadata: PendingMetadata
+
+    var id: PendingUtteranceID { metadata.id }
+    var stagedAt: Date { metadata.stagedAt }
+}
+
 struct PendingRecordReader {
     let layout: RecoveryLayout
     let limits: UtteranceRecoveryLimits
     let fileManager: FileManager
 
     func read(_ directory: URL, for sessionID: UUID) throws -> PendingUtteranceRecord {
-        let metadataURL = layout.metadataURL(in: directory)
-        let audioURL = layout.audioURL(in: directory)
-        let metadata = try readMetadata(metadataURL)
+        try read(inspect(directory, for: sessionID))
+    }
+
+    func inspect(_ directory: URL, for sessionID: UUID) throws -> PendingRecordDescriptor {
+        let metadata = try readMetadata(layout.metadataURL(in: directory))
         try validateIdentity(metadata, directory: directory, sessionID: sessionID)
-        let (decoded, wavByteCount) = try readAudio(audioURL)
-        try validateAudio(decoded, byteCount: wavByteCount, metadata: metadata)
-        let segment = metadata.makeSegment(samples: decoded.samples)
+        return PendingRecordDescriptor(directory: directory, metadata: metadata)
+    }
+
+    func read(_ descriptor: PendingRecordDescriptor) throws -> PendingUtteranceRecord {
+        let (decoded, wavByteCount) = try readAudio(layout.audioURL(in: descriptor.directory))
+        try validateAudio(decoded, byteCount: wavByteCount, metadata: descriptor.metadata)
+        let segment = descriptor.metadata.makeSegment(samples: decoded.samples)
         do {
             _ = try SpeechSegmentValidator(limits: limits).validate(segment)
         } catch {
             throw RecordReadFailure(reason: .metadataMismatch)
         }
-        return PendingUtteranceRecord(id: metadata.id, segment: segment, stagedAt: metadata.stagedAt)
+        return PendingUtteranceRecord(
+            id: descriptor.id,
+            segment: segment,
+            stagedAt: descriptor.stagedAt
+        )
     }
 
     private func validateIdentity(

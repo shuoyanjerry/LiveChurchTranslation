@@ -1,13 +1,23 @@
 import DiscourseResolutionAPI
 
-enum ResolutionGender: Hashable, Sendable {
+enum ResolutionReferent: Hashable, Sendable {
     case female
     case male
+    case deity
 
     var pronoun: String {
         switch self {
         case .female: "她"
         case .male: "他"
+        case .deity: "祂"
+        }
+    }
+
+    var discourseGender: DiscourseReferentGender? {
+        switch self {
+        case .female: .female
+        case .male: .male
+        case .deity: nil
         }
     }
 }
@@ -17,21 +27,21 @@ struct PronounCandidate {
     let original: String
 }
 
-struct GenderAnchor {
-    let gender: ResolutionGender
+struct ReferentAnchor {
+    let referent: ResolutionReferent
     let range: Range<String.Index>
     let isPlural: Bool
 }
 
 struct SelectedEvidence {
-    let gender: ResolutionGender
+    let referent: ResolutionReferent
     let reason: DiscourseCorrectionReason
     let confidence: Double
     let evidence: DiscourseCorrectionEvidence
 }
 
 struct ContextAnchor {
-    let anchor: GenderAnchor
+    let anchor: ReferentAnchor
     let turn: VerifiedDiscourseTurn
     let distance: Int
 }
@@ -47,6 +57,7 @@ enum EvidenceDecision {
 }
 
 struct PronounScan {
-    let candidates: [PronounCandidate]
+    let observed: [PronounCandidate]
+    let eligible: [PronounCandidate]
     let constraints: [DiscourseResolutionConstraint]
 }

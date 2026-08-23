@@ -35,6 +35,13 @@ import TranslationAPI
                         observedText: "休恩",
                         replacementText: "救恩"
                     )
+                ],
+                pronounDecisions: [
+                    TranscriptSourcePronounDecision(
+                        resolution: .unresolvedSpokenMandarin,
+                        utf16Location: 0,
+                        utf16Length: 1
+                    )
                 ]
             )
         )
@@ -42,6 +49,7 @@ import TranslationAPI
         #expect(entry.rawSourceText == "休恩来自恩典")
         #expect(entry.sourceText == "救恩来自恩典")
         #expect(entry.sourceCorrections.first?.observedText == "休恩")
+        #expect(entry.sourcePronounDecisions.first?.resolution == .unresolvedSpokenMandarin)
     }
 
     @Test func legacyEntryJSONDefaultsRawTextToNormalizedText() throws {
@@ -59,11 +67,14 @@ import TranslationAPI
         )
         object.removeValue(forKey: "rawSourceText")
         object.removeValue(forKey: "sourceCorrections")
+        object.removeValue(forKey: "sourcePronounDecisions")
         let legacy = try JSONSerialization.data(withJSONObject: object)
 
         let decoded = try JSONDecoder().decode(TranscriptEntry.self, from: legacy)
+        #expect(decoded.sourceSegmentSequence == nil)
         #expect(decoded.rawSourceText == "救恩")
         #expect(decoded.sourceCorrections.isEmpty)
+        #expect(decoded.sourcePronounDecisions.isEmpty)
     }
 
     @Test func legacyCorrectionJSONDefaultsStructuredAuditFields() throws {

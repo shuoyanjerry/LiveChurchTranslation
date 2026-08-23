@@ -59,6 +59,10 @@ public struct LiveSessionSnapshot: Equatable, Sendable {
     public let sessionID: UUID?
     public let phase: LiveSessionPhase
     public let transcript: [TranscriptEntry]
+    /// Set only after the capture provider has started the local audio stream.
+    public let captureStartedAt: Date?
+    public let sourceLanguage: String?
+    public let targetLanguage: String?
     public let modelStatus: ModelRuntimeStatus?
     public let statusMessage: String
     /// Issues remain visible after the session reaches a terminal phase.
@@ -70,6 +74,9 @@ public struct LiveSessionSnapshot: Equatable, Sendable {
         sessionID: UUID?,
         phase: LiveSessionPhase,
         transcript: [TranscriptEntry],
+        captureStartedAt: Date? = nil,
+        sourceLanguage: String? = nil,
+        targetLanguage: String? = nil,
         modelStatus: ModelRuntimeStatus?,
         statusMessage: String,
         issues: [LiveSessionIssue] = [],
@@ -78,6 +85,9 @@ public struct LiveSessionSnapshot: Equatable, Sendable {
         self.sessionID = sessionID
         self.phase = phase
         self.transcript = transcript
+        self.captureStartedAt = captureStartedAt
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
         self.modelStatus = modelStatus
         self.statusMessage = statusMessage
         self.issues = issues

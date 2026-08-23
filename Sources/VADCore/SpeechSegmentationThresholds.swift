@@ -10,9 +10,11 @@ struct SpeechSegmentationThresholds {
     let softSilenceSampleCount: Int
     let softSplitAfterSampleCount: Int
     let preferredMaximumSampleCount: Int
+    let preferredBoundarySilenceSampleCount: Int
     let hardMaximumSampleCount: Int
     let postRollSampleCount: Int
     let minimumVoicedSampleCount: Int
+    let candidatePauseThresholds: [EndpointPauseThreshold]
 
     init(configuration: VoiceActivityConfiguration) {
         sampleRate = configuration.requiredSampleRate
@@ -25,11 +27,20 @@ struct SpeechSegmentationThresholds {
         softSilenceSampleCount = samples.count(for: configuration.softSplitSilence)
         softSplitAfterSampleCount = samples.count(for: configuration.softSplitAfter)
         preferredMaximumSampleCount = samples.count(for: configuration.preferredMaximumSegment)
+        preferredBoundarySilenceSampleCount = samples.countAllowingZero(
+            for: configuration.preferredBoundarySilence
+        )
         hardMaximumSampleCount = samples.count(
             for: configuration.preferredMaximumSegment + configuration.maximumBoundaryGrace
         )
         postRollSampleCount = samples.countAllowingZero(for: configuration.postRoll)
         minimumVoicedSampleCount = samples.count(for: configuration.minimumVoiced)
+        candidatePauseThresholds = CandidatePauseThreshold.allCases.map { checkpoint in
+            EndpointPauseThreshold(
+                checkpoint: checkpoint,
+                sampleCount: samples.count(for: checkpoint.duration)
+            )
+        }
     }
 }
 

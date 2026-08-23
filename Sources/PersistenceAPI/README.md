@@ -7,7 +7,8 @@ used to enumerate saved sessions.
 
 ## Public API
 
-`TranscriptStore`, `StoredSessionSummary`, and `TranscriptStoreError`.
+`TranscriptStore`, including its active-session query, `StoredSessionSummary`, and
+`TranscriptStoreError`.
 
 ## Dependencies
 
@@ -21,7 +22,7 @@ Concrete implementations own synchronization and durability semantics.
 
 ## Failure Modes
 
-The API distinguishes a missing session from an underlying storage failure.
+The API distinguishes a missing or active session from an underlying storage failure.
 
 ## Tests
 

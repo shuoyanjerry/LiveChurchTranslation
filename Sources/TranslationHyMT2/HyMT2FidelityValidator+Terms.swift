@@ -1,0 +1,70 @@
+import Foundation
+import TranslationAPI
+
+extension HyMT2FidelityValidator {
+    static func missingTerms(
+        in target: String,
+        required: [TranslationTerm]
+    ) -> [OutputValidationIssue] {
+        required.compactMap { term in
+            guard term.requirement == .required else { return nil }
+            let accepted = [term.target] + term.acceptedTargets
+            let found = accepted.contains { candidate in
+                target.range(
+                    of: candidate,
+                    options: [.caseInsensitive, .diacriticInsensitive]
+                ) != nil
+            }
+            return found ? nil : .missingTerm(term.target)
+        }
+    }
+
+    static func missingNumbers(
+        in target: String,
+        source: String
+    ) -> [OutputValidationIssue] {
+        let sourceNumbers = digitRuns(in: source)
+        var remaining = digitRuns(in: target)
+        return sourceNumbers.compactMap { number in
+            guard let index = remaining.firstIndex(of: number) else {
+                return .missingNumber(number)
+            }
+            remaining.remove(at: index)
+            return nil
+        }
+    }
+
+    static func containsNegation(_ text: String, language: String) -> Bool {
+        if language.lowercased().hasPrefix("zh") {
+            return ["没有", "并非", "不是", "不可", "不能", "不要", "不得", "从未", "未曾", "不"]
+                .contains(where: text.contains)
+        }
+        let words = matches(pattern: #"[A-Za-z]+(?:'[A-Za-z]+)?"#, in: text.lowercased())
+        let direct = Set(["not", "no", "never", "without", "neither", "nor", "cannot"])
+        return words.contains(where: { direct.contains($0) || $0.hasSuffix("n't") })
+    }
+
+    static func containsScriptureReference(_ text: String, language: String) -> Bool {
+        if !matches(pattern: #"\d+\s*:\s*\d+"#, in: text).isEmpty { return true }
+        if language.lowercased().hasPrefix("zh") {
+            return !matches(
+                pattern: #"[0-9零〇一二两三四五六七八九十百千]+章[0-9零〇一二两三四五六七八九十百千]+节"#,
+                in: text
+            ).isEmpty
+        }
+        return text.localizedCaseInsensitiveContains("chapter")
+            && text.localizedCaseInsensitiveContains("verse")
+    }
+
+    private static func digitRuns(in text: String) -> [String] {
+        matches(pattern: #"\d+"#, in: text)
+    }
+
+    private static func matches(pattern: String, in text: String) -> [String] {
+        guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(text.startIndex..., in: text)
+        return expression.matches(in: text, range: range).compactMap {
+            Range($0.range, in: text).map { String(text[$0]) }
+        }
+    }
+}

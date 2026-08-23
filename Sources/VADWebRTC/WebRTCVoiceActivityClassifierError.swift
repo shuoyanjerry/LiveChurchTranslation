@@ -2,6 +2,7 @@
 public enum WebRTCVoiceActivityClassifierError: Error, Sendable, Equatable {
     case allocationFailed
     case invalidConfiguration(parameter: String)
+    case unsupportedSampleRate(expected: Int, actual: Double)
     case invalidFrameLength(expected: Int, actual: Int)
     case nonFiniteSamples
     case nativeConfigurationRejected

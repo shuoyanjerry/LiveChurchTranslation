@@ -25,7 +25,19 @@ enum ASRInputGuard {
     }
 
     static func isPromptOnlyHallucination(_ text: String, hotwords: String) -> Bool {
-        !text.isEmpty && removingPromptEchoPrefix(text, hotwords: hotwords).isEmpty
+        guard !text.isEmpty else { return false }
+        if removingPromptEchoPrefix(text, hotwords: hotwords).isEmpty { return true }
+        let output = compacted(text)
+        let terms = promptTerms(in: hotwords)
+        for start in terms.indices {
+            var candidate = ""
+            for end in start..<terms.endIndex {
+                candidate += terms[end]
+                if end - start + 1 >= 6, candidate == output { return true }
+                if candidate.count >= output.count { break }
+            }
+        }
+        return false
     }
 
     static func removingPromptEchoPrefix(_ text: String, hotwords: String) -> String {
@@ -55,8 +67,16 @@ enum ASRInputGuard {
         CharacterSet(charactersIn: ",，、;；。.!！？?：:")
     )
 
+    private static func promptTerms(in text: String) -> [String] {
+        let separators = CharacterSet(charactersIn: ",，、;；\n")
+        return text.components(separatedBy: separators)
+            .map(compacted)
+            .filter { !$0.isEmpty }
+    }
+
     private static func compacted(_ text: String) -> String {
         text.unicodeScalars.filter { !tokenSeparators.contains($0) }.map(String.init).joined()
+            .lowercased()
     }
 
     private static func suffix(

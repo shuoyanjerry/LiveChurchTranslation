@@ -2,7 +2,8 @@
 
 ## Purpose
 
-Enforces the operator-only, expected-revision Start/Stop contract independently of local session details.
+Enforces operator authorization and expected revisions for the closed command vocabulary independently
+of local session policy. The production adapter rejects Start and permits only Stop.
 
 ## Public API
 

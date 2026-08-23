@@ -21,15 +21,39 @@ Only then does the detector publish `speechStarted` and reserve its sequence
 number. A shorter candidate publishes neither start nor end, so normal
 process/flush event streams cannot contain an orphaned start event.
 
+Audio continuing across the absolute cap is already confirmed speech. Its next
+segment is published immediately and retained even when the final tail is shorter
+than `minimumVoiced`, preventing hard-cut audio loss.
+
 Endpoint pause hysteresis ignores one isolated raw-speech frame as likely noise.
 Two consecutive raw-speech frames immediately cancel the pending pause. Trim is
 stricter: only the final uninterrupted raw-silence run is shortened to 280 ms.
 
+The same `EndpointPauseTracker` transitions passively expose 250, 300, and
+400 ms candidate checkpoints through package-only
+`processWithShadowEvidence`/`flushWithShadowEvidence`. The tracker emits each
+threshold once and in order. It calculates the candidate end inside the actual
+analysis window, records observation overshoot, and closes each reached episode
+on two-frame recovery or the real segment end. It emits only for already
+published speech or accepted hard-cap continuation audio; rejected speech-start
+candidates remain invisible.
+
+Source positions are monotonic `Int64` sample indexes for one capture stream.
+The pre-roll buffer retains its absolute origin when trimming. Partial EOF
+windows count only valid source samples, so classifier padding cannot create or
+extend candidate evidence. The shadow path stores neither audio snapshots nor
+unbounded event history and cannot change a production boundary decision.
+
 At 15 seconds, speech remains open until three of the latest five acoustic
 decisions are non-speech. This avoids treating one or two noisy frames as a
-boundary while minimizing unsafe 16.5-second hard cuts. If no boundary arrives
+boundary while minimizing structural 16.5-second hard-cap events. If no boundary arrives
 during the 1.5-second grace period, the hard cut retains every sample and lets
 continuous speech start the next segment.
+
+`preferredBoundarySilence` can require a longer post-15-second pause for
+qualification replays. Its zero sermon default preserves the calibrated stable
+three-of-five acoustic policy. With the sermon profile, a pause of 500 ms or
+more after nine seconds can still close first as `.softSilence`.
 
 ## Public API
 
@@ -51,17 +75,33 @@ owner; callers may safely submit frames from concurrent tasks.
 ## Failure Modes
 
 Initialization rejects unsafe timing or threshold settings. Processing reports
-wrong sample rates, non-finite samples, and backwards timestamps. Transients
+wrong sample rates, non-finite samples, and backwards timestamps.
+Overlapping or gapped frame timestamps are rejected as discontinuities; callers
+must reset the stream after an intentional device-generation change. Transients
 shorter than the configured voiced minimum are rejected. End-of-stream flushing
-explicitly closes valid active speech instead of dropping it.
+classifies one padded native window when needed but never retains or counts the
+synthetic zeros as audio. It explicitly closes valid active speech.
 
 ## Tests
 
 Unit tests exercise all calibrated thresholds, isolated-noise and two-frame
 recovery behavior, post-roll trimming, preferred-boundary and hard-cap reasons,
-continuation, flush, reset, and invalid input handling.
+continuation, adversarial post-15-second pause recovery, flush, reset, and
+invalid input handling. Deterministic shadow tests additionally cover checkpoint
+ordering, pre-roll and timestamp origins, blip recovery, independent episodes,
+partial EOF, hard-cap sequence rollover, unconfirmed-speech suppression,
+production-event parity, and bounded rolling storage.
 
-The four-hour production replay emitted 1,063 segments with 29 under two
-seconds. Replacing the stable post-15-second boundary with a 500 ms wait reduced
-the count to 1,042 but increased unsafe hard-cap cuts from 366 to 612, so the
-three-of-five acoustic boundary is retained.
+After preserving short hard-cap tails, the four-hour private replay emitted
+1,064 segments with 30 under two seconds. Requiring a 500 ms post-15-second wait
+emitted 1,043 segments but increased the structural hard-cut proxy from 366 to
+610, so neither replay supplies semantic boundary accuracy without manual labels.
+Mode 3 with the identical FSM emitted 1,531 segments, 150 under two seconds, and
+63 hard-cap proxies; the extra fragmentation prevents promotion without labels.
+The 7.6456-hour expanded mode 2 replay emitted 2,321 segments, 156 under two
+seconds, and 584 hard-cap proxies. Mode 2 stable remains the selected default.
+
+A stratified review of 29 short segments from the expanded set found 19 readable
+complete proxies, two semantically incomplete subordinate-phrase proxies, seven
+ambiguous short utterances, and one silent EOF tail. These are review categories,
+not human time-aligned boundary labels or an accuracy estimate.

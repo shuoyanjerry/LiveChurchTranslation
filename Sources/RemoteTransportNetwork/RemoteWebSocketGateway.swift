@@ -65,7 +65,13 @@ public struct RemoteWebSocketGateway: Sendable {
         )
         let response = try handshake.response(for: request)
         let connection = await projection.connect(peerID: authorization.peerID)
-        let session = RemoteSocketSession(peerID: authorization.peerID, projection: projection)
+        let session = RemoteSocketSession(
+            peerID: authorization.peerID,
+            grantID: authorization.grantID,
+            bearerCredential: credential,
+            pairing: pairing,
+            projection: projection
+        )
         return RemoteSocketOpenResult(
             handshakeResponse: response,
             authorization: authorization,

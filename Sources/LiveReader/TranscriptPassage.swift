@@ -23,13 +23,21 @@ struct TranscriptPassage: View {
                     .lineSpacing(7)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                if let notice = unresolvedPronounNotice {
+                    Text(notice.text)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(ChurchTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(notice.accessibilityLabel)
+                        .accessibilityHint(UnresolvedPronounNotice.accessibilityHint)
+                }
                 if settings.showSourceText {
                     Text(entry.sourceText)
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(ChurchTheme.muted)
                         .lineSpacing(3)
                         .textSelection(.enabled)
-                        .accessibilityLabel("Recognized Chinese: \(entry.sourceText)")
+                        .accessibilityLabel("Recognized source: \(entry.sourceText)")
                 }
             }
         }
@@ -43,6 +51,13 @@ struct TranscriptPassage: View {
             }
         }
         .accessibilityValue(isLatest ? "Latest translation" : "")
+    }
+
+    private var unresolvedPronounNotice: UnresolvedPronounNotice? {
+        let count = entry.sourcePronounDecisions.filter {
+            $0.resolution == .unresolvedSpokenMandarin
+        }.count
+        return UnresolvedPronounNotice(unresolvedCount: count)
     }
 }
 

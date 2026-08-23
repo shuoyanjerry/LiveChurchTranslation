@@ -13,4 +13,8 @@ enum AudioTiming {
     static func duration(sampleCount: Int, sampleRate: Double) -> Duration {
         .seconds(Double(sampleCount) / sampleRate)
     }
+
+    static func duration(sampleCount: Int64, sampleRate: Double) -> Duration {
+        .seconds(Double(sampleCount) / sampleRate)
+    }
 }

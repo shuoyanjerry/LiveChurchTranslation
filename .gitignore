@@ -6,5 +6,8 @@ Models/
 *.dmg
 *.zip
 *.xcuserstate
+**/xcuserdata/
 .DS_Store
 .artifacts/
+# Private sermon QA renders and extracted text; redistribution is not authorized.
+/tmp/pdfs/argyle-golden/
