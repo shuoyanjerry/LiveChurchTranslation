@@ -92,9 +92,36 @@ extension FileUtteranceRecoveryStore {
     }
 
     private func synchronizeTerminalResolution(_ id: PendingUtteranceID) throws {
-        try writer.synchronizeDirectory(layout.pendingDirectory(id.sessionID))
+        let pending = layout.pendingDirectory(id.sessionID)
+        let session = layout.sessionDirectory(id.sessionID)
+        if fileManager.fileExists(atPath: pending.path) {
+            try synchronizeResolutionDirectory(pending, expectedName: "pending")
+        } else if fileManager.fileExists(atPath: session.path) {
+            try synchronizeResolutionDirectory(
+                session,
+                expectedName: id.sessionID.uuidString.lowercased()
+            )
+        }
         try writer.synchronizeDirectory(layout.rejectedDirectory(id.sessionID))
         try writer.synchronizeDirectory(layout.resolvedRootDirectory)
+        try writer.synchronizeDirectory(layout.root)
+    }
+
+    private func synchronizeResolutionDirectory(
+        _ directory: URL,
+        expectedName: String
+    ) throws {
+        let values = try directory.resourceValues(
+            forKeys: [.isDirectoryKey, .isSymbolicLinkKey]
+        )
+        guard values.isDirectory == true, values.isSymbolicLink != true,
+            directory.lastPathComponent == expectedName
+        else {
+            throw UtteranceRecoveryError.invalidConfiguration(
+                "terminalResolutionSourceDirectory"
+            )
+        }
+        try writer.synchronizeDirectory(directory)
     }
 
     private func validatePreviouslyRejected(

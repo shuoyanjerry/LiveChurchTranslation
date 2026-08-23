@@ -32,12 +32,16 @@ import UtteranceRecoveryFileSystem
         let receipt = rejectionReceipt(for: staged.id)
 
         try await firstStore.resolve(staged.id, as: .terminallyRejected([receipt]))
+        #expect(!FileManager.default.fileExists(atPath: activeSessionPath(fixture).path))
+        let storedBeforeRetry = try storedRejection(fixture: fixture)
         let restartedStore = try fixture.store()
+        try await restartedStore.resolve(staged.id, as: .terminallyRejected([receipt]))
         try await restartedStore.resolve(staged.id, as: .terminallyRejected([receipt]))
 
         let recovered = try await restartedStore.recoverPending(for: fixture.sessionID)
         #expect(recovered.pending.isEmpty)
         #expect(try rejectedRecordCount(fixture: fixture) == 1)
+        #expect(try storedRejection(fixture: fixture) == storedBeforeRetry)
     }
 
     @Test func deletingSessionArtifactsRemovesPendingAndRejectedEvidence() async throws {
