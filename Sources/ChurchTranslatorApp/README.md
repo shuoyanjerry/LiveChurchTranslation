@@ -16,7 +16,9 @@ Concrete production adapters and feature targets. No other target may depend on 
 ## Threading Model
 
 Composition and SwiftUI scene construction are main-actor isolated; injected actors retain their own
-state ownership.
+state ownership. Live capture and audio imports reuse one ASR actor, one
+translation actor, one downloader, and one model-preparation coordinator so the
+models occupy memory only once.
 
 ## Failure Modes
 

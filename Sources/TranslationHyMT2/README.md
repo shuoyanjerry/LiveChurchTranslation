@@ -67,13 +67,17 @@ nonce proof reduce that residual cross-request replay risk; they do not eliminat
 
 ## Dependencies
 
-- `TranslationAPI` only for domain requests, results, terms, and the provider protocol.
+- `TranslationAPI` for domain requests, results, terms, and the provider protocol.
+- `ModelRuntimeAPI` for the lightweight runtime-health boundary used between sessions.
 - Foundation for `Process`, `URLSession`, JSON, clocks, and filesystem inspection.
 - A pinned, signed `llama-server` executable must be copied into `Contents/MacOS` by release packaging. Its sandboxed child-process signature contains only App Sandbox and inheritance entitlements. No llama.cpp symbols leak into the business layer.
 
 ## Threading Model
 
 `HyMT2TranslationProvider`, the process controller, and the HTTP transport are actors. One provider serializes model lifecycle and inference. Cross-boundary inputs are immutable `Sendable` values; no singleton or shared mutable state is used.
+Its health check verifies only resident model state and whether the managed
+helper process is still running. A failed check lets session preparation restart
+the helper from the already verified local GGUF without hashing it again.
 
 ## Failure Modes
 

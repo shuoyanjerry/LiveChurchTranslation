@@ -17,6 +17,7 @@ struct PreparedSessionInference: Sendable {
 struct SessionPreparer: Sendable {
     let dependencies: LiveSessionDependencies
     let models: SessionModelDescriptors
+    let modelPreparation: InferenceModelPreparationCoordinator
     let utteranceProcessor: UtteranceProcessor
     let sessionKind: TranscriptSessionKind
     let sessionTitle: String?
@@ -64,23 +65,7 @@ struct SessionPreparer: Sendable {
     }
 
     private func loadModels() async throws {
-        async let asrLocation = dependencies.modelDownloader.ensureAvailable(
-            models.speechRecognition
-        )
-        async let translationLocation = dependencies.modelDownloader.ensureAvailable(
-            models.translation
-        )
-        let locations = try await (asrLocation, translationLocation)
-        try Task.checkCancellation()
-
-        await dependencies.modelReporter.setState(.loading, for: models.speechRecognition)
-        try await dependencies.asr.loadModel(at: locations.0)
-        try Task.checkCancellation()
-        await dependencies.modelReporter.setState(.ready, for: models.speechRecognition)
-        await dependencies.modelReporter.setState(.loading, for: models.translation)
-        try await dependencies.translator.loadModel(at: locations.1)
-        try Task.checkCancellation()
-        await dependencies.modelReporter.setState(.ready, for: models.translation)
+        try await modelPreparation.ensureReady()
     }
 
     private func replayRecoverableUtterances(
@@ -113,11 +98,6 @@ struct SessionPreparer: Sendable {
         }
         try await dependencies.transcriptStore.begin(transcript)
         try Task.checkCancellation()
-    }
-
-    func cancel() async {
-        await dependencies.modelDownloader.cancelDownload(for: models.speechRecognition.id)
-        await dependencies.modelDownloader.cancelDownload(for: models.translation.id)
     }
 
     private func startCapture(

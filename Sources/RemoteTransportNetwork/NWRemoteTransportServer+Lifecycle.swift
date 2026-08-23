@@ -3,45 +3,30 @@ import Foundation
 import RemoteTransportAPI
 
 extension NWRemoteTransportServer {
-    func installHandlers(on listener: NWListener) {
+    func installHandlers(on listener: NWListener, listenerID: UUID) {
         listener.stateUpdateHandler = { [weak self] state in
-            Task { await self?.listenerStateChanged(state) }
+            Task { await self?.listenerStateChanged(state, listenerID: listenerID) }
         }
         listener.newConnectionHandler = { [weak self] connection in
-            Task { await self?.accept(connection) }
+            Task { await self?.accept(connection, listenerID: listenerID) }
         }
     }
 
-    func listenerStateChanged(_ state: NWListener.State) async {
+    func listenerStateChanged(_ state: NWListener.State, listenerID: UUID) async {
+        guard activeListenerID == listenerID else { return }
         switch state {
         case .ready:
             becomeReady()
+        case .waiting(let error):
+            guard NWLocalNetworkPermissionDenial.matches(error) else { return }
+            await handleLocalNetworkPermissionDenial()
         case .failed(let error):
-            if startContinuation != nil {
-                failStart(error.localizedDescription)
-            } else {
-                await failRunningServer(error.localizedDescription)
-            }
+            await handleListenerFailure(error)
         case .cancelled:
-            if listener != nil { setStatus(.stopped) }
+            await stop()
         default:
             break
         }
-    }
-
-    func failRunningServer(_ message: String) async {
-        let bounded = String(message.prefix(240))
-        heartbeatTask?.cancel()
-        heartbeatTask = nil
-        listener?.cancel()
-        listener = nil
-        let openConnections = connections.values
-        connections.removeAll()
-        for connection in openConnections { await connection.close() }
-        components = nil
-        await pairingManager.revokeAll(now: Date())
-        setStatus(.failed(message: bounded))
-        emit(.connectionCountChanged(0))
     }
 
     func becomeReady() {
@@ -65,19 +50,9 @@ extension NWRemoteTransportServer {
         startHeartbeat()
     }
 
-    func failStart(_ message: String) {
-        let bounded = String(message.prefix(240))
-        listener?.cancel()
-        listener = nil
-        startContinuation?.resume(
-            throwing: RemoteTransportLifecycleError.listenerFailed(bounded)
-        )
-        startContinuation = nil
-        setStatus(.failed(message: bounded))
-    }
-
-    func accept(_ connection: NWConnection) {
-        guard let configuration = activeConfiguration,
+    func accept(_ connection: NWConnection, listenerID: UUID) {
+        guard activeListenerID == listenerID,
+            let configuration = activeConfiguration,
             connections.count < configuration.maximumConnections,
             let components,
             let peer = NWEndpointPeer.address(for: connection),

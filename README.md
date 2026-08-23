@@ -96,10 +96,18 @@ graph.
 - Runtime dependency: sherpa-onnx 1.13.6 is exact-version pinned; the translation helper
   is bundled with the release app.
 
-Models are not stored in Git. First use downloads about 2.12 GB over HTTPS. Each transfer has
-an in-flight byte cap, and the installer verifies the exact byte count and SHA-256 before
-atomic promotion. Once installed, ASR and translation run locally. LAN sharing creates
-network traffic only when explicitly enabled.
+Models are not stored in Git. Every app launch checks the pinned model inventory in the
+background. Missing artifacts (about 2.12 GB on a new Mac) download automatically over HTTPS,
+are verified by exact byte count and SHA-256, and are atomically installed before loading.
+Before any transfer, the app verifies that the volume has about 2.66 GB available for a fresh
+installation (missing model bytes plus one shared 512 MiB safety margin).
+Temporary failures receive bounded automatic retries, while the window remains usable and
+shows preparation progress. Once installed, ASR and translation run locally. LAN sharing
+creates network traffic only when explicitly enabled.
+
+The same generic arm64 build path covers M-series Macs that can run macOS 15. Current real-model
+performance evidence is from an M1 Pro with 16 GB; the base M1 with 8 GB remains the minimum-hardware
+performance gate documented in the English ASR selection report.
 
 ## Repository architecture
 
@@ -111,6 +119,7 @@ the only composition root.
 
 - [Architecture and module catalog](Docs/Architecture.md)
 - [Tests and release qualification](Docs/Testing.md)
+- [English ASR production selection](Docs/EnglishASRSelection-2026-08-23.md)
 - [English-to-Chinese theological qualification](Docs/EnglishTranslationQualification-2026-08-22.md)
 - [Scripture terminology and rights gate](Docs/ScriptureStandards.md)
 - [Mac App Store submission runbook](Docs/AppStoreSubmission.md)
@@ -131,7 +140,9 @@ formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
 
 ## Use
 
-1. Launch Quiet Liturgy Reader and allow microphone access.
+1. Launch Quiet Liturgy Reader. Model checking, download, verification, and loading begin
+   automatically. If microphone access is not already authorized, follow the in-app explanation;
+   returning from System Settings refreshes permission state automatically.
 2. Select the language direction, desired input, and glossary if needed.
 3. Choose **Start** and confirm that participants know the meeting is being recorded. Secure
    local recording begins before first-use model installation finishes, so early audio is retained.
@@ -150,10 +161,11 @@ Application data is stored under
 
 ## Distribution status and licensing
 
-Build scripts can create engineering `.app` and `.dmg` artifacts. A build is not a
-public release unless its release report records Developer ID signing, notarization,
-stapling, Gatekeeper launch on a clean Mac, exact model revisions, hashes, hardware tests,
-and quality review. This repository does not claim those results in this README.
+The delivery target is an internal church application engineered to Mac App Store quality
+standards; an actual App Store submission is not required. Build scripts can create engineering
+`.app` and `.dmg` artifacts. Any distributed build still needs its exact model revisions, hashes,
+hardware tests, and quality review recorded; this README does not convert development evidence
+into a release claim.
 
 The source is MIT licensed. Model weights and bundled third-party code retain their own
 licenses; review `THIRD_PARTY_NOTICES.md` before distribution. The visual system is an

@@ -12,6 +12,7 @@ import Testing
         let settings = SettingsStoreStub()
         let viewModel = LiveReaderViewModel(
             controller: controller,
+            modelPreparation: ModelPreparationStub(),
             capture: AudioCaptureStub(),
             glossary: GlossaryStub(),
             settingsStore: settings
@@ -45,6 +46,7 @@ import Testing
         let settings = SettingsStoreStub()
         let viewModel = LiveReaderViewModel(
             controller: SessionControllerStub(),
+            modelPreparation: ModelPreparationStub(),
             capture: AudioCaptureStub(),
             glossary: GlossaryStub(),
             settingsStore: settings
@@ -60,6 +62,42 @@ import Testing
         #expect(persisted.translationMode == .englishToSimplifiedChinese)
         #expect(persisted.selectedAudioDeviceID == "sanctuary-mic")
     }
+
+    @Test func loadStartsModelPreparationWithoutUserAction() async {
+        let modelPreparation = ModelPreparationStub()
+        let viewModel = LiveReaderViewModel(
+            controller: SessionControllerStub(),
+            modelPreparation: modelPreparation,
+            capture: AudioCaptureStub(),
+            glossary: GlossaryStub(),
+            settingsStore: SettingsStoreStub()
+        )
+
+        await viewModel.load()
+        for _ in 0..<20 {
+            if await modelPreparation.prepareCount() > 0 { break }
+            await Task.yield()
+        }
+
+        #expect(await modelPreparation.prepareCount() == 1)
+    }
+}
+
+private actor ModelPreparationStub: ModelPreparationController {
+    private var preparations = 0
+
+    func prepareModels() { preparations += 1 }
+    func retryModelPreparation() { preparations += 1 }
+    func currentModelPreparation() -> ModelPreparationSnapshot {
+        ModelPreparationSnapshot(phase: .ready, message: "Models ready")
+    }
+    func modelPreparationEvents() -> AsyncStream<ModelPreparationSnapshot> {
+        AsyncStream { continuation in
+            continuation.yield(currentModelPreparation())
+            continuation.finish()
+        }
+    }
+    func prepareCount() -> Int { preparations }
 }
 
 private actor SessionControllerStub: LiveSessionController {

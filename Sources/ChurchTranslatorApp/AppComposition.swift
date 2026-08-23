@@ -18,6 +18,7 @@ struct AppSceneDependencies {
     let controller: LiveSessionCoordinator
     let viewModel: LiveReaderViewModel
     let libraryViewModel: SessionLibraryViewModel
+    let permissionCoordinator: MicrophonePermissionCoordinator
     let sharingFeature: any LocalSharingFeature
     let projectionAdapter: LiveSessionProjectionAdapter
     let audioImporter: any AudioImporting
@@ -27,22 +28,29 @@ struct AppSceneDependencies {
 enum AppComposition {
     static func build() throws -> AppSceneDependencies {
         let directories = try AppDirectories.production()
-        let services = try AppServiceGraph(directories: directories)
+        let models = productionModels
+        let services = try AppServiceGraph(directories: directories, models: models)
         let controller = try makeController(services: services, directories: directories)
         let viewModel = LiveReaderViewModel(
             controller: controller,
+            modelPreparation: services.modelPreparation,
             capture: services.capture,
             glossary: services.glossary,
             settingsStore: services.settings
         )
         let remote = makeRemoteServices(controller: controller, settings: services.settings)
         let audioImporter = makeAudioImporter(services: services, directories: directories)
+        let permissionCoordinator = MicrophonePermissionCoordinator(
+            permissionClient: AudioCaptureMicrophonePermissionClient(capture: services.capture),
+            settingsOpener: MacMicrophoneSettingsOpener()
+        )
         Task { await remote.projectionAdapter.start() }
         Task { await recoverInterruptedRecordings(services: services) }
         return AppSceneDependencies(
             controller: controller,
             viewModel: viewModel,
             libraryViewModel: SessionLibraryViewModel(store: services.transcripts),
+            permissionCoordinator: permissionCoordinator,
             sharingFeature: remote.sharingFeature,
             projectionAdapter: remote.projectionAdapter,
             audioImporter: audioImporter
@@ -55,7 +63,8 @@ enum AppComposition {
     ) throws -> LiveSessionCoordinator {
         LiveSessionCoordinator(
             dependencies: try services.makeSessionDependencies(directories: directories),
-            models: productionModels
+            models: productionModels,
+            modelPreparation: services.modelPreparation
         )
     }
 
@@ -70,25 +79,10 @@ enum AppComposition {
                     capture: FileAudioCaptureProvider(url: url)
                 ),
                 models: productionModels,
+                modelPreparation: services.modelPreparation,
                 sessionKind: .importedAudio,
                 sessionTitle: url.deletingPathExtension().lastPathComponent
             )
-        }
-    }
-
-    private static var productionModels: SessionModelDescriptors {
-        SessionModelDescriptors(
-            speechRecognition: ProductionModelCatalog.qwenDescriptor,
-            translation: ProductionModelCatalog.translationDescriptor
-        )
-    }
-
-    private static func recoverInterruptedRecordings(services: AppServiceGraph) async {
-        guard let sessions = try? await services.transcripts.recentSessions(limit: 10_000) else {
-            return
-        }
-        for session in sessions {
-            _ = try? await services.recordings.repairInterruptedRecording(sessionID: session.id)
         }
     }
 

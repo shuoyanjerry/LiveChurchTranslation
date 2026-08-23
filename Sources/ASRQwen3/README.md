@@ -21,8 +21,8 @@ replaceable discourse-resolution boundary.
 
 ## Dependencies
 
-Depends only on `ASRAPI` and the pinned sherpa-onnx adapter. Callers never import
-sherpa-onnx.
+Depends on `ASRAPI`, the lightweight `ModelRuntimeAPI` health boundary, and the
+pinned sherpa-onnx adapter. Callers never import sherpa-onnx.
 
 ## Threading Model
 
@@ -32,6 +32,9 @@ threads. A frozen 220-segment qualification run produced identical hypotheses
 at two, four, and six threads; four threads had the best overall latency/RTF
 tradeoff on the qualified M1 Pro host. Callers can still inject a different
 configuration for separately qualified hardware.
+Loading the same standardized model location is idempotent while the recognizer
+is resident. Its runtime health check reads only that actor-owned resident
+state; it never reopens or hashes model artifacts.
 
 ## Failure Modes
 

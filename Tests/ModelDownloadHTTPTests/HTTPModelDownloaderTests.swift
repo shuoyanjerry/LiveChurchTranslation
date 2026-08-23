@@ -31,7 +31,7 @@ import Testing
             result: .file(relativePath: "model.gguf")
         )
         let transport = FakeModelHTTPTransport(payloads: [model.remoteURL: model.data])
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: transport,
@@ -69,7 +69,7 @@ import Testing
         )
         try Data("corrupt".utf8).write(to: installed)
         let transport = FakeModelHTTPTransport(payloads: [model.remoteURL: model.data])
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: transport,
@@ -98,7 +98,7 @@ import Testing
             payloads: [model.remoteURL: model.data],
             delay: .milliseconds(100)
         )
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: transport,

@@ -47,6 +47,16 @@ struct LocalSharingPopover: View {
                 ProgressView().controlSize(.small)
                 Text("Starting local sharing…")
             }
+        case .localNetworkPermissionDenied:
+            Text(LocalSharingPresentation.localNetworkPermissionMessage)
+                .foregroundStyle(ChurchTheme.muted)
+            Button {
+                openLocalNetworkSettings()
+            } label: {
+                Label("打开系统设置", systemImage: "gear")
+            }
+            .buttonStyle(ChurchPrimaryButtonStyle())
+            actionButton("Try Again", icon: "arrow.clockwise", intent: .toggle)
         case .on(let endpoint, let connectionCount, let invitation, let peers):
             activeContent(endpoint, connectionCount, invitation, peers)
         case .failed(let message):

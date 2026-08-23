@@ -1,8 +1,9 @@
 import ASRAPI
 import Foundation
+import ModelRuntimeAPI
 import TranslationAPI
 
-actor FakeMandarinASRProvider: ASRProvider {
+actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
     nonisolated let identifier = "fake-mandarin-asr"
     private let texts: [String]
     private let loadFails: Bool
@@ -10,6 +11,8 @@ actor FakeMandarinASRProvider: ASRProvider {
     private let recognitionError: ASRError?
     private let recognitionDelay: Duration?
     private var requests: [ASRRequest] = []
+    private var loads = 0
+    private var runtimeIsReady = false
 
     init(
         text: String,
@@ -35,7 +38,9 @@ actor FakeMandarinASRProvider: ASRProvider {
     }
 
     func loadModel(at _: URL) throws {
+        loads += 1
         if loadFails { throw SessionPipelineFakeError.modelLoading }
+        runtimeIsReady = true
     }
 
     func transcribe(_ request: ASRRequest) async throws -> RecognizedUtterance {
@@ -54,17 +59,24 @@ actor FakeMandarinASRProvider: ASRProvider {
         )
     }
 
-    func unloadModel() {}
+    func unloadModel() { runtimeIsReady = false }
+    func isModelRuntimeReady() -> Bool { runtimeIsReady }
+    func loadCount() -> Int { loads }
     func receivedRequests() -> [ASRRequest] { requests }
 }
 
-actor FakeHyTranslationProvider: TranslationProvider {
+actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking {
     nonisolated let identifier = "fake-hy-mt2"
     private let shouldFail: Bool
     private var requests: [TranslationRequest] = []
+    private var loads = 0
+    private var runtimeIsReady = false
 
     init(shouldFail: Bool) { self.shouldFail = shouldFail }
-    func loadModel(at _: URL) {}
+    func loadModel(at _: URL) {
+        loads += 1
+        runtimeIsReady = true
+    }
 
     func translate(_ request: TranslationRequest) throws -> TranslationResult {
         requests.append(request)
@@ -77,6 +89,9 @@ actor FakeHyTranslationProvider: TranslationProvider {
         )
     }
 
-    func shutdown() {}
+    func shutdown() { runtimeIsReady = false }
+    func isModelRuntimeReady() -> Bool { runtimeIsReady }
+    func markRuntimeUnavailable() { runtimeIsReady = false }
+    func loadCount() -> Int { loads }
     func receivedRequests() -> [TranslationRequest] { requests }
 }

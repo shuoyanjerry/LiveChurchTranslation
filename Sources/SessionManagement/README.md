@@ -9,9 +9,9 @@ recoverable utterances, and drains work during stop.
 
 ## Public API
 
-`LiveSessionCoordinator`, `LiveSessionDependencies`, and
-`SessionModelDescriptors`. Concrete work is supplied entirely through injected
-protocol implementations.
+`LiveSessionCoordinator`, `LiveSessionDependencies`, `SessionModelDescriptors`,
+and `InferenceModelPreparationCoordinator`. Concrete work is supplied entirely
+through injected protocol implementations.
 
 The ASR prompt is built only from enabled glossary source terms. Prior transcript
 turns and pronoun/gender decisions never enter this channel. Finalized source/target
@@ -30,6 +30,9 @@ and `SessionManagementAPI`. It has no UI or concrete infrastructure dependency.
 `LiveSessionCoordinator` is an actor. It owns the state machine, queues, child
 tasks, stop/finalization ordering, and event publication. Cross-module values
 are immutable and `Sendable`; injected services define their own isolation.
+Model preparation is a separate actor with one shared in-flight attempt. A
+cancelled session stops waiting without cancelling the application-level
+download, and failed automatic preparation uses two bounded retries.
 For live sessions, private recording and capture start before model preparation;
 VAD segments are staged durably but inference workers remain closed until both
 models are ready. Recovery replay excludes the current session so newly staged
@@ -69,8 +72,9 @@ recovery translation and pronoun context.
 ## Tests
 
 `SessionManagementTests` use protocol fakes to cover lifecycle transitions,
-pipeline ordering, stop draining, cancellation, model failures, persistence
-failures, rolling context, recovery replay, and event delivery.
+pipeline ordering, stop draining, shared model single-flight, cancellation,
+retry, model failures, persistence failures, rolling context, recovery replay,
+and event delivery.
 Lifecycle tests prove capture-before-model behavior, durable pending audio after
 model failure, current-session replay exclusion, and partial-recording preservation.
 Queue tests cover FIFO wraparound, both admission limits, and an overload run

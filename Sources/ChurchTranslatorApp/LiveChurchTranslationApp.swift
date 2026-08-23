@@ -25,6 +25,7 @@ public struct LiveChurchTranslationApp: App {
                 AppWorkspaceView(
                     liveViewModel: dependencies.viewModel,
                     libraryViewModel: dependencies.libraryViewModel,
+                    permissionCoordinator: dependencies.permissionCoordinator,
                     sharingFeature: dependencies.sharingFeature,
                     audioImporter: dependencies.audioImporter
                 )

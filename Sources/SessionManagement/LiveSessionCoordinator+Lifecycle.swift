@@ -10,7 +10,6 @@ extension LiveSessionCoordinator {
     func performStop(sessionID: UUID) async {
         let captureStartup = captureStartupTask
         let preparation = preparationTask
-        await sessionPreparer.cancel()
         await dependencies.capture.stopCapture()
         _ = await captureStartup?.result
         captureStartupTask = nil

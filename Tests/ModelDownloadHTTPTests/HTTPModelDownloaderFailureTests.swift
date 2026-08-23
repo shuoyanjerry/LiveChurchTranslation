@@ -16,7 +16,7 @@ import Testing
         )
         let manifest = try makeManifest(artifacts: [model])
         let reporter = TestRuntimeReporter()
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: FakeModelHTTPTransport(
@@ -52,7 +52,7 @@ import Testing
             data: Data("payload".utf8)
         )
         let manifest = try makeManifest(artifacts: [model])
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: FakeModelHTTPTransport(
@@ -85,7 +85,7 @@ import Testing
             at: sandbox.url.appendingPathComponent("test-model"),
             withDestinationURL: outside.url
         )
-        let downloader = try HTTPModelDownloader(
+        let downloader = try testDownloader(
             manifests: [manifest],
             rootDirectory: sandbox.url,
             transport: FakeModelHTTPTransport(payloads: [model.remoteURL: model.data]),

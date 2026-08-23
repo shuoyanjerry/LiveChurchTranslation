@@ -43,9 +43,9 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `PersistenceFileSystemTests` | JSONL/Markdown sessions, synchronized append, loading, source audit persistence, and non-bypassable active-recording deletion guards |
 | `LoggingOSLogTests` | Deterministic payload formatting plus a source policy that keeps all dynamic message and metadata text private |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
-| `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, atomic install, cancellation, and deduplication |
-| `SessionManagementTests` | Fake-provider end-to-end pipeline, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
-| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, sharing presentation contracts, and live-session control locking |
+| `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, shared disk-space preflight/reservations, atomic install, cancellation, and deduplication |
+| `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
+| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
 | `RemotePairingCoreTests` | Entropy shape, expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, closed command authorization, stale revisions, concurrent races, replay, and target failure |
 | `RemoteControlSessionAdapterTests` | Remote Start fail-closed policy and authorized stop-only forwarding |
@@ -54,7 +54,7 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `RemoteSharingFeatureTests` | Enable/disable, invitations, presentation state, peers, and revocation with protocol fakes |
 | `RemoteDiscoveryBonjourTests` | Fixed service type and credential-free, bounded metadata |
 | `RemoteWebAssetsTests` | Asset allowlist, no third-party URLs, and Safari reader security assumptions |
-| `RemoteTransportNetworkTests` | Bounded HTTP/WebSocket parsing, Host/Origin policy, cookie parity, headers, viewer denial, and a real localhost listener/snapshot/delta smoke test |
+| `RemoteTransportNetworkTests` | Bounded HTTP/WebSocket parsing, Host/Origin policy, cookie parity, headers, viewer denial, exact Bonjour local-network policy-denial classification, and a real localhost listener/snapshot/delta smoke test |
 
 Most tests use protocol fakes and temporary directories. The default gate does not
 download model weights, use a real microphone, or launch Safari. The network suite does

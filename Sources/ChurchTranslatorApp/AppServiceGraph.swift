@@ -27,14 +27,27 @@ struct AppServiceGraph {
     let settings: UserDefaultsSettingsStore
     let transcripts: FileTranscriptStore
     let recordings: FileSessionRecordingStore
+    let modelPreparation: InferenceModelPreparationCoordinator
 
     private let logger: UnifiedLogger
     private let reporter: ModelRuntimeReporter
     private let downloader: HTTPModelDownloader
+    private let asr: Qwen3ASRProvider
+    private let translator: HyMT2TranslationProvider
 
-    init(directories: AppDirectories) throws {
+    init(directories: AppDirectories, models: SessionModelDescriptors) throws {
         let logger = UnifiedLogger(subsystem: "com.shuoyan.LiveChurchTranslation")
         let reporter = ModelRuntimeReporter()
+        let downloader = try HTTPModelDownloader(
+            manifests: ProductionModelCatalog.manifests(),
+            rootDirectory: directories.models,
+            locationStore: LocalModelLocationStore(root: directories.models),
+            runtimeReporter: reporter
+        )
+        let asr = Qwen3ASRProvider()
+        let translator = HyMT2TranslationProvider(
+            helperExecutableURL: HelperExecutableLocator.llamaServer()
+        )
         capture = AVFoundationAudioCaptureProvider()
         glossary = DefaultGlossaryService(
             repository: FileGlossaryRepository(directory: directories.glossary)
@@ -46,11 +59,15 @@ struct AppServiceGraph {
         recordings = try FileSessionRecordingStore(root: directories.transcripts)
         self.logger = logger
         self.reporter = reporter
-        downloader = try HTTPModelDownloader(
-            manifests: ProductionModelCatalog.manifests(),
-            rootDirectory: directories.models,
-            locationStore: LocalModelLocationStore(root: directories.models),
-            runtimeReporter: reporter
+        self.downloader = downloader
+        self.asr = asr
+        self.translator = translator
+        modelPreparation = InferenceModelPreparationCoordinator(
+            modelDownloader: downloader,
+            modelReporter: reporter,
+            asr: asr,
+            translator: translator,
+            models: models
         )
     }
 
@@ -64,12 +81,10 @@ struct AppServiceGraph {
             vad: try CalibratedVoiceActivityDetector(
                 classifier: try WebRTCVoiceActivityClassifier()
             ),
-            asr: Qwen3ASRProvider(),
+            asr: asr,
             asrNormalizer: RuleBasedASRTextNormalizer(),
             discourseResolver: DiscourseResolver(),
-            translator: HyMT2TranslationProvider(
-                helperExecutableURL: HelperExecutableLocator.llamaServer()
-            ),
+            translator: translator,
             glossary: glossary,
             modelDownloader: downloader,
             modelReporter: reporter,

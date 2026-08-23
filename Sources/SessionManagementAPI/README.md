@@ -9,7 +9,7 @@ for a live translation session.
 
 `LiveSessionController`, `LiveSessionPhase`, `LiveSessionIssueStage`,
 `LiveSessionIssue`, `LiveSessionFinalizationOutcome`, `LiveSessionSnapshot`, and
-`LiveSessionEvent`.
+`LiveSessionEvent`, plus the model-preparation controller, phase, and snapshot.
 
 ## Dependencies
 

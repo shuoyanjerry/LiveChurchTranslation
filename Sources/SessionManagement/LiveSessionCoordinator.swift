@@ -20,6 +20,7 @@ enum SessionProcessingPolicy: Sendable {
 public actor LiveSessionCoordinator: LiveSessionController {
     let dependencies: LiveSessionDependencies
     let utteranceProcessor: UtteranceProcessor
+    let modelPreparation: InferenceModelPreparationCoordinator
     let sessionPreparer: SessionPreparer
     let sessionFinalizer: SessionFinalizer
     let processingPolicy: SessionProcessingPolicy
@@ -45,16 +46,28 @@ public actor LiveSessionCoordinator: LiveSessionController {
     public init(
         dependencies: LiveSessionDependencies,
         models: SessionModelDescriptors,
+        modelPreparation: InferenceModelPreparationCoordinator? = nil,
         sessionKind: TranscriptSessionKind = .live,
         sessionTitle: String? = nil
     ) {
         self.dependencies = dependencies
         processingPolicy = SessionProcessingPolicy(sessionKind: sessionKind)
         let processor = UtteranceProcessor(dependencies: dependencies)
+        let modelPreparation =
+            modelPreparation
+            ?? InferenceModelPreparationCoordinator(
+                modelDownloader: dependencies.modelDownloader,
+                modelReporter: dependencies.modelReporter,
+                asr: dependencies.asr,
+                translator: dependencies.translator,
+                models: models
+            )
         utteranceProcessor = processor
+        self.modelPreparation = modelPreparation
         sessionPreparer = SessionPreparer(
             dependencies: dependencies,
             models: models,
+            modelPreparation: modelPreparation,
             utteranceProcessor: processor,
             sessionKind: sessionKind,
             sessionTitle: sessionTitle
