@@ -2,6 +2,7 @@ import Foundation
 import SessionManagementAPI
 import SettingsAPI
 import TranscriptAPI
+import TranslationAPI
 import UtteranceRecoveryAPI
 
 struct RecoverySessionCursor {
@@ -84,12 +85,7 @@ extension UtteranceRecoveryReplayer {
         entries: inout [TranscriptEntry]
     ) async -> LiveSessionIssue? {
         do {
-            let context = contextEntries(
-                from: entries,
-                before: record.id.sequenceNumber
-            )
-            let entry = try await processor.recoverEntry(record, context: context)
-            if !entries.contains(where: { $0.id == entry.id }) { entries.append(entry) }
+            try await replaySentences(record, entries: &entries)
             try await dependencies.recoveryStore.markCompleted(record.id)
             return nil
         } catch is IgnoredUtterance {
@@ -105,6 +101,49 @@ extension UtteranceRecoveryReplayer {
                 sequence: record.id.sequenceNumber,
                 message: error.localizedDescription
             )
+        }
+    }
+
+    private func replaySentences(
+        _ record: PendingUtteranceRecord,
+        entries: inout [TranscriptEntry]
+    ) async throws {
+        let context = contextEntries(from: entries, before: record.id.sequenceNumber)
+        let inputs = try await processor.recognize(
+            record.segment,
+            discourseContext: context.discourse
+        )
+        var translationContext = context.translation
+        for (ordinal, input) in inputs.enumerated() {
+            if let existing = entries.first(where: {
+                $0.id == input.utterance.sourceSegmentID
+            }) {
+                appendContext(existing, to: &translationContext)
+                continue
+            }
+            let entry = try await processor.recoverEntry(
+                record,
+                input: input,
+                translationContext: translationContext,
+                presentationSequence: context.presentationSequence + ordinal
+            )
+            entries.append(entry)
+            appendContext(entry, to: &translationContext)
+        }
+    }
+
+    private func appendContext(
+        _ entry: TranscriptEntry,
+        to context: inout [TranslationContextEntry]
+    ) {
+        context.append(
+            TranslationContextEntry(
+                sourceText: entry.sourceText,
+                targetText: entry.targetText
+            )
+        )
+        if context.count > 2 {
+            context.removeFirst(context.count - 2)
         }
     }
 

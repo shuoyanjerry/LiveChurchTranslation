@@ -17,6 +17,7 @@ extension LiveSessionCoordinator {
         inferenceIsReady = false
         captureEndedBeforeInference = false
         terminalFailureMessage = nil
+        sentenceAudioTimelineAnchor = nil
         segmentQueue.removeAll()
         pendingUtterances.removeAll(keepingCapacity: false)
         unresolvedUtteranceCount = 0
@@ -102,6 +103,7 @@ extension LiveSessionCoordinator {
         mode: TranslationMode,
         inferenceReady: Bool
     ) async throws -> Bool {
+        sentenceAudioTimelineAnchor = nil
         let task = Task { [sessionPreparer] in
             try await sessionPreparer.beginCapture(
                 sessionID: sessionID,

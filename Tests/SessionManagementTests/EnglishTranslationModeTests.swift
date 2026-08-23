@@ -67,4 +67,64 @@ import Testing
         #expect(prompt.contains("praying"))
         #expect(!prompt.contains("optional-theological-expression"))
     }
+
+    @Test func mandarinHotwordsUseABoundedTheologicalCore() {
+        let prompt = ASRContextTermSelector.prompt(
+            from: DefaultGlossary.entries,
+            mode: .mandarinToEnglish
+        )
+
+        #expect(
+            prompt
+                == "麦基洗德,撒冷,亚伯拉罕,至高神,祭司,基督耶稣,救赎,恩典,"
+                + "本乎恩典,因着信,称义,成圣,主耶稣基督,圣灵,父子圣灵"
+        )
+    }
+
+    @Test func mandarinHotwordsReserveCapacityForRequiredCustomTerms() {
+        let prompt = ASRContextTermSelector.prompt(
+            from: DefaultGlossary.entries + [
+                GlossaryEntry(
+                    source: "尼布甲尼撒",
+                    target: "Nebuchadnezzar",
+                    enforcement: .required
+                ),
+                GlossaryEntry(source: "提摩太", target: "Timothy", enforcement: .required),
+                GlossaryEntry(source: "约伯", target: "Job", enforcement: .required),
+            ],
+            mode: .mandarinToEnglish
+        )
+
+        #expect(prompt.split(separator: ",").count == 18)
+        #expect(prompt.hasSuffix("父子圣灵,约伯,提摩太,尼布甲尼撒"))
+    }
+
+    @Test func englishHotwordCoreRemainsStable() {
+        let prompt = ASRContextTermSelector.prompt(
+            from: DefaultGlossary.entries,
+            mode: .englishToSimplifiedChinese
+        )
+
+        #expect(
+            prompt
+                == "salvation,grace,justification,sanctification,the Holy Spirit,the Trinity,"
+                + "resurrection,atonement,repentance,prayer,pray,prays,praying,praise,praises,"
+                + "praising,church,gracious"
+        )
+    }
+
+    @Test func englishSavedAcceptsNaturalChineseTargetVariant() async throws {
+        let harness = SessionTestHarness(
+            recognizedText: "We are saved by grace.",
+            translationMode: .englishToSimplifiedChinese
+        )
+
+        _ = try await harness.run()
+
+        let request = try #require(await harness.translator.receivedRequests().first)
+        let saved = try #require(request.glossary.first { $0.source == "salvation" })
+        #expect(saved.target == "救恩")
+        #expect(saved.acceptedTargets.contains("得救"))
+        #expect(saved.requirement == .required)
+    }
 }

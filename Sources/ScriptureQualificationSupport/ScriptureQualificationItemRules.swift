@@ -3,7 +3,7 @@ import ScriptureAPI
 enum ScriptureQualificationItemRules {
     static func validate(
         _ item: ScriptureQualificationItem,
-        grants: [String: ScriptureQualificationGrant]
+        declarations: [String: ScriptureQualificationSourceDeclaration]
     ) throws {
         try ScriptureQualificationScalarRules.requireID(item.id, label: "item.id")
         guard item.useKind == .exactQuotation else {
@@ -14,8 +14,8 @@ enum ScriptureQualificationItemRules {
         guard let expectedLanguage = languages[item.editionID], item.languageTag == expectedLanguage else {
             throw ScriptureQualificationError.invalidManifest("item language/edition mismatch")
         }
-        try requireTextGrant(item, grants: grants)
-        try requireAudioGrant(item, grants: grants)
+        try requireTextDeclaration(item, declarations: declarations)
+        try requireAudioDeclaration(item, declarations: declarations)
         try ScriptureQualificationScalarRules.requireRelativePath(
             item.audioPath,
             label: "item.audioPath"
@@ -42,37 +42,49 @@ enum ScriptureQualificationItemRules {
         )
     }
 
-    private static func requireTextGrant(
+    private static func requireTextDeclaration(
         _ item: ScriptureQualificationItem,
-        grants: [String: ScriptureQualificationGrant]
+        declarations: [String: ScriptureQualificationSourceDeclaration]
     ) throws {
-        guard let grant = grants[item.textGrantID], grant.editionID == item.editionID else {
-            throw ScriptureQualificationError.invalidManifest("missing matching item text grant")
-        }
         guard
-            grant.rights.textUseAuthorized,
-            grant.rights.crossLanguageEvaluationAuthorized
+            let declaration = declarations[item.textDeclarationID],
+            declaration.editionID == item.editionID
         else {
             throw ScriptureQualificationError.invalidManifest(
-                "text grant lacks text or cross-language evaluation rights"
+                "missing matching item text source declaration"
+            )
+        }
+        guard
+            declaration.permittedUses.textEvaluationAllowed,
+            declaration.permittedUses.crossLanguageEvaluationAllowed,
+            declaration.permittedUses.modelAdjustmentAllowed
+        else {
+            throw ScriptureQualificationError.invalidManifest(
+                "text source declaration does not allow required evaluation uses"
             )
         }
     }
 
-    private static func requireAudioGrant(
+    private static func requireAudioDeclaration(
         _ item: ScriptureQualificationItem,
-        grants: [String: ScriptureQualificationGrant]
+        declarations: [String: ScriptureQualificationSourceDeclaration]
     ) throws {
-        guard let grant = grants[item.audioGrantID], grant.editionID == item.editionID else {
-            throw ScriptureQualificationError.invalidManifest("missing matching item audio grant")
-        }
         guard
-            grant.rights.audioUseAuthorized,
-            grant.rights.recordingUseAuthorized,
-            grant.rights.asrEvaluationAuthorized
+            let declaration = declarations[item.audioDeclarationID],
+            declaration.editionID == item.editionID
         else {
             throw ScriptureQualificationError.invalidManifest(
-                "audio grant lacks audio, recording, or ASR-evaluation rights"
+                "missing matching item audio source declaration"
+            )
+        }
+        guard
+            declaration.permittedUses.audioEvaluationAllowed,
+            declaration.permittedUses.recordingEvaluationAllowed,
+            declaration.permittedUses.asrEvaluationAllowed,
+            declaration.permittedUses.modelAdjustmentAllowed
+        else {
+            throw ScriptureQualificationError.invalidManifest(
+                "audio source declaration does not allow required evaluation uses"
             )
         }
     }

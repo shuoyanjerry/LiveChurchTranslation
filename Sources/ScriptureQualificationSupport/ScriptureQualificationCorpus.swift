@@ -3,29 +3,29 @@ import Foundation
 public struct ScriptureQualificationCorpus: Sendable {
     public let manifest: ScriptureQualificationManifest
     public let manifestSHA256: String
-    public let grants: [ScriptureQualificationVerifiedGrant]
+    public let sourceDeclarations: [ScriptureVerifiedSourceDeclaration]
     public let items: [ScriptureQualificationVerifiedItem]
 
     public init(
         manifest: ScriptureQualificationManifest,
         manifestSHA256: String,
-        grants: [ScriptureQualificationVerifiedGrant],
+        sourceDeclarations: [ScriptureVerifiedSourceDeclaration],
         items: [ScriptureQualificationVerifiedItem]
     ) {
         self.manifest = manifest
         self.manifestSHA256 = manifestSHA256
-        self.grants = grants
+        self.sourceDeclarations = sourceDeclarations
         self.items = items
     }
 }
 
-public struct ScriptureQualificationVerifiedGrant: Sendable {
-    public let metadata: ScriptureQualificationGrant
-    public let evidenceURL: URL
+public struct ScriptureVerifiedSourceDeclaration: Sendable {
+    public let metadata: ScriptureQualificationSourceDeclaration
+    public let declarationURL: URL
 
-    public init(metadata: ScriptureQualificationGrant, evidenceURL: URL) {
+    public init(metadata: ScriptureQualificationSourceDeclaration, declarationURL: URL) {
         self.metadata = metadata
-        self.evidenceURL = evidenceURL
+        self.declarationURL = declarationURL
     }
 }
 

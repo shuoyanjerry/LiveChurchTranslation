@@ -24,6 +24,7 @@ public actor LiveSessionCoordinator: LiveSessionController {
     let sessionPreparer: SessionPreparer
     let sessionFinalizer: SessionFinalizer
     let processingPolicy: SessionProcessingPolicy
+    let sentenceVisibilityClock: any SentenceVisibilityClock
     var state = LiveSessionStateMachine()
     var captureTask: Task<Void, Never>?
     var workerTask: Task<Void, Never>?
@@ -42,6 +43,7 @@ public actor LiveSessionCoordinator: LiveSessionController {
     var captureEndedBeforeInference = false
     var terminalFailureMessage: String?
     var unsavedTranscripts: [UUID: TranscriptSession] = [:]
+    var sentenceAudioTimelineAnchor: SentenceAudioTimelineAnchor?
 
     public init(
         dependencies: LiveSessionDependencies,
@@ -50,7 +52,26 @@ public actor LiveSessionCoordinator: LiveSessionController {
         sessionKind: TranscriptSessionKind = .live,
         sessionTitle: String? = nil
     ) {
+        self.init(
+            dependencies: dependencies,
+            models: models,
+            modelPreparation: modelPreparation,
+            sessionKind: sessionKind,
+            sessionTitle: sessionTitle,
+            sentenceVisibilityClock: ContinuousSentenceVisibilityClock()
+        )
+    }
+
+    init(
+        dependencies: LiveSessionDependencies,
+        models: SessionModelDescriptors,
+        modelPreparation: InferenceModelPreparationCoordinator? = nil,
+        sessionKind: TranscriptSessionKind = .live,
+        sessionTitle: String? = nil,
+        sentenceVisibilityClock: any SentenceVisibilityClock
+    ) {
         self.dependencies = dependencies
+        self.sentenceVisibilityClock = sentenceVisibilityClock
         processingPolicy = SessionProcessingPolicy(sessionKind: sessionKind)
         let processor = UtteranceProcessor(dependencies: dependencies)
         let modelPreparation =

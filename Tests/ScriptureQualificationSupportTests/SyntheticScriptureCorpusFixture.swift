@@ -13,22 +13,28 @@ final class SyntheticScriptureCorpusFixture {
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         root = base.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try Self.makeDirectory(root)
-        for name in ["evidence", "audio", "reference"] {
+        for name in ["declarations", "audio", "reference"] {
             try Self.makeDirectory(root.appendingPathComponent(name, isDirectory: true))
         }
-        let englishEvidence = Data("synthetic English rights evidence".utf8)
-        let chineseEvidence = Data("synthetic Chinese rights evidence".utf8)
+        let englishDeclaration = Data("synthetic English source and use declaration".utf8)
+        let chineseDeclaration = Data("synthetic Chinese source and use declaration".utf8)
         let audio = Data("synthetic audio bytes".utf8)
         let reference = Data("original synthetic text, with punctuation.".utf8)
-        try Self.write(englishEvidence, to: root.appendingPathComponent("evidence/english.txt"))
-        try Self.write(chineseEvidence, to: root.appendingPathComponent("evidence/chinese.txt"))
+        try Self.write(
+            englishDeclaration,
+            to: root.appendingPathComponent("declarations/english.txt")
+        )
+        try Self.write(
+            chineseDeclaration,
+            to: root.appendingPathComponent("declarations/chinese.txt")
+        )
         for id in ["en-development", "zh-development", "en-blind", "zh-blind"] {
             try Self.write(audio, to: root.appendingPathComponent("audio/\(id).wav"))
             try Self.write(reference, to: root.appendingPathComponent("reference/\(id).txt"))
         }
         let hashes = SyntheticScriptureHashes(
-            englishEvidence: ScriptureQualificationSHA256.hash(data: englishEvidence),
-            chineseEvidence: ScriptureQualificationSHA256.hash(data: chineseEvidence),
+            englishDeclaration: ScriptureQualificationSHA256.hash(data: englishDeclaration),
+            chineseDeclaration: ScriptureQualificationSHA256.hash(data: chineseDeclaration),
             audio: ScriptureQualificationSHA256.hash(data: audio),
             reference: ScriptureQualificationSHA256.hash(data: reference)
         )

@@ -3,8 +3,8 @@ import ScriptureAPI
 public struct ScriptureQualificationItem: Codable, Sendable {
     public let id: String
     public let editionID: ScriptureEditionID
-    public let textGrantID: String
-    public let audioGrantID: String
+    public let textDeclarationID: String
+    public let audioDeclarationID: String
     public let useKind: ScriptureUseKind
     public let partition: ScriptureQualificationPartition
     public let readingKind: ScriptureReadingKind
@@ -23,8 +23,8 @@ public struct ScriptureQualificationItem: Codable, Sendable {
     public init(
         id: String,
         editionID: ScriptureEditionID,
-        textGrantID: String,
-        audioGrantID: String,
+        textDeclarationID: String,
+        audioDeclarationID: String,
         useKind: ScriptureUseKind,
         partition: ScriptureQualificationPartition,
         readingKind: ScriptureReadingKind,
@@ -42,8 +42,8 @@ public struct ScriptureQualificationItem: Codable, Sendable {
     ) {
         self.id = id
         self.editionID = editionID
-        self.textGrantID = textGrantID
-        self.audioGrantID = audioGrantID
+        self.textDeclarationID = textDeclarationID
+        self.audioDeclarationID = audioDeclarationID
         self.useKind = useKind
         self.partition = partition
         self.readingKind = readingKind

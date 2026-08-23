@@ -25,11 +25,13 @@ actor UtteranceProcessor {
         let glossary: [GlossaryEntry]
         let sourceAudit: TranscriptSourceAudit
         let pronounGuidance: [TranslationPronounGuidance]
+        let isFinalInSourceSegment: Bool
+        let sourceDiscourseText: String
     }
 
     let dependencies: LiveSessionDependencies
     private var translationContext = TranslationContextWindow()
-    private var discourseContext = DiscourseContextWindow()
+    var discourseContext = DiscourseContextWindow()
     var mode = TranslationMode.mandarinToEnglish
 
     init(dependencies: LiveSessionDependencies) {
@@ -44,49 +46,6 @@ actor UtteranceProcessor {
     func configure(mode: TranslationMode) {
         self.mode = mode
         resetContext()
-    }
-
-    func recognize(_ segment: SpeechSegment) async throws -> RecognizedInput {
-        try await recognize(segment, discourseContext: discourseContext.entries)
-    }
-
-    func recognize(
-        _ segment: SpeechSegment,
-        discourseContext: [VerifiedDiscourseTurn]
-    ) async throws -> RecognizedInput {
-        do {
-            let glossary = try await dependencies.glossary.snapshot()
-            let enabled = glossary.entries.filter(\.isEnabled)
-            let recognition = try await dependencies.asr.transcribe(
-                ASRRequest(
-                    segment: segment,
-                    languageCode: mode.sourceRecognitionCode,
-                    contextPrompt: asrPrompt(from: enabled, mode: mode)
-                )
-            )
-            let normalized = normalizedRecognition(recognition, entries: enabled, mode: mode)
-            let resolved = resolvedRecognition(
-                normalized,
-                sequence: Int(clamping: segment.sequenceNumber),
-                context: discourseContext
-            )
-            await recordRecognition(resolved.utterance, original: recognition, segment: segment)
-            return RecognizedInput(
-                utterance: resolved.utterance,
-                sourceSegmentSequence: segment.sequenceNumber,
-                glossary: enabled,
-                sourceAudit: resolved.audit,
-                pronounGuidance: resolved.pronounGuidance
-            )
-        } catch let failure as UtteranceProcessingFailure {
-            throw failure
-        } catch ASRError.filteredNonspeech {
-            throw IgnoredUtterance(message: ASRError.filteredNonspeech.localizedDescription)
-        } catch ASRError.promptOnlyHallucination {
-            throw IgnoredUtterance(message: ASRError.promptOnlyHallucination.localizedDescription)
-        } catch {
-            throw failure(stage: .recognition, error: error)
-        }
     }
 
     func translate(_ input: RecognizedInput, sessionID: UUID) async throws -> TranscriptEntry {
@@ -104,14 +63,16 @@ actor UtteranceProcessor {
                 targetText: entry.targetText
             )
         )
-        discourseContext.append(
-            VerifiedDiscourseTurn(
-                sequence: Int(clamping: input.sourceSegmentSequence),
-                text: entry.sourceText
+        if input.isFinalInSourceSegment {
+            discourseContext.append(
+                VerifiedDiscourseTurn(
+                    sequence: Int(clamping: input.sourceSegmentSequence),
+                    text: input.sourceDiscourseText
+                )
             )
-        )
+        }
         await dependencies.transcript.append(entry)
-        await recordTranslation(duration: translation.duration)
+        recordTranslationAfterCriticalPath(duration: translation.duration)
         return entry
     }
 
@@ -138,7 +99,7 @@ actor UtteranceProcessor {
 }
 
 extension UtteranceProcessor {
-    private func resolvedRecognition(
+    func resolvedRecognition(
         _ normalized: (utterance: RecognizedUtterance, audit: TranscriptSourceAudit),
         sequence: Int,
         context: [VerifiedDiscourseTurn]

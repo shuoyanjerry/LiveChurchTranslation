@@ -6,7 +6,7 @@ import DiscourseResolutionCore
 import GlossaryAPI
 import ModelDownloadAPI
 import ModelRuntimeAPI
-import SessionManagement
+@testable import SessionManagement
 import SettingsAPI
 import TranscriptAPI
 import TranscriptCore
@@ -34,7 +34,7 @@ enum SessionDependencyFactory {
                 settings: AppSettings(translationMode: components.translationMode)
             ),
             logger: NoopAppLogger(),
-            diagnostics: FakeDiagnosticsRecorder()
+            diagnostics: components.diagnostics
         )
     }
 
@@ -45,7 +45,13 @@ enum SessionDependencyFactory {
             enforcement: .required
         ),
         GlossaryEntry(source: "恩典", target: "grace", enforcement: .required),
-        GlossaryEntry(source: "救恩", target: "salvation", enforcement: .required),
+        GlossaryEntry(
+            source: "救恩",
+            target: "salvation",
+            sourceAliases: ["得救"],
+            targetVariants: ["saved", "saving"],
+            enforcement: .required
+        ),
         GlossaryEntry(source: "在圣灵里成圣", target: "be sanctified in the Holy Spirit"),
         GlossaryEntry(
             source: "洗礼",
@@ -68,6 +74,8 @@ struct SessionTestComponents {
     let store: FakeTranscriptStore
     let recordingStore: FakeSessionRecordingStore
     let recoveryStore: FakeUtteranceRecoveryStore
+    let diagnostics: FakeDiagnosticsRecorder
+    let sentenceVisibilityClock: any SentenceVisibilityClock
     let translationMode: TranslationMode
 
     init(
@@ -91,7 +99,8 @@ struct SessionTestComponents {
         holdsCaptureOpen: Bool,
         emitsOnlyOnFlush: Bool,
         emitsEveryFrame: Bool = false,
-        translationMode: TranslationMode = .mandarinToEnglish
+        translationMode: TranslationMode = .mandarinToEnglish,
+        sentenceVisibilityClock: any SentenceVisibilityClock
     ) {
         capture = FakeAudioCaptureProvider(
             permission: permission,
@@ -104,17 +113,16 @@ struct SessionTestComponents {
             emitsOnlyOnFlush: emitsOnlyOnFlush,
             emitsEveryFrame: emitsEveryFrame
         )
-        if let recognizedTexts {
-            asr = FakeMandarinASRProvider(texts: recognizedTexts)
-        } else {
-            asr = FakeMandarinASRProvider(
+        asr = Self.makeASR(
+            texts: recognizedTexts,
+            configuration: FakeASRInputs(
                 text: recognizedText,
                 loadFails: modelLoadFails,
                 recognitionFails: recognitionFails,
                 recognitionError: recognitionError,
                 recognitionDelay: recognitionDelay
             )
-        }
+        )
         translator = FakeHyTranslationProvider(shouldFail: translationFails)
         downloader = FakeModelDownloader(delay: modelPreparationDelay)
         reporter = FakeModelRuntimeReporter()
@@ -126,6 +134,32 @@ struct SessionTestComponents {
             failRepair: recordingRepairFails
         )
         recoveryStore = FakeUtteranceRecoveryStore(stageFails: recoveryStageFails)
+        diagnostics = FakeDiagnosticsRecorder()
+        self.sentenceVisibilityClock = sentenceVisibilityClock
         self.translationMode = translationMode
     }
+
+    private static func makeASR(
+        texts: [String]?,
+        configuration: FakeASRInputs
+    ) -> FakeMandarinASRProvider {
+        guard let texts else {
+            return FakeMandarinASRProvider(
+                text: configuration.text,
+                loadFails: configuration.loadFails,
+                recognitionFails: configuration.recognitionFails,
+                recognitionError: configuration.recognitionError,
+                recognitionDelay: configuration.recognitionDelay
+            )
+        }
+        return FakeMandarinASRProvider(texts: texts)
+    }
+}
+
+private struct FakeASRInputs {
+    let text: String
+    let loadFails: Bool
+    let recognitionFails: Bool
+    let recognitionError: ASRError?
+    let recognitionDelay: Duration?
 }

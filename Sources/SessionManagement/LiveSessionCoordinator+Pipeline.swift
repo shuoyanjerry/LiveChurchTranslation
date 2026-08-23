@@ -13,6 +13,7 @@ extension LiveSessionCoordinator {
         do {
             for try await frame in stream {
                 guard acceptsFrames(for: sessionID) else { break }
+                establishSentenceAudioTimeline(with: frame)
                 try await dependencies.recordingStore.append(frame, to: sessionID)
                 let events = try await process(frame)
                 guard acceptsFrames(for: sessionID) else { break }
@@ -43,6 +44,19 @@ extension LiveSessionCoordinator {
     private func process(_ frame: AudioFrame) async throws -> [VoiceActivityEvent] {
         let processed = try await dependencies.audioProcessor.process(frame)
         return try await dependencies.vad.process(processed)
+    }
+
+    private func establishSentenceAudioTimeline(with frame: AudioFrame) {
+        guard processingPolicy == .boundedLive, sentenceAudioTimelineAnchor == nil else { return }
+        sentenceAudioTimelineAnchor = SentenceAudioTimelineAnchor(
+            audioTimestamp: audioFrameEnd(frame),
+            monotonicTimestamp: sentenceVisibilityClock.now()
+        )
+    }
+
+    private func audioFrameEnd(_ frame: AudioFrame) -> Duration {
+        guard frame.sampleRate.isFinite, frame.sampleRate > 0 else { return frame.timestamp }
+        return frame.timestamp + .seconds(Double(frame.frameCount) / frame.sampleRate)
     }
 
     func handle(_ event: VoiceActivityEvent, sessionID: UUID) async {

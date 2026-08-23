@@ -38,6 +38,8 @@ import TranslationAPI
         #expect(prompt.contains("use 神 rather than 上帝"))
         #expect(prompt.contains("allow 他 or 祂 according to context"))
         #expect(prompt.contains("never reconstruct or invent verse text"))
+        #expect(prompt.contains("prefer the established wording of this edition"))
+        #expect(prompt.contains("never add a clause that is absent from the source"))
     }
 
     @Test func sanitizesNewlinesInsideTerminology() {

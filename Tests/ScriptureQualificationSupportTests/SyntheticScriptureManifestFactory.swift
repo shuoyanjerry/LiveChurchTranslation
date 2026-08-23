@@ -7,13 +7,13 @@ enum SyntheticScriptureManifestFactory {
 
     static func make(hashes: SyntheticScriptureHashes) -> ScriptureQualificationManifest {
         ScriptureQualificationManifest(
-            schemaVersion: 1,
-            corpusID: "synthetic-private-scripture-v1",
+            schemaVersion: 2,
+            corpusID: "synthetic-private-scripture-v2",
             createdAt: "2026-08-01T00:00:00Z",
             visibility: .gitignoredPrivateLocalQAOnly,
             mustNotCommit: true,
             editionPair: .production,
-            grants: grants(hashes: hashes),
+            sourceDeclarations: declarations(hashes: hashes),
             items: SyntheticScriptureItemFactory.make(hashes: hashes),
             translationPairs: [
                 .init(
@@ -30,52 +30,48 @@ enum SyntheticScriptureManifestFactory {
         )
     }
 
-    private static func grants(
+    private static func declarations(
         hashes: SyntheticScriptureHashes
-    ) -> [ScriptureQualificationGrant] {
+    ) -> [ScriptureQualificationSourceDeclaration] {
         [
-            grant(
-                id: "english-grant",
+            declaration(
+                id: "english-source",
                 editionID: .englishStandardVersion2025,
-                evidencePath: "evidence/english.txt",
-                hash: hashes.englishEvidence
+                path: "declarations/english.txt",
+                hash: hashes.englishDeclaration
             ),
-            grant(
-                id: "chinese-grant",
+            declaration(
+                id: "chinese-source",
                 editionID: .newPunctuationCUVShenSimplified1988,
-                evidencePath: "evidence/chinese.txt",
-                hash: hashes.chineseEvidence
+                path: "declarations/chinese.txt",
+                hash: hashes.chineseDeclaration
             ),
         ]
     }
 
-    private static func grant(
+    private static func declaration(
         id: String,
         editionID: ScriptureEditionID,
-        evidencePath: String,
+        path: String,
         hash: String
-    ) -> ScriptureQualificationGrant {
+    ) -> ScriptureQualificationSourceDeclaration {
         .init(
             id: id,
             editionID: editionID,
-            licensor: "Synthetic Rights Administrator",
-            licensee: "Synthetic Test Church",
-            agreementID: "synthetic-agreement",
-            evidencePath: evidencePath,
-            evidenceSHA256: hash,
-            validFrom: "2026-01-01T00:00:00Z",
-            expiresAt: "2027-01-01T00:00:00Z",
-            territories: ["US"],
-            reviewedBy: "Synthetic Reviewer",
-            reviewedAt: "2026-07-01T00:00:00Z",
-            rights: .init(
-                textUseAuthorized: true,
-                audioUseAuthorized: true,
-                recordingUseAuthorized: true,
-                asrEvaluationAuthorized: true,
-                crossLanguageEvaluationAuthorized: true,
-                modelTrainingAuthorized: false,
-                redistributionAuthorized: false
+            sourceAttribution: "Original synthetic test source",
+            declaredBy: "Synthetic Test Project",
+            declarationPath: path,
+            declarationSHA256: hash,
+            declaredAt: "2026-07-01T00:00:00Z",
+            permittedUses: .init(
+                textEvaluationAllowed: true,
+                audioEvaluationAllowed: true,
+                recordingEvaluationAllowed: true,
+                asrEvaluationAllowed: true,
+                crossLanguageEvaluationAllowed: true,
+                modelAdjustmentAllowed: true,
+                modelTrainingAllowed: false,
+                redistributionAllowed: false
             )
         )
     }
@@ -83,8 +79,8 @@ enum SyntheticScriptureManifestFactory {
 }
 
 struct SyntheticScriptureHashes {
-    let englishEvidence: String
-    let chineseEvidence: String
+    let englishDeclaration: String
+    let chineseDeclaration: String
     let audio: String
     let reference: String
 }

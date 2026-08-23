@@ -96,4 +96,6 @@ actor FakeDiagnosticsRecorder: DiagnosticsRecorder {
     func export() throws -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("diagnostics.json")
     }
+
+    func recordedEvents() -> [DiagnosticEvent] { events }
 }

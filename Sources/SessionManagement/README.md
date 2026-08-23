@@ -18,6 +18,16 @@ turns and pronoun/gender decisions never enter this channel. Finalized source/ta
 pairs are bounded translation background instead, while occurrence-level pronoun
 evidence travels as immutable typed guidance.
 
+One acoustic segment is recognized once, then Apple's sentence tokenizer divides
+multi-sentence output without waiting for a later segment. Each sentence is
+translated, persisted, and published in FIFO order before the next sentence starts.
+Unpunctuated output remains one sentence and proceeds immediately. Split entries use
+deterministic identities derived from the durable segment so crash recovery skips
+already persisted sentences exactly once. This guarantee assumes the same staged
+audio produces the same recognition and sentence topology; a model or normalizer
+upgrade that changes that topology requires a versioned durable recognition-plan
+migration before replay.
+
 ## Dependencies
 
 Depends on the API targets for audio capture and processing, VAD, utterance
@@ -68,6 +78,14 @@ the dense transcript presentation sequence is never evidence. Recovery excludes
 future source segments even after filtered or failed gaps. Legacy entries without
 a stable source identity remain readable but are conservatively omitted from
 recovery translation and pronoun context.
+Every live publication records a content-free sentence-tail-to-visible measurement.
+The first completed capture frame anchors the audio timeline to a monotonic clock.
+The realtime target is three seconds from each sentence's audio-tail estimate to
+publication, including endpoint wait and inference; misses and invalid clock mappings
+remain visible as warning diagnostics without changing transcript order.
+Here, visibility ends at coordinator publication into the local UI and projection
+consumer streams. It does not claim MainActor drawing, network delivery, or remote
+device paint; those stages require their own downstream acknowledgement metrics.
 
 ## Tests
 
@@ -80,5 +98,8 @@ model failure, current-session replay exclusion, and partial-recording preservat
 Queue tests cover FIFO wraparound, both admission limits, and an overload run
 that proves every captured frame is recorded while a contiguous transcript tail
 remains recoverable on disk.
+Sentence tests cover bilingual semantic splitting, deterministic timing and identity,
+ordered publication, the visibility SLA, unpunctuated long input, and partial
+recovery without duplicate translation.
 Import tests cover fast sources, inference and recovery-store failures, complete
 recording retention, and early cancellation without false success.

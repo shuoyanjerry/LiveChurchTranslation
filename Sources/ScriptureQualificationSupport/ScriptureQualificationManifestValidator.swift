@@ -9,8 +9,8 @@ public struct ScriptureQualificationManifestValidator: Sendable {
     }
 
     public func validate(_ manifest: ScriptureQualificationManifest) throws {
-        guard manifest.schemaVersion == 1 else {
-            throw ScriptureQualificationError.invalidManifest("schemaVersion must be 1")
+        guard manifest.schemaVersion == 2 else {
+            throw ScriptureQualificationError.invalidManifest("schemaVersion must be 2")
         }
         try ScriptureQualificationScalarRules.requireID(manifest.corpusID, label: "corpusID")
         let createdAt = try ScriptureQualificationScalarRules.date(
@@ -30,33 +30,34 @@ public struct ScriptureQualificationManifestValidator: Sendable {
                 "editionPair must exactly equal ScriptureEditionPair.production"
             )
         }
-        let grants = try validateGrants(manifest.grants)
-        guard Set(grants.values.map(\.licensee)).count == 1 else {
-            throw ScriptureQualificationError.invalidManifest(
-                "all grants must name the same licensee"
-            )
-        }
-        let items = try validateItems(manifest.items, grants: grants)
-        let usedGrants = try ScriptureQualificationPairRules.validate(
+        let declarations = try validateDeclarations(manifest.sourceDeclarations)
+        let items = try validateItems(manifest.items, declarations: declarations)
+        let usedDeclarations = try ScriptureQualificationPairRules.validate(
             manifest.translationPairs,
             items: items
         )
-        guard usedGrants == Set(grants.keys) else {
-            throw ScriptureQualificationError.invalidManifest("every grant must be used")
+        guard usedDeclarations == Set(declarations.keys) else {
+            throw ScriptureQualificationError.invalidManifest(
+                "every source declaration must be used"
+            )
         }
     }
 
-    private func validateGrants(
-        _ values: [ScriptureQualificationGrant]
-    ) throws -> [String: ScriptureQualificationGrant] {
+    private func validateDeclarations(
+        _ values: [ScriptureQualificationSourceDeclaration]
+    ) throws -> [String: ScriptureQualificationSourceDeclaration] {
         guard !values.isEmpty else {
-            throw ScriptureQualificationError.invalidManifest("grants must not be empty")
+            throw ScriptureQualificationError.invalidManifest(
+                "sourceDeclarations must not be empty"
+            )
         }
-        var result: [String: ScriptureQualificationGrant] = [:]
-        for grant in values {
-            try ScriptureQualificationGrantRules.validate(grant, now: now)
-            guard result.updateValue(grant, forKey: grant.id) == nil else {
-                throw ScriptureQualificationError.invalidManifest("duplicate grant id")
+        var result: [String: ScriptureQualificationSourceDeclaration] = [:]
+        for declaration in values {
+            try ScriptureQualificationDeclarationRules.validate(declaration, now: now)
+            guard result.updateValue(declaration, forKey: declaration.id) == nil else {
+                throw ScriptureQualificationError.invalidManifest(
+                    "duplicate source declaration id"
+                )
             }
         }
         return result
@@ -64,7 +65,7 @@ public struct ScriptureQualificationManifestValidator: Sendable {
 
     private func validateItems(
         _ values: [ScriptureQualificationItem],
-        grants: [String: ScriptureQualificationGrant]
+        declarations: [String: ScriptureQualificationSourceDeclaration]
     ) throws -> [String: ScriptureQualificationItem] {
         guard !values.isEmpty else {
             throw ScriptureQualificationError.invalidManifest("items must not be empty")
@@ -72,7 +73,7 @@ public struct ScriptureQualificationManifestValidator: Sendable {
         var result: [String: ScriptureQualificationItem] = [:]
         var paths = Set<String>()
         for item in values {
-            try ScriptureQualificationItemRules.validate(item, grants: grants)
+            try ScriptureQualificationItemRules.validate(item, declarations: declarations)
             guard result.updateValue(item, forKey: item.id) == nil else {
                 throw ScriptureQualificationError.invalidManifest("duplicate item id")
             }

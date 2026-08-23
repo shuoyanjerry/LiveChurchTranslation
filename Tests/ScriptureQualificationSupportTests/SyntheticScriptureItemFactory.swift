@@ -16,8 +16,8 @@ enum SyntheticScriptureItemFactory {
         return .init(
             id: specification.id,
             editionID: specification.editionID,
-            textGrantID: isEnglish ? "english-grant" : "chinese-grant",
-            audioGrantID: isEnglish ? "english-grant" : "chinese-grant",
+            textDeclarationID: isEnglish ? "english-source" : "chinese-source",
+            audioDeclarationID: isEnglish ? "english-source" : "chinese-source",
             useKind: .exactQuotation,
             partition: specification.partition,
             readingKind: .fullVerse,

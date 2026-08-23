@@ -9,7 +9,7 @@ import Testing
         let corpus = try fixture.load()
 
         #expect(corpus.manifest.editionPair == .production)
-        #expect(corpus.grants.count == 2)
+        #expect(corpus.sourceDeclarations.count == 2)
         #expect(corpus.items.count == 4)
         #expect(corpus.items.allSatisfy { $0.audioURL.path.hasPrefix(fixture.root.path + "/") })
         #expect(corpus.items.allSatisfy { $0.referenceURL.path.hasPrefix(fixture.root.path + "/") })
@@ -41,30 +41,6 @@ import Testing
         #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
     }
 
-    @Test func rejectsMissingASREvaluationRight() throws {
-        let fixture = try SyntheticScriptureCorpusFixture()
-        var object = try fixture.manifestObject()
-        var grants = try #require(object["grants"] as? [[String: Any]])
-        var rights = try #require(grants[0]["rights"] as? [String: Any])
-        rights["asrEvaluationAuthorized"] = false
-        grants[0]["rights"] = rights
-        object["grants"] = grants
-        try fixture.writeManifestObject(object)
-
-        #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
-    }
-
-    @Test func rejectsGrantsForDifferentLicensees() throws {
-        let fixture = try SyntheticScriptureCorpusFixture()
-        var object = try fixture.manifestObject()
-        var grants = try #require(object["grants"] as? [[String: Any]])
-        grants[1]["licensee"] = "Different Organization"
-        object["grants"] = grants
-        try fixture.writeManifestObject(object)
-
-        #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
-    }
-
     @Test func rejectsCorpusWithoutSealedBlindPartition() throws {
         let fixture = try SyntheticScriptureCorpusFixture()
         var object = try fixture.manifestObject()
@@ -90,20 +66,20 @@ import Testing
         #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
     }
 
-    @Test func rejectsTamperedEvidenceAndSymlinkedEvidence() throws {
+    @Test func rejectsTamperedAndSymlinkedSourceDeclaration() throws {
         let fixture = try SyntheticScriptureCorpusFixture()
-        let evidence = fixture.root.appendingPathComponent("evidence/english.txt")
-        try Data("changed evidence".utf8).write(to: evidence)
+        let declaration = fixture.root.appendingPathComponent("declarations/english.txt")
+        try Data("changed declaration".utf8).write(to: declaration)
         try FileManager.default.setAttributes(
             [.posixPermissions: 0o600],
-            ofItemAtPath: evidence.path
+            ofItemAtPath: declaration.path
         )
         #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
 
-        try FileManager.default.removeItem(at: evidence)
+        try FileManager.default.removeItem(at: declaration)
         try FileManager.default.createSymbolicLink(
-            at: evidence,
-            withDestinationURL: fixture.root.appendingPathComponent("evidence/chinese.txt")
+            at: declaration,
+            withDestinationURL: fixture.root.appendingPathComponent("declarations/chinese.txt")
         )
         #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
     }
@@ -115,7 +91,7 @@ import Testing
         try fixture.writeManifestObject(object)
         #expect(throws: ScriptureQualificationError.self) { _ = try fixture.load() }
 
-        let duplicate = Data(#"{"schemaVersion":1,"schemaVersion":1}"#.utf8)
+        let duplicate = Data(#"{"schemaVersion":2,"schemaVersion":2}"#.utf8)
         #expect(throws: ScriptureQualificationError.self) {
             _ = try ScriptureQualificationManifestDecoder.decode(duplicate)
         }

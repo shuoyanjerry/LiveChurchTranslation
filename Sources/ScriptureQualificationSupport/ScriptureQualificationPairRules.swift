@@ -11,7 +11,7 @@ enum ScriptureQualificationPairRules {
         var pairIDs = Set<String>()
         var itemIDs = Set<String>()
         var partitions = Set<ScriptureQualificationPartition>()
-        var usedGrants = Set<String>()
+        var usedDeclarations = Set<String>()
         for pair in pairs {
             try ScriptureQualificationScalarRules.requireID(pair.id, label: "pair.id")
             guard pairIDs.insert(pair.id).inserted else {
@@ -25,7 +25,7 @@ enum ScriptureQualificationPairRules {
                 throw ScriptureQualificationError.invalidManifest("items may appear in only one pair")
             }
             partitions.insert(evidence.english.partition)
-            usedGrants.formUnion(evidence.grantIDs)
+            usedDeclarations.formUnion(evidence.declarationIDs)
         }
         guard itemIDs == Set(items.keys) else {
             throw ScriptureQualificationError.invalidManifest("every item must belong to one pair")
@@ -35,7 +35,7 @@ enum ScriptureQualificationPairRules {
                 "development and sealedBlindQualification partitions are both required"
             )
         }
-        return usedGrants
+        return usedDeclarations
     }
 
     private static func validatePair(
@@ -60,9 +60,9 @@ enum ScriptureQualificationPairRules {
         return PairEvidence(
             english: english,
             chinese: chinese,
-            grantIDs: [
-                english.textGrantID, english.audioGrantID,
-                chinese.textGrantID, chinese.audioGrantID,
+            declarationIDs: [
+                english.textDeclarationID, english.audioDeclarationID,
+                chinese.textDeclarationID, chinese.audioDeclarationID,
             ]
         )
     }
@@ -83,5 +83,5 @@ enum ScriptureQualificationPairRules {
 private struct PairEvidence {
     let english: ScriptureQualificationItem
     let chinese: ScriptureQualificationItem
-    let grantIDs: Set<String>
+    let declarationIDs: Set<String>
 }
