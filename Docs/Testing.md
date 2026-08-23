@@ -39,6 +39,7 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `GlossaryCoreTests` | Defaults, aliases/variants, enforcement, validation, and deterministic persistence behavior |
 | `TranslationHyMT2Tests` | Prompt isolation, latest-two context cap, occurrence-level pronoun proof blocks, strict retry, prompt-control injection/output guards, helper lifecycle, timeout, and fidelity validation |
 | `TranslationQualificationSupportTests` | Strict private-manifest/report decoding, duplicate-key rejection, recomputed preservation evidence, source-range pronoun traces, privacy-safe atomic output, and hard release gates |
+| `ScriptureQualificationSupportTests` | 13 synthetic tests for exact ESV 2025/CUNPSS-Shen 1988 identity, independent manifest/source/evidence hashes, private containment, text/audio/recording/ASR/translation rights, one-licensee binding, development/sealed partitions, reading-kind alignment, strict JSON, and punctuation fidelity without report text |
 | `TranscriptCoreTests` | Ordered lifecycle, raw/normalized source audit, append events, and compatibility decoding |
 | `PersistenceFileSystemTests` | JSONL/Markdown sessions, synchronized append, loading, source audit persistence, and non-bypassable active-recording deletion guards |
 | `LoggingOSLogTests` | Deterministic payload formatting plus a source policy that keeps all dynamic message and metadata text private |
@@ -97,6 +98,11 @@ QWEN_MODEL_DIR=/path/to/qwen Scripts/run_qwen_english_qualification.sh
 
 HYMT_MODEL_DIR=/path/to/hy-mt2 HYMT_LLAMA_SERVER=/path/to/llama-server \
   swift test --filter HyMT2RealModelSmokeTests
+
+swift run scripture-qualification-tool verify \
+  /path/to/.artifacts/scripture-qualification/<corpus-id> \
+  /path/to/.artifacts/scripture-qualification/<corpus-id>/manifest.json \
+  <independently-reviewed-manifest-sha256>
 ```
 
 The Qwen test reports raw output, normalized output, the correction audit, audio duration,
@@ -104,6 +110,11 @@ and decode duration. The Hy-MT2 test reports outputs and sentence inference dura
 These are smoke harnesses, not quality claims. Do not use measurements from the sibling
 `church_translation` project, including its long-sermon run, as validation of this exact
 Qwen3-ASR/Hy-MT2 app stack.
+
+The Scripture command is a rights, identity-metadata, containment, and hash preflight. It
+does not validate grant authenticity, decode the audio, prove the declared edition content,
+or produce an ASR/translation quality result. See
+[Private Scripture qualification](PrivateScriptureQualification.md).
 
 The English command generates an 18-clip, six-locale synthetic theological corpus locally and
 runs the production `languageCode = "en"` path, context selector, WER/CER gates, and report writer.

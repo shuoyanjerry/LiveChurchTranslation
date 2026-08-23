@@ -15,7 +15,7 @@ enum HyMT2PromptBuilder {
         if !terms.isEmpty {
             sections.append(termSection(terms))
         }
-        sections.append(scriptureRule(targetLanguage: targetLanguage))
+        sections.append(HyMT2ScripturePolicy.rule(targetLanguage: targetLanguage))
         if strict {
             sections.append(strictRules(targetLanguage: targetLanguage))
         }
@@ -67,21 +67,6 @@ enum HyMT2PromptBuilder {
             )
         }
         return rules.joined(separator: " ")
-    }
-
-    private static func scriptureRule(targetLanguage: String) -> String {
-        if targetLanguage.lowercased().hasPrefix("zh") {
-            return "Use book names and biblical terminology consistent with CUNPSS-神, the "
-                + "Simplified Chinese Union Version with New Punctuation, Shen Edition "
-                + "(新标点和合本，神版). Preserve Arabic chapter-and-verse numbers (for example, "
-                + "约翰福音 3:16), use 神 rather than 上帝, allow 他 or 祂 according to "
-                + "context, and never "
-                + "reconstruct or invent verse text that the current source did not supply."
-        }
-        return "Use book names and biblical terminology consistent with The Holy Bible, English "
-            + "Standard Version (ESV), Text Edition: 2025. Preserve conventional numeric references "
-            + "(for example, John 3:16), and never reconstruct or invent verse text that the current "
-            + "source did not supply."
     }
 
     private static func termSection(_ terms: [TranslationTerm]) -> String {

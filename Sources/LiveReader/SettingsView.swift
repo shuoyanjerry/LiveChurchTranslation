@@ -64,6 +64,19 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Section("Scripture terminology") {
+                LabeledContent(
+                    "English baseline",
+                    value: ScriptureSettingsPresentation.englishBaseline
+                )
+                LabeledContent(
+                    "Chinese baseline",
+                    value: ScriptureSettingsPresentation.simplifiedChineseBaseline
+                )
+                Text(ScriptureSettingsPresentation.notice)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Privacy") {
                 Text("Meeting audio, transcripts, and translations stay on this Mac.")
                     .foregroundStyle(.secondary)

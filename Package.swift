@@ -42,6 +42,10 @@ let package = Package(
     products: [
         .library(name: "ChurchTranslatorApp", targets: ["ChurchTranslatorApp"]),
         .executable(name: "LiveChurchTranslation", targets: ["ChurchTranslatorCLI"]),
+        .executable(
+            name: "scripture-qualification-tool",
+            targets: ["ScriptureQualificationTool"]
+        ),
     ],
     dependencies: [
         .package(
@@ -58,6 +62,8 @@ let package = Package(
         target("ASRAPI", dependencies: ["VADAPI"]),
         target("ASRNormalizationAPI"),
         target("ASRQualificationSupport"),
+        target("ScriptureAPI"),
+        target("ScriptureQualificationSupport", dependencies: ["ScriptureAPI"]),
         target("DiscourseResolutionAPI"),
         target("TranslationAPI"),
         target("TranslationQualificationSupport"),
@@ -130,7 +136,10 @@ let package = Package(
             "TranslationApple",
             dependencies: ["TranslationAPI", "ModelRuntimeAPI"]
         ),
-        target("TranslationHyMT2", dependencies: ["ModelRuntimeAPI", "TranslationAPI"]),
+        target(
+            "TranslationHyMT2",
+            dependencies: ["ModelRuntimeAPI", "ScriptureAPI", "TranslationAPI"]
+        ),
         target("GlossaryCore", dependencies: ["GlossaryAPI"]),
         target("GlossaryFileSystem", dependencies: ["GlossaryAPI"]),
         target("ModelRuntimeCore", dependencies: ["ModelRuntimeAPI"]),
@@ -194,7 +203,7 @@ let package = Package(
             dependencies: [
                 "AudioCaptureAPI", "GlossaryAPI", "ModelRuntimeAPI",
                 "PersistenceAPI", "RemoteSharingFeatureAPI", "SessionManagementAPI", "SettingsAPI",
-                "TranscriptAPI", "UIDesignSystem",
+                "ScriptureAPI", "TranscriptAPI", "UIDesignSystem",
             ]
         ),
         target(
@@ -216,6 +225,11 @@ let package = Package(
         .executableTarget(
             name: "ChurchTranslatorCLI",
             dependencies: ["ChurchTranslatorApp"],
+            swiftSettings: strict
+        ),
+        .executableTarget(
+            name: "ScriptureQualificationTool",
+            dependencies: ["ScriptureQualificationSupport"],
             swiftSettings: strict
         ),
         test("AudioProcessingCoreTests", dependencies: ["AudioCaptureAPI", "AudioProcessingCore"]),
@@ -263,6 +277,10 @@ let package = Package(
             "ASRQualificationSupportTests",
             dependencies: ["ASRQualificationSupport"]
         ),
+        test(
+            "ScriptureQualificationSupportTests",
+            dependencies: ["ScriptureAPI", "ScriptureQualificationSupport"]
+        ),
         .testTarget(
             name: "ASRQualificationManifestToolTests",
             dependencies: ["ASRQualificationSupport"],
@@ -293,7 +311,8 @@ let package = Package(
             "TranslationHyMT2Tests",
             dependencies: [
                 "DiscourseResolutionAPI", "DiscourseResolutionCore", "GlossaryAPI",
-                "TranslationAPI", "TranslationHyMT2", "TranslationQualificationSupport",
+                "ScriptureAPI", "TranslationAPI", "TranslationHyMT2",
+                "TranslationQualificationSupport",
             ],
             exclude: ["README.md"]
         ),
@@ -301,7 +320,10 @@ let package = Package(
             "TranslationQualificationSupportTests",
             dependencies: ["TranslationQualificationSupport"]
         ),
-        test("LiveReaderTests", dependencies: ["LiveReader", "RemoteSharingFeatureAPI"]),
+        test(
+            "LiveReaderTests",
+            dependencies: ["LiveReader", "RemoteSharingFeatureAPI", "ScriptureAPI"]
+        ),
         test(
             "UtteranceRecoveryFileSystemTests",
             dependencies: ["UtteranceRecoveryAPI", "UtteranceRecoveryFileSystem", "VADAPI"]

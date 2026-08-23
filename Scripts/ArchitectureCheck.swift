@@ -46,6 +46,11 @@ func isAllowed(_ source: TargetNode, dependency: String) -> Bool {
     if source.name == "ChurchTranslatorCLI" && dependency == "ChurchTranslatorApp" {
         return true
     }
+    if source.name == "ScriptureQualificationTool"
+        && dependency == "ScriptureQualificationSupport"
+    {
+        return true
+    }
     if source.name == "VADWebRTC" && dependency == "WebRTCVADC" {
         return true
     }
