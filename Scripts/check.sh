@@ -23,7 +23,17 @@ run_logged_gate() {
     result=${PIPESTATUS[0]}
     set -e
     if [[ "$result" -ne 0 && "${GITHUB_ACTIONS:-}" == "true" ]]; then
-        details="$(tail -n 40 "$log_file")"
+        details="$(
+            rg 'error:|fatalError|Expectation failed|Caught error|✘ (Test|Suite)' "$log_file" \
+                | tail -n 120 \
+                || true
+        )"
+        if [[ -z "$details" ]]; then
+            details="$(tail -n 40 "$log_file")"
+        fi
+        if [[ "${#details}" -gt 50000 ]]; then
+            details="${details: -50000}"
+        fi
         details="${details//'%'/'%25'}"
         details="${details//$'\r'/'%0D'}"
         details="${details//$'\n'/'%0A'}"
