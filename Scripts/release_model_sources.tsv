@@ -1,0 +1,8 @@
+# relative_path	immutable_url
+qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/conv_frontend.onnx
+qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/encoder.int8.onnx
+qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/decoder.int8.onnx
+qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/merges.txt
+qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/tokenizer_config.json
+qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json	https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/vocab.json
+hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf	https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/resolve/1cd5208700acedef4ef93019b6cfc148b8522d45/Hy-MT2-1.8B-Q4_K_M.gguf

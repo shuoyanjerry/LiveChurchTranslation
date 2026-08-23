@@ -92,6 +92,37 @@ import TranscriptAPI
         try await independentReader.delete(sessionID: fixture.session.id)
     }
 
+    @Test func incompleteFinalizationPersistsCountsAndNeverClaimsCompleteness() async throws {
+        let fixture = PersistenceFixture()
+        defer { fixture.remove() }
+        let store = fixture.store
+        try await store.begin(fixture.session)
+        let rejection = StoredTranscriptRejection(
+            sentenceID: UUID(),
+            sentenceOrdinal: 0,
+            stage: "translation",
+            failureCode: "hymt2.invalid_output"
+        )
+
+        try await store.finish(
+            finishedSession(from: fixture.session),
+            finalization: TranscriptFinalization(
+                pendingRecordCount: 2,
+                rejections: [rejection],
+                quarantinedArtifactCount: 1
+            )
+        )
+
+        let summary = try #require(try await store.recentSessions(limit: 1).first)
+        #expect(summary.integrity == .incomplete)
+        #expect(summary.pendingRecordCount == 2)
+        #expect(summary.rejectedSentenceCount == 1)
+        #expect(summary.quarantinedArtifactCount == 1)
+        let markdown = try String(contentsOf: fixture.markdownURL, encoding: .utf8)
+        #expect(markdown.contains("未完整处理"))
+        #expect(!markdown.contains("会议记录完整"))
+    }
+
     private func assertPersistedFiles(_ fixture: PersistenceFixture) throws {
         let contents = try String(contentsOf: fixture.jsonLinesURL, encoding: .utf8)
         let lines = contents.split(whereSeparator: \Character.isNewline)

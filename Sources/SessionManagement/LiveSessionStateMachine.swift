@@ -11,8 +11,8 @@ struct LiveSessionStateMachine {
     private(set) var sourceLanguage: String?
     private(set) var targetLanguage: String?
     private(set) var modelStatus: ModelRuntimeStatus?
-    private(set) var statusMessage = "Ready"
-    private(set) var issues: [LiveSessionIssue] = []
+    private(set) var statusMessage = "就绪"
+    private var issueBuffer = BoundedLiveSessionIssueBuffer()
     private(set) var finalizationOutcome: LiveSessionFinalizationOutcome?
 
     mutating func begin(sessionID: UUID) {
@@ -21,9 +21,9 @@ struct LiveSessionStateMachine {
         captureStartedAt = nil
         sourceLanguage = nil
         targetLanguage = nil
-        issues = []
+        issueBuffer = BoundedLiveSessionIssueBuffer()
         finalizationOutcome = nil
-        transition(to: .requestingPermission, message: "Requesting microphone access…")
+        transition(to: .requestingPermission, message: "正在请求麦克风权限…")
     }
 
     mutating func transition(to phase: LiveSessionPhase, message: String) {
@@ -47,7 +47,7 @@ struct LiveSessionStateMachine {
     mutating func receive(_ status: ModelRuntimeStatus) {
         setModelStatus(status)
         if phase == .preparingModel, let message = ModelStatusMessage.text(for: status) {
-            let prefix = captureStartedAt == nil ? "" : "Recording · "
+            let prefix = captureStartedAt == nil ? "" : "录音中 · "
             transition(to: .preparingModel, message: prefix + message)
         }
     }
@@ -57,7 +57,7 @@ struct LiveSessionStateMachine {
     }
 
     mutating func record(_ issue: LiveSessionIssue) {
-        issues.append(issue)
+        issueBuffer.append(issue)
     }
 
     mutating func finish(
@@ -90,7 +90,7 @@ struct LiveSessionStateMachine {
             targetLanguage: targetLanguage,
             modelStatus: modelStatus,
             statusMessage: statusMessage,
-            issues: issues,
+            issues: issueBuffer.values,
             finalizationOutcome: finalizationOutcome
         )
     }

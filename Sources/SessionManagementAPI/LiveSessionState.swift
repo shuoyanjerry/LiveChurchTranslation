@@ -50,6 +50,10 @@ public struct LiveSessionIssue: Identifiable, Equatable, Sendable {
 public enum LiveSessionFinalizationOutcome: Equatable, Sendable {
     case saved
     case savedWithUnresolvedUtterances(count: Int)
+    case savedWithIncompleteTranscript(
+        rejectedUtteranceCount: Int,
+        recoverableUtteranceCount: Int
+    )
     case cancelledBeforeCapture
     case failedBeforeCapture
     case saveFailed(message: String, unresolvedUtteranceCount: Int)

@@ -103,6 +103,7 @@ public struct TranscriptEntry: Codable, Identifiable, Equatable, Sendable {
     public let sourceCorrections: [TranscriptSourceCorrection]
     public let sourcePronounDecisions: [TranscriptSourcePronounDecision]
     public let targetText: String
+    public let translationReview: TranslationReview?
     public let startedMilliseconds: Int64
     public let endedMilliseconds: Int64
     public let translationMilliseconds: Int64
@@ -117,6 +118,7 @@ public struct TranscriptEntry: Codable, Identifiable, Equatable, Sendable {
         sourceCorrections: [TranscriptSourceCorrection] = [],
         sourcePronounDecisions: [TranscriptSourcePronounDecision] = [],
         targetText: String,
+        translationReview: TranslationReview? = nil,
         startedMilliseconds: Int64,
         endedMilliseconds: Int64,
         translationMilliseconds: Int64,
@@ -130,6 +132,7 @@ public struct TranscriptEntry: Codable, Identifiable, Equatable, Sendable {
         self.sourceCorrections = sourceCorrections
         self.sourcePronounDecisions = sourcePronounDecisions
         self.targetText = targetText
+        self.translationReview = translationReview
         self.startedMilliseconds = startedMilliseconds
         self.endedMilliseconds = endedMilliseconds
         self.translationMilliseconds = translationMilliseconds
@@ -139,7 +142,7 @@ public struct TranscriptEntry: Codable, Identifiable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case id, sequence, sourceSegmentSequence, rawSourceText, sourceText, sourceCorrections
         case sourcePronounDecisions
-        case targetText, startedMilliseconds, endedMilliseconds
+        case targetText, translationReview, startedMilliseconds, endedMilliseconds
         case translationMilliseconds, createdAt
     }
 
@@ -164,6 +167,10 @@ public struct TranscriptEntry: Codable, Identifiable, Equatable, Sendable {
                 forKey: .sourcePronounDecisions
             ) ?? []
         targetText = try values.decode(String.self, forKey: .targetText)
+        translationReview = try values.decodeIfPresent(
+            TranslationReview.self,
+            forKey: .translationReview
+        )
         startedMilliseconds = try values.decode(Int64.self, forKey: .startedMilliseconds)
         endedMilliseconds = try values.decode(Int64.self, forKey: .endedMilliseconds)
         translationMilliseconds = try values.decode(Int64.self, forKey: .translationMilliseconds)

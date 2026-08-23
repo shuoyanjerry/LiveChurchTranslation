@@ -13,7 +13,12 @@ enum HyMT2FidelityValidator {
         if target.isEmpty { issues.append(.empty) }
         if !plausibleLength(target, source: source) { issues.append(.implausibleLength) }
         if containsMetaText(target) { issues.append(.metaText) }
-        if HyMT2PromptControlDelimiter.occurs(in: target) {
+        if HyMT2PromptControlDelimiter.occurs(in: target)
+            || HyMT2PronounProtocolResidualValidator.containsProtocolFragment(
+                in: target,
+                plan: nil
+            )
+        {
             issues.append(.promptControlDelimiter)
         }
         if hasUnexpectedScript(target, source: source, targetLanguage: targetLanguage) {

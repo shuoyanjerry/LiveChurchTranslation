@@ -2,16 +2,22 @@ import Foundation
 import PersistenceAPI
 import TranscriptAPI
 
-public actor FileTranscriptStore: TranscriptStore {
+public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecoveryStore {
     let root: URL
     let fileManager: FileManager
+    let recoveryLimits: TranscriptRecoveryLimits
     let jsonEncoder: JSONEncoder
     var entryIDs: [UUID: Set<UUID>] = [:]
     var activeSessionIDs: Set<UUID> = []
 
-    public init(root: URL, fileManager: FileManager = .default) {
+    public init(
+        root: URL,
+        fileManager: FileManager = .default,
+        recoveryLimits: TranscriptRecoveryLimits = TranscriptRecoveryLimits()
+    ) {
         self.root = root
         self.fileManager = fileManager
+        self.recoveryLimits = recoveryLimits
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -23,7 +29,7 @@ public actor FileTranscriptStore: TranscriptStore {
             let directory = sessionDirectory(session.id)
             try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            try writeManifest(for: session)
+            try writeManifest(for: session, integrity: .active)
             try markdownHeader(for: session).write(
                 to: markdownURL(session.id),
                 atomically: true,
@@ -53,16 +59,26 @@ public actor FileTranscriptStore: TranscriptStore {
         }
     }
 
-    public func finish(_ session: TranscriptSession) async throws {
+    public func finish(
+        _ session: TranscriptSession,
+        finalization: TranscriptFinalization
+    ) async throws {
         defer { activeSessionIDs.remove(session.id) }
         do {
+            let committedFinalization = try mergedFinalization(
+                sessionID: session.id,
+                current: finalization
+            )
             try writeEntries(session.entries, sessionID: session.id)
-            try writeManifest(for: session)
-            try completeMarkdown(for: session).write(
+            try completeMarkdown(
+                for: session,
+                finalization: committedFinalization
+            ).write(
                 to: markdownURL(session.id),
                 atomically: true,
                 encoding: .utf8
             )
+            try writeManifest(for: session, finalization: committedFinalization)
             try enforcePrivatePermissions(sessionID: session.id)
         } catch {
             throw TranscriptStoreError.fileSystem(error.localizedDescription)
@@ -137,7 +153,7 @@ extension FileTranscriptStore {
         activeSessionIDs.contains(sessionID) || hasRecordingActivityArtifact(sessionID: sessionID)
     }
 
-    private func hasRecordingActivityArtifact(sessionID: UUID) -> Bool {
+    func hasRecordingActivityArtifact(sessionID: UUID) -> Bool {
         let directory = sessionDirectory(sessionID)
         return [".recording-active", "recording.partial.caf"].contains {
             fileManager.fileExists(atPath: directory.appending(path: $0).path)

@@ -59,36 +59,6 @@ import TranslationAPI
         #expect(prompts[1].contains("without summarizing"))
     }
 
-    @Test func secondInvalidOutputIsSurfacedWithoutThirdAttempt() async throws {
-        let harness = try await makeTranslationHarness(responses: [
-            .success("We are made right."),
-            .success("Here is the translation: We are made right."),
-            .success("This response must never be consumed."),
-        ])
-        defer { harness.model.remove() }
-        let request = TranslationRequest(
-            sourceText: "我们因信称义。",
-            glossary: [
-                TranslationTerm(source: "因信称义", target: "justification by faith")
-            ]
-        )
-
-        do {
-            _ = try await harness.provider.translate(request)
-            Issue.record("Expected output rejection")
-        } catch let error as HyMT2Error {
-            guard case .invalidOutput(let reasons) = error else {
-                Issue.record("Unexpected error: \(error)")
-                return
-            }
-            #expect(reasons.contains(where: { $0.contains("required term") }))
-        } catch {
-            Issue.record("Unexpected error: \(error)")
-        }
-        let requestCount = await harness.transport.completionRequests().count
-        #expect(requestCount == 2)
-    }
-
     @Test func transportFailureDoesNotTriggerContentRetry() async throws {
         let harness = try await makeTranslationHarness(responses: [
             .failure(.transportFailure("connection reset")),

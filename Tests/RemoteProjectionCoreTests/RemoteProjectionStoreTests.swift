@@ -5,6 +5,14 @@ import Testing
 
 @Suite("Remote projection store")
 struct RemoteProjectionStoreTests {
+    @Test("The initial listener status is Simplified Chinese")
+    func initialStatus() async {
+        let snapshot = await RemoteProjectionStore().snapshot()
+
+        #expect(snapshot.phase == .idle)
+        #expect(snapshot.statusMessage == "等待 Mac 开始")
+    }
+
     @Test("Late lower sequence upserts remain in authoritative order")
     func lateLowerSequence() async throws {
         let store = RemoteProjectionStore()

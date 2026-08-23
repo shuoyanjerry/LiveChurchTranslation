@@ -33,10 +33,42 @@ enum HyMT2PromptControlDelimiter {
     }
 
     private static func inspectionForm(_ value: String) -> String {
-        let withoutFormatCharacters = removingFormatCharacters(from: value)
+        var inspected = value
+        for _ in 0..<3 {
+            let normalized = removingFormatCharacters(
+                from: inspected.precomposedStringWithCompatibilityMapping
+            )
+            let decoded = decodingAngleBracketEntities(in: normalized)
+            if decoded == inspected { return decoded }
+            inspected = decoded
+        }
         return removingFormatCharacters(
-            from: withoutFormatCharacters.precomposedStringWithCompatibilityMapping
+            from: inspected.precomposedStringWithCompatibilityMapping
         )
+    }
+
+    private static func decodingAngleBracketEntities(in value: String) -> String {
+        var decoded = value
+        for _ in 0..<2 {
+            decoded =
+                decoded
+                .replacingOccurrences(
+                    of: #"&(?:lt|#0*60|#x0*3c);"#,
+                    with: "<",
+                    options: [.regularExpression, .caseInsensitive]
+                )
+                .replacingOccurrences(
+                    of: #"&(?:gt|#0*62|#x0*3e);"#,
+                    with: ">",
+                    options: [.regularExpression, .caseInsensitive]
+                )
+                .replacingOccurrences(
+                    of: "&amp;",
+                    with: "&",
+                    options: .caseInsensitive
+                )
+        }
+        return decoded
     }
 
     private static func removingFormatCharacters(from value: String) -> String {

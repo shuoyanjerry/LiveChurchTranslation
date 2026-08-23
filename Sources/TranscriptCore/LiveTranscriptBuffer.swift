@@ -135,6 +135,7 @@ extension LiveTranscriptBuffer {
             sourceCorrections: sourceAudit?.corrections ?? [],
             sourcePronounDecisions: sourceAudit?.pronounDecisions ?? [],
             targetText: translation.targetText,
+            translationReview: translation.review,
             startedMilliseconds: recognition.startedAt.milliseconds,
             endedMilliseconds: recognition.endedAt.milliseconds,
             translationMilliseconds: translation.duration.milliseconds

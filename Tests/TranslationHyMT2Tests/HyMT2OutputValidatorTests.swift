@@ -84,6 +84,14 @@ import TranslationAPI
         )
     }
 
+    @Test func rejectsReservedProtocolTextWithoutPronounGuidance() {
+        assertIssue(
+            .promptControlDelimiter,
+            output: "Grace is enough. QLR_PRIVATE",
+            source: "恩典够用。"
+        )
+    }
+
     @Test(arguments: ["They 后来继续分享。", "They continued sharing。"])
     func rejectsChineseSourceScriptInEnglishOutput(_ output: String) {
         assertIssue(

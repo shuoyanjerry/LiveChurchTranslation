@@ -315,8 +315,10 @@ Score separately:
   reaching the transcript fails the gate.
 
 Automated validators are narrow defect detectors, not a substitute for bilingual human
-review. A rejected sentence remaining recoverable is safer than publishing an unchecked
-guess, but it is still a service interruption to measure.
+review. Any safe, non-empty candidate is shown in full and marked only in the persisted backend
+record when a validator warns; it is excluded from translation context but never hidden from the
+listener. Empty output, exact source echo, explicit model refusal, and internal prompt/protocol
+text remain recoverable failures because none is a translation.
 
 Negation qualification must not use the current sentence-level cue-presence check as its own
 oracle. The deterministic public challenge includes known multi-cue omission and scope false
@@ -350,7 +352,8 @@ Motion, text selection, and long-English/Chinese wrapping checks. A rendered scr
 unit test alone is not clean-Mac UI evidence.
 
 Verify that normal operation sends no audio, transcript, glossary, or diagnostics off the
-Mac. Model installation may contact only manifest-pinned HTTPS artifact hosts. With LAN
+Mac. A signed release must load its bundled models with the network disabled and must not contact
+an artifact host; only a development build may use the manifest-pinned HTTPS fallback. With LAN
 sharing off, no listener should exist. With sharing on, confirm that Bonjour and paired
 HTTP/WebSocket traffic are local, no third-party asset request occurs, credentials and
 transcript content do not enter logs, and disabling sharing revokes grants.
@@ -366,3 +369,5 @@ and Gatekeeper launch on a clean standard-user account.
 If credentials or clean hardware are unavailable, packaging scripts may produce an
 unsigned or ad-hoc engineering artifact. Label it explicitly. Do not call it notarized,
 publicly distributed, production-ready, long-sermon validated, or clean-Mac validated.
+The tag workflow creates a draft prerelease and an automated packaging report only; neither
+supersedes the human, corpus, soak, latency, device, privacy, or clean-Mac gates above.

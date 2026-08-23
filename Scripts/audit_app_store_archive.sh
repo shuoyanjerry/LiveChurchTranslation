@@ -71,6 +71,8 @@ PROFILE="$CONTENTS/embedded.provisionprofile"
   || fail "llama-server must be a non-symlink executable in Contents/MacOS"
 [[ ! -e "$CONTENTS/Helpers/llama-server" ]] \
   || fail "legacy Contents/Helpers/llama-server must not be present"
+"$SCRIPT_DIR/check_bundled_models.sh" "$APP"
+"$SCRIPT_DIR/check_bundled_licenses.sh" "$CONTENTS/Resources/Licenses"
 
 plutil -lint "$INFO" "$PRIVACY" >/dev/null || fail "bundle plist validation failed"
 require_nonempty "$INFO" "NSMicrophoneUsageDescription" "microphone usage description"

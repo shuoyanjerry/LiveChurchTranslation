@@ -6,7 +6,7 @@ extension LiveReaderViewModel {
         if isRunning {
             await controller.stop()
         } else if externalSessionControlLock {
-            presentedError = "Wait for the current audio import to finish before starting live capture."
+            presentedError = "请先等待当前音频导入完成，再开始实时翻译。"
         } else {
             presentsRecordingNotice = true
         }

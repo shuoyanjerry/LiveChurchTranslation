@@ -1,3 +1,7 @@
 enum ReaderJavaScript {
-    static let value = ReaderJavaScriptReader.value + ReaderJavaScriptNetwork.value
+    static let value =
+        ReaderJavaScriptPreamble.value
+        + ReaderJavaScriptPresentation.value
+        + ReaderJavaScriptReader.value
+        + ReaderJavaScriptNetwork.value
 }

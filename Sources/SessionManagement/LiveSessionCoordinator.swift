@@ -35,6 +35,7 @@ public actor LiveSessionCoordinator: LiveSessionController {
     var segmentQueue = PendingUtteranceQueue()
     var pendingUtterances: [PendingUtterance] = []
     var unresolvedUtteranceCount = 0
+    var terminalRejectedSentenceCount = 0
     var diskRecoveryMode: DiskRecoveryMode?
     var eventHub = SessionEventHub()
     var isActive = false
@@ -42,6 +43,7 @@ public actor LiveSessionCoordinator: LiveSessionController {
     var inferenceIsReady = false
     var captureEndedBeforeInference = false
     var terminalFailureMessage: String?
+    var hasUnrecoverableSessionFailure = false
     var unsavedTranscripts: [UUID: TranscriptSession] = [:]
     var sentenceAudioTimelineAnchor: SentenceAudioTimelineAnchor?
 
@@ -105,7 +107,7 @@ extension LiveSessionCoordinator {
         }
         guard let sessionID = state.sessionID else { return }
         isActive = false
-        state.transition(to: .stopping, message: "Finishing the current sentence…")
+        state.transition(to: .stopping, message: "正在完成当前语句…")
         publishState()
         captureStartupTask?.cancel()
         preparationTask?.cancel()
@@ -123,7 +125,8 @@ extension LiveSessionCoordinator {
 
     public func events() async -> AsyncStream<LiveSessionEvent> {
         eventHub.stream(initial: state.snapshot) { [weak self] id in
-            Task { await self?.removeContinuation(id) }
+            guard let self else { return }
+            Task { await self.removeContinuation(id) }
         }
     }
 

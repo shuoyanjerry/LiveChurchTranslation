@@ -23,7 +23,7 @@ struct LiveReaderHeader: View {
                     Task { await viewModel.retryModelPreparation() }
                 }
                 .buttonStyle(ChurchSecondaryButtonStyle())
-                .help("重新下载、校验并载入本地模型")
+                .help("重新校验并载入应用内置模型")
             }
             if let startedAt = viewModel.recordingStartedAt {
                 RecordingIndicator(startedAt: startedAt)
@@ -47,7 +47,7 @@ struct LiveReaderHeader: View {
                 .frame(width: 42, height: 42)
                 .background(ChurchTheme.surfaceWarm, in: Circle())
             VStack(alignment: .leading, spacing: 2) {
-                Text("Quiet Liturgy Reader")
+                Text("教会实时翻译")
                     .font(.system(size: 21, weight: .semibold, design: .serif))
                     .foregroundStyle(ChurchTheme.ink)
                 Text(viewModel.displayedStatusMessage)
@@ -71,15 +71,15 @@ struct LiveReaderHeader: View {
         .popover(isPresented: $showsSharing, arrowEdge: .bottom) {
             LocalSharingPopover(state: sharingState, onIntent: onSharingIntent)
         }
-        .help("Share the live transcript on the local network")
+        .help("让同一局域网内的听众查看实时听抄与翻译")
     }
 
     private var optionsMenu: some View {
         Menu {
-            Button("Theological Glossary", systemImage: "character.book.closed") {
+            Button("属灵术语表", systemImage: "character.book.closed") {
                 showsGlossary = true
             }
-            Button("Reader Settings", systemImage: "slider.horizontal.3") {
+            Button("阅读与翻译设置", systemImage: "slider.horizontal.3") {
                 showsSettings = true
             }
         } label: {
@@ -89,12 +89,12 @@ struct LiveReaderHeader: View {
         }
         .menuStyle(.borderlessButton)
         .foregroundStyle(ChurchTheme.ink)
-        .accessibilityLabel("Reader options")
+        .accessibilityLabel("更多选项")
     }
 
     private var inputMenu: some View {
         Menu {
-            Button("System Default") { selectInput(nil) }
+            Button("系统默认麦克风") { selectInput(nil) }
             if !viewModel.devices.isEmpty { Divider() }
             ForEach(viewModel.devices) { device in
                 Button(device.name) { selectInput(device.id) }
@@ -111,7 +111,7 @@ struct LiveReaderHeader: View {
         }
         .buttonStyle(ChurchSecondaryButtonStyle())
         .disabled(viewModel.sessionControlsLocked)
-        .accessibilityLabel("Audio input")
+        .accessibilityLabel("音频输入")
         .accessibilityValue(selectedInputName)
     }
 
@@ -124,6 +124,6 @@ struct LiveReaderHeader: View {
         .buttonStyle(ChurchPrimaryButtonStyle())
         .disabled(viewModel.externalSessionControlLock && !viewModel.isRunning)
         .keyboardShortcut(.return, modifiers: [.command])
-        .accessibilityHint("Starts or stops live speech recognition and translation")
+        .accessibilityHint("开始或停止实时语音识别、翻译和录音")
     }
 }

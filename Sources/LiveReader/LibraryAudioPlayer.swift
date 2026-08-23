@@ -24,7 +24,7 @@ struct LibraryAudioPlayer: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(ChurchTheme.olive)
-                .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
+                .accessibilityLabel(viewModel.isPlaying ? "暂停" : "播放")
 
                 Text(time(viewModel.currentTime))
                     .monospacedDigit()

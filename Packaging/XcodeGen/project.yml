@@ -4,7 +4,7 @@ options:
   minimumXcodeGenVersion: 2.45.4
   xcodeVersion: "16.4"
   projectFormat: xcode16_3
-  developmentLanguage: en
+  developmentLanguage: zh-Hans
   createIntermediateGroups: true
   deploymentTarget:
     macOS: "15.0"
@@ -17,6 +17,10 @@ fileGroups:
   - Packaging/LiveChurchTranslation.entitlements
   - Packaging/Helper.entitlements
   - Packaging/LlamaRuntime.sha256
+  - Packaging/ProductionModels.sha256
+  - Packaging/ProductionModels.sizes
+  - Packaging/LicenseFiles.sha256
+  - Packaging/Licenses
   - Packaging/XcodeGen/project.yml
   - Scripts/embed_app_store_runtime.sh
   - Docs/AppStoreSubmission.md
@@ -43,6 +47,8 @@ targets:
       - path: Assets/AppIcon.xcassets
         buildPhase: resources
       - path: Packaging/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      - path: Packaging/zh-Hans.lproj
         buildPhase: resources
       - path: PRIVACY.md
         buildPhase: resources
@@ -88,8 +94,21 @@ targets:
         inputFiles:
           - $(SRCROOT)/Package.swift
           - $(SRCROOT)/Scripts/embed_app_store_runtime.sh
+          - $(SRCROOT)/Scripts/check_release_models.sh
+          - $(SRCROOT)/Scripts/check_bundled_licenses.sh
           - $(SRCROOT)/Packaging/Helper.entitlements
           - $(SRCROOT)/Packaging/LlamaRuntime.sha256
+          - $(SRCROOT)/Packaging/ProductionModels.sha256
+          - $(SRCROOT)/Packaging/ProductionModels.sizes
+          - $(SRCROOT)/Packaging/LicenseFiles.sha256
+          - $(SRCROOT)/Packaging/Licenses/Hy-MT2-LICENSE.txt
+          - $(SRCROOT)/Packaging/Licenses/ONNX-Runtime-LICENSE.txt
+          - $(SRCROOT)/Packaging/Licenses/Qwen3-ASR-LICENSE.txt
+          - $(SRCROOT)/Packaging/Licenses/Qwen3-ASR-NOTICE.txt
+          - $(SRCROOT)/Packaging/Licenses/libfvad-AUTHORS.txt
+          - $(SRCROOT)/Packaging/Licenses/libfvad-LICENSE.txt
+          - $(SRCROOT)/Packaging/Licenses/libfvad-PATENTS.txt
+          - $(SRCROOT)/Packaging/Licenses/sherpa-onnx-LICENSE.txt
           - $(SRCROOT)/.artifacts/llama-b10549/llama-server
           - $(SRCROOT)/.artifacts/llama-b10549/libllama-server-impl.dylib
           - $(SRCROOT)/.artifacts/llama-b10549/libllama-common.0.dylib
@@ -102,6 +121,13 @@ targets:
           - $(SRCROOT)/.artifacts/llama-b10549/libggml-rpc.0.dylib
           - $(SRCROOT)/.artifacts/llama-b10549/libggml-base.0.dylib
           - $(SRCROOT)/.artifacts/llama-b10549/LICENSE
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json
+          - $(SRCROOT)/.artifacts/release-models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json
+          - $(SRCROOT)/.artifacts/release-models/hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/llama-server
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama-server-impl.dylib
@@ -115,6 +141,21 @@ targets:
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-rpc.0.dylib
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-base.0.dylib
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/llama.cpp-LICENSE
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Models/hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Hy-MT2-LICENSE.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/ONNX-Runtime-LICENSE.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Qwen3-ASR-LICENSE.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/Qwen3-ASR-NOTICE.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-AUTHORS.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-LICENSE.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/libfvad-PATENTS.txt
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Licenses/sherpa-onnx-LICENSE.txt
 
 schemes:
   QuietLiturgyReader:

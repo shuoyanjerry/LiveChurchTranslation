@@ -94,10 +94,13 @@ extension InferenceModelPreparationCoordinator {
     private func loadingMessage(for descriptor: ModelDescriptor) -> String {
         descriptor.id == descriptors.first?.id
             ? "正在载入语音识别模型…"
-            : "正在载入属灵翻译模型…"
+            : "正在载入中英翻译模型…"
     }
 
     private static func failureMessage(for error: any Error) -> String {
+        if let presented = error as? any ModelPreparationUserFacingError {
+            return presented.modelPreparationMessage
+        }
         guard let downloadError = error as? ModelDownloadError else {
             return "本地模型无法载入。请重试；若问题持续，请重新启动应用。"
         }

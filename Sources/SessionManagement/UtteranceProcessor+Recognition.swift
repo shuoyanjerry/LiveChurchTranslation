@@ -30,11 +30,12 @@ extension UtteranceProcessor {
             )
         } catch let failure as UtteranceProcessingFailure {
             throw failure
-        } catch ASRError.filteredNonspeech {
-            throw IgnoredUtterance(message: ASRError.filteredNonspeech.localizedDescription)
-        } catch ASRError.promptOnlyHallucination {
-            throw IgnoredUtterance(message: ASRError.promptOnlyHallucination.localizedDescription)
+        } catch let classified as any ASRFailureImpactProviding
+            where classified.asrFailureImpact == .ignoredUtterance
+        {
+            throw IgnoredUtterance(message: classified.localizedDescription)
         } catch {
+            if error is CancellationError { throw CancellationError() }
             throw failure(stage: .recognition, error: error)
         }
     }

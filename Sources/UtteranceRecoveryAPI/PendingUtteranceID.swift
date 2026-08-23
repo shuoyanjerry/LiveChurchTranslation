@@ -1,7 +1,7 @@
 import Foundation
 
 /// Stable identity for one durable VAD-to-inference handoff.
-public struct PendingUtteranceID: Sendable, Equatable, Hashable {
+public struct PendingUtteranceID: Codable, Sendable, Equatable, Hashable {
     public let sessionID: UUID
     public let segmentID: UUID
     public let sequenceNumber: UInt64

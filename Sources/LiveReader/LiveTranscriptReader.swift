@@ -77,7 +77,7 @@ struct LiveTranscriptReader: View {
         .buttonStyle(ChurchSecondaryButtonStyle())
         .padding(28)
         .transition(.opacity.combined(with: .move(edge: .bottom)))
-        .accessibilityHint("Returns to the newest translated passage")
+        .accessibilityHint("返回最新一段翻译")
     }
 }
 
@@ -90,7 +90,7 @@ extension LiveTranscriptReader {
                 .foregroundStyle(ChurchTheme.olive)
             Spacer()
             Picker(
-                "Translation mode",
+                "翻译方向",
                 selection: Binding(
                     get: { viewModel.settings.translationMode },
                     set: { mode in Task { await viewModel.selectTranslationMode(mode) } }
@@ -114,7 +114,7 @@ extension LiveTranscriptReader {
                 }
             } label: {
                 HStack(spacing: 7) {
-                    Text("Source")
+                    Text("识别原文")
                     Image(
                         systemName: viewModel.settings.showSourceText
                             ? "checkmark.circle.fill" : "circle"
@@ -124,14 +124,14 @@ extension LiveTranscriptReader {
             }
             .buttonStyle(.plain)
             .foregroundStyle(ChurchTheme.olive)
-            .accessibilityValue(viewModel.settings.showSourceText ? "Shown" : "Hidden")
+            .accessibilityValue(viewModel.settings.showSourceText ? "已显示" : "已隐藏")
         }
     }
 
     private var modeCaption: String {
         switch viewModel.settings.translationMode {
-        case .mandarinToEnglish: "中文信息 · ENGLISH TRANSLATION"
-        case .englishToSimplifiedChinese: "ENGLISH MESSAGE · 中文翻译"
+        case .mandarinToEnglish: "普通话信息 · 英语翻译"
+        case .englishToSimplifiedChinese: "英语信息 · 简体中文翻译"
         }
     }
 
@@ -146,8 +146,8 @@ extension LiveTranscriptReader {
     }
 
     private var jumpLabel: String {
-        guard liveFollow.unseenEntryCount > 0 else { return "Jump to Live" }
-        return "Jump to Live · \(liveFollow.unseenEntryCount) new"
+        guard liveFollow.unseenEntryCount > 0 else { return "回到最新" }
+        return "回到最新 · \(liveFollow.unseenEntryCount) 条新内容"
     }
 
     private func isUserDriven(_ phase: ScrollPhase) -> Bool {

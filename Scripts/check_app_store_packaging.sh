@@ -18,6 +18,11 @@ HELPER="$REPOSITORY_ROOT/Packaging/Helper.entitlements"
 PRIVACY="$REPOSITORY_ROOT/Packaging/PrivacyInfo.xcprivacy"
 EXPORT_OPTIONS="$REPOSITORY_ROOT/Packaging/AppStoreExportOptions.plist"
 RUNTIME_MANIFEST="$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256"
+MODEL_SHA_MANIFEST="$REPOSITORY_ROOT/Packaging/ProductionModels.sha256"
+MODEL_SIZE_MANIFEST="$REPOSITORY_ROOT/Packaging/ProductionModels.sizes"
+LICENSE_MANIFEST="$REPOSITORY_ROOT/Packaging/LicenseFiles.sha256"
+LICENSE_ROOT="$REPOSITORY_ROOT/Packaging/Licenses"
+ZH_INFO="$REPOSITORY_ROOT/Packaging/zh-Hans.lproj/InfoPlist.strings"
 ICON="$REPOSITORY_ROOT/Assets/AppIconQuiet.icns"
 ICON_SOURCE="$REPOSITORY_ROOT/Assets/AppIconQuiet-1024.png"
 ICON_CATALOG="$REPOSITORY_ROOT/Assets/AppIcon.xcassets"
@@ -65,17 +70,30 @@ done
 bash -n \
   "$SCRIPT_DIR/archive_app_store.sh" \
   "$SCRIPT_DIR/audit_app_store_archive.sh" \
+  "$SCRIPT_DIR/audit_release_app.sh" \
   "$SCRIPT_DIR/check_app_store_packaging.sh" \
+  "$SCRIPT_DIR/check_bundled_licenses.sh" \
+  "$SCRIPT_DIR/check_bundled_models.sh" \
+  "$SCRIPT_DIR/check_release_credentials.sh" \
+  "$SCRIPT_DIR/check_release_models.sh" \
   "$SCRIPT_DIR/check_xcode_project.sh" \
+  "$SCRIPT_DIR/create_dmg.sh" \
   "$SCRIPT_DIR/embed_app_store_runtime.sh" \
   "$SCRIPT_DIR/export_app_store.sh" \
   "$SCRIPT_DIR/fetch_llama_runtime.sh" \
+  "$SCRIPT_DIR/fetch_release_models.sh" \
   "$SCRIPT_DIR/fetch_xcodegen.sh" \
+  "$SCRIPT_DIR/generate_release_evidence.sh" \
   "$SCRIPT_DIR/generate_xcode_project.sh" \
+  "$SCRIPT_DIR/notarize_release.sh" \
   "$SCRIPT_DIR/package_release.sh"
 
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
+[[ "$(plist_value "$INFO" "CFBundleDevelopmentRegion")" == "zh-Hans" ]] \
+  || fail "Simplified Chinese must be the development language"
+[[ -f "$ZH_INFO" ]] || fail "Simplified Chinese InfoPlist localization is missing"
+plutil -lint "$ZH_INFO" >/dev/null || fail "Simplified Chinese InfoPlist localization is invalid"
 [[ -n "$(plist_value "$INFO" "NSMicrophoneUsageDescription")" ]] \
   || fail "microphone usage description is missing"
 [[ -n "$(plist_value "$INFO" "NSLocalNetworkUsageDescription")" ]] \
@@ -160,6 +178,17 @@ done
   || fail "tracked export template must not contain a real team ID"
 [[ "$(wc -l <"$RUNTIME_MANIFEST" | tr -d ' ')" == "12" ]] \
   || fail "pinned llama.cpp runtime manifest is incomplete"
+[[ "$(wc -l <"$MODEL_SHA_MANIFEST" | tr -d ' ')" == "7" ]] \
+  || fail "production model SHA manifest is incomplete"
+[[ "$(wc -l <"$MODEL_SIZE_MANIFEST" | tr -d ' ')" == "7" ]] \
+  || fail "production model size manifest is incomplete"
+[[ "$(awk '{ total += $1 } END { print total }' "$MODEL_SIZE_MANIFEST")" \
+  == "2120095795" ]] || fail "production model byte total changed without review"
+[[ "$(wc -l <"$LICENSE_MANIFEST" | tr -d ' ')" == "8" ]] \
+  || fail "third-party license manifest is incomplete"
+"$SCRIPT_DIR/check_bundled_licenses.sh" "$LICENSE_ROOT"
+awk 'length($1) != 64 || $2 !~ /^[A-Za-z0-9._\/-]+$/ { exit 1 }' "$MODEL_SHA_MANIFEST" \
+  || fail "production model SHA manifest is malformed"
 if [[ -d "$REPOSITORY_ROOT/.artifacts/llama-b10549" ]]; then
   (cd "$REPOSITORY_ROOT/.artifacts/llama-b10549" \
     && shasum -a 256 -c "$RUNTIME_MANIFEST" >/dev/null) \
@@ -170,17 +199,52 @@ rg -Fq 'minimumXcodeGenVersion: 2.45.4' \
   || fail "XcodeGen project version is not pinned"
 rg -Fq '090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef' \
   "$SCRIPT_DIR/fetch_xcodegen.sh" || fail "XcodeGen archive checksum is not pinned"
+MODEL_SOURCE_MANIFEST="$SCRIPT_DIR/release_model_sources.tsv"
+RELEASE_WORKFLOW="$REPOSITORY_ROOT/.github/workflows/release.yml"
+CI_WORKFLOW="$REPOSITORY_ROOT/.github/workflows/ci.yml"
+[[ -f "$MODEL_SOURCE_MANIFEST" && ! -L "$MODEL_SOURCE_MANIFEST" ]] \
+  || fail "release model source manifest is missing"
+[[ "$(grep -vc '^#' "$MODEL_SOURCE_MANIFEST" | tr -d ' ')" == "7" ]] \
+  || fail "release model source manifest must list seven artifacts"
+rg -Fq '68818b2313fe77bd06f6a7c5068ff3ef59d02b8a' "$MODEL_SOURCE_MANIFEST" \
+  || fail "Qwen release source is not revision-pinned"
+rg -Fq '1cd5208700acedef4ef93019b6cfc148b8522d45' "$MODEL_SOURCE_MANIFEST" \
+  || fail "Hy-MT2 release source is not revision-pinned"
+[[ -f "$RELEASE_WORKFLOW" && ! -L "$RELEASE_WORKFLOW" ]] \
+  || fail "GitHub Release workflow is missing"
+if rg -n '^[[:space:]]*uses:[[:space:]]+[^[:space:]]+@(v[0-9]|main|master)([^0-9a-f]|$)' \
+  "$RELEASE_WORKFLOW" >/dev/null; then
+  fail "GitHub Release workflow contains a mutable Action reference"
+fi
+for workflow in "$CI_WORKFLOW" "$RELEASE_WORKFLOW"; do
+  rg -Fq 'persist-credentials: false' "$workflow" \
+    || fail "GitHub checkout credentials must not persist: $(basename "$workflow")"
+done
+rg -Fq 'environment: production-release' "$RELEASE_WORKFLOW" \
+  || fail "formal release workflow must use the protected release environment"
+rg -Fq 'git merge-base --is-ancestor' "$RELEASE_WORKFLOW" \
+  || fail "formal release workflow must restrict tags to default-branch history"
 
 EXECUTABLE_SCRIPTS=(
   archive_app_store.sh
   audit_app_store_archive.sh
+  audit_release_app.sh
   check_app_store_packaging.sh
+  check_bundled_licenses.sh
+  check_bundled_models.sh
+  check_release_credentials.sh
+  check_release_models.sh
   check_xcode_project.sh
+  create_dmg.sh
   embed_app_store_runtime.sh
   export_app_store.sh
   fetch_llama_runtime.sh
+  fetch_release_models.sh
   fetch_xcodegen.sh
+  generate_release_evidence.sh
   generate_xcode_project.sh
+  notarize_release.sh
+  package_release.sh
 )
 for name in "${EXECUTABLE_SCRIPTS[@]}"; do
   [[ -x "$SCRIPT_DIR/$name" ]] || fail "$name is not executable"

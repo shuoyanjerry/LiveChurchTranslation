@@ -19,6 +19,11 @@ struct SessionLibraryRow: View {
             }
             .font(.caption)
             .foregroundStyle(ChurchTheme.muted)
+            if let integrity = summary.integrityLabel {
+                Label(integrity, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(ChurchTheme.warning)
+            }
         }
         .padding(.vertical, 7)
     }

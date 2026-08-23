@@ -70,6 +70,11 @@ struct SessionLibraryDetail: View {
                 Text(summary.languagePair)
                     .font(.callout)
                     .foregroundStyle(ChurchTheme.muted)
+                if let detail = summary.integrityDetail {
+                    Label(detail, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(ChurchTheme.warning)
+                }
             }
             Spacer()
             Button("在 Finder 中显示", systemImage: "folder") {
@@ -81,8 +86,8 @@ struct SessionLibraryDetail: View {
             .disabled(viewModel.selectedSessionIsActive)
             .help(
                 viewModel.selectedSessionIsActive
-                    ? "Stop the active meeting before deleting it."
-                    : "Delete this meeting"
+                    ? "请先停止当前会议，再删除。"
+                    : "删除这场会议"
             )
         }
         .padding(.horizontal, 28)

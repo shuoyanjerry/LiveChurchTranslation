@@ -15,7 +15,7 @@ import VADAPI
         let preparing = await harness.coordinator.currentSnapshot()
         #expect(preparing.phase == .preparingModel)
         #expect(preparing.captureStartedAt != nil)
-        #expect(preparing.statusMessage.contains("Recording"))
+        #expect(preparing.statusMessage.contains("录音"))
         #expect((await harness.recordingStore.recordedFrames()).count == 1)
 
         await harness.coordinator.stop()
@@ -122,10 +122,10 @@ extension LiveSessionReliabilityTests {
             Issue.record("Expected an explicit save failure")
             return
         }
-        #expect(message.contains("could not be finalized"))
+        #expect(message.contains("无法自动完成保存"))
         #expect(unresolved == 0)
         #expect(snapshot.issues.last?.stage == .finalization)
-        #expect(events.recoverableErrors.contains { $0.contains("could not be finalized") })
+        #expect(events.recoverableErrors.contains { $0.contains("无法自动完成保存") })
         #expect((await harness.coordinator.unsavedTranscripts).count == 1)
         #expect((await harness.store.finishedSessions()).isEmpty)
     }

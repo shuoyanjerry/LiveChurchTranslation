@@ -17,27 +17,27 @@ struct SessionLibraryView: View {
         .background(ChurchTheme.background)
         .task { await viewModel.load() }
         .alert(
-            "Library",
+            "资料库",
             isPresented: Binding(
                 get: { viewModel.presentedError != nil },
                 set: { if !$0 { viewModel.presentedError = nil } }
             )
         ) {
-            Button("OK") { viewModel.presentedError = nil }
+            Button("好") { viewModel.presentedError = nil }
         } message: {
-            Text(viewModel.presentedError ?? "Unknown error")
+            Text(viewModel.presentedError ?? "发生未知错误")
         }
         .confirmationDialog(
-            "Delete this meeting?",
+            "删除这场会议？",
             isPresented: $confirmsDeletion,
             titleVisibility: .visible
         ) {
-            Button("Delete Meeting", role: .destructive) {
+            Button("删除会议", role: .destructive) {
                 Task { await viewModel.deleteSelected() }
             }
-            Button("Cancel", role: .cancel) {}
+            Button("取消", role: .cancel) {}
         } message: {
-            Text("The transcript and complete audio recording will be removed from this Mac.")
+            Text("听抄稿、翻译和完整录音将从此 Mac 删除，且无法恢复。")
         }
     }
 
@@ -63,7 +63,7 @@ struct SessionLibraryView: View {
                     }
                 }
                 .buttonStyle(.borderless)
-                .help(viewModel.isImporting ? "Stop importing" : "Import an audio file")
+                .help(viewModel.isImporting ? "停止导入" : "导入音频文件")
             }
             .padding(20)
 

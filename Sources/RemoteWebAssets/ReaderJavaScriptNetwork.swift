@@ -2,7 +2,7 @@ enum ReaderJavaScriptNetwork {
     static let value = #"""
           const fetchSnapshot = async () => {
             const response = await fetch("/api/snapshot", {cache: "no-store"});
-            if (!response.ok) throw new Error("Snapshot unavailable");
+            if (!response.ok) throw new Error("无法获取实时内容");
             applySnapshot(await response.json());
             const role = response.headers.get("X-Remote-Role");
             operator.hidden = role !== "operator";
@@ -13,7 +13,7 @@ enum ReaderJavaScriptNetwork {
             socket.onopen = () => {
               retry = 0;
               heartbeatAt = Date.now();
-              setConnection("Connected", "live");
+              setConnection("已连接", "live");
             };
             socket.onmessage = event => {
               try {
@@ -24,7 +24,7 @@ enum ReaderJavaScriptNetwork {
             };
             socket.onerror = () => socket.close();
             socket.onclose = () => {
-              setConnection("Reconnecting");
+              setConnection("正在重新连接");
               const ceiling = Math.min(30000, 500 * (2 ** Math.min(retry++, 6)));
               setTimeout(connect, Math.random() * ceiling);
             };
@@ -38,7 +38,7 @@ enum ReaderJavaScriptNetwork {
               invitationID: match[1],
               fragmentCredential: match[2],
               peerMetadata: {
-                displayName: navigator.platform || "Safari device",
+                displayName: navigator.platform || "Safari 设备",
                 userAgentSummary: navigator.userAgent.slice(0, 160)
               }
             };
@@ -48,7 +48,7 @@ enum ReaderJavaScriptNetwork {
               body: JSON.stringify(body)
             });
             if (!response.ok) {
-              throw new Error("Pairing invitation is invalid or expired");
+              throw new Error("邀请无效或已过期");
             }
           };
           const stopOnMac = async () => {
@@ -62,7 +62,7 @@ enum ReaderJavaScriptNetwork {
               })
             });
             if (!response.ok) {
-              pairing.textContent = "The Mac did not accept the stop request.";
+              pairing.textContent = "Mac 未接受结束请求，请稍后重试。";
               pairing.hidden = false;
             }
             await fetchSnapshot();
@@ -93,7 +93,7 @@ enum ReaderJavaScriptNetwork {
             .catch(error => {
               pairing.textContent = error.message;
               pairing.hidden = false;
-              setConnection("Not paired", "error");
+              setConnection("尚未配对", "error");
             });
         })();
         """#

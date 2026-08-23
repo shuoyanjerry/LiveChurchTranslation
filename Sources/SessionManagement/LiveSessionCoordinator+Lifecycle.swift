@@ -52,21 +52,22 @@ extension LiveSessionCoordinator {
             ) != nil {
                 recordIssue(
                     stage: .finalization,
-                    message: "The meeting recording was recovered after an interrupted save. "
-                        + originalMessage,
+                    message: "会议录音在保存中断后已恢复。" + originalMessage,
                     isRecoverable: true
                 )
                 return
             }
             let message =
-                "The meeting recording could not be finalized automatically. "
-                + "Any partial recording was retained for recovery. " + originalMessage
+                "会议录音无法自动完成保存，已保留可恢复的部分录音。"
+                + originalMessage
+            hasUnrecoverableSessionFailure = true
             terminalFailureMessage = terminalFailureMessage ?? message
             recordIssue(stage: .finalization, message: message, isRecoverable: true)
         } catch {
+            hasUnrecoverableSessionFailure = true
             let message =
-                "The meeting recording remains in recoverable partial form. "
-                + originalMessage + " Recovery also reported: " + error.localizedDescription
+                "会议录音仍处于可恢复的未完成状态。" + originalMessage
+                + "恢复操作还报告：" + error.localizedDescription
             terminalFailureMessage = terminalFailureMessage ?? message
             recordIssue(stage: .finalization, message: message, isRecoverable: true)
         }
@@ -76,9 +77,15 @@ extension LiveSessionCoordinator {
         let failure = terminalFailureMessage
         let result =
             if let failure {
-                await sessionFinalizer.fail(failure)
+                await sessionFinalizer.fail(
+                    failure,
+                    hasUnrecoverableFailure: hasUnrecoverableSessionFailure
+                )
             } else {
-                await sessionFinalizer.finish(sessionID: sessionID)
+                await sessionFinalizer.finish(
+                    sessionID: sessionID,
+                    hasUnrecoverableFailure: hasUnrecoverableSessionFailure
+                )
             }
         let completion = completion(from: result, sessionID: sessionID)
         segmentQueue.removeAll()
@@ -99,6 +106,9 @@ extension LiveSessionCoordinator {
     }
 
     func requestFailure(_ message: String, stage: LiveSessionIssueStage) async {
+        if didStartCapture {
+            hasUnrecoverableSessionFailure = true
+        }
         terminalFailureMessage = message
         recordIssue(stage: stage, message: message, isRecoverable: true)
         await stop()
@@ -120,58 +130,4 @@ extension LiveSessionCoordinator {
         publish(.recoverableError(message))
     }
 
-    private func completion(
-        from result: SessionPersistenceResult,
-        sessionID: UUID
-    ) -> SessionCompletion {
-        let unresolved = unresolvedUtteranceCount
-        switch result {
-        case .failed(let transcript, let message):
-            unsavedTranscripts[sessionID] = transcript
-            state.record(
-                LiveSessionIssue(
-                    stage: .finalization,
-                    message: message,
-                    isRecoverable: true
-                )
-            )
-            return SessionCompletion(
-                outcome: .saveFailed(
-                    message: message,
-                    unresolvedUtteranceCount: unresolved
-                ),
-                message: "Transcript save failed",
-                errorMessage: message
-            )
-        case .noTranscript where !didStartCapture && terminalFailureMessage == nil:
-            return SessionCompletion(
-                outcome: .cancelledBeforeCapture,
-                message: "Stopped before listening",
-                errorMessage: nil
-            )
-        case .noTranscript:
-            return SessionCompletion(
-                outcome: .failedBeforeCapture,
-                message: "Session failed before listening",
-                errorMessage: nil
-            )
-        case .saved:
-            return successfulCompletion(unresolved: unresolved)
-        }
-    }
-
-    private func successfulCompletion(unresolved: Int) -> SessionCompletion {
-        guard unresolved > 0 else {
-            return SessionCompletion(
-                outcome: .saved,
-                message: "Transcript saved",
-                errorMessage: nil
-            )
-        }
-        return SessionCompletion(
-            outcome: .savedWithUnresolvedUtterances(count: unresolved),
-            message: "Transcript saved with \(unresolved) unfinished sentence(s)",
-            errorMessage: nil
-        )
-    }
 }

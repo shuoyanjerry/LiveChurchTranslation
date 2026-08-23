@@ -6,7 +6,9 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
     private let stageFails: Bool
     private var records: [PendingUtteranceID: PendingUtteranceRecord] = [:]
     private var completed: [PendingUtteranceID] = []
+    private var resolutions: [(PendingUtteranceID, UtteranceRecoveryResolution)] = []
     private var requestedPageSizes: [Int] = []
+    private var stageAttempts = 0
 
     init(stageFails: Bool = false) {
         self.stageFails = stageFails
@@ -16,6 +18,7 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
         _ segment: SpeechSegment,
         for sessionID: UUID
     ) throws -> PendingUtteranceRecord {
+        stageAttempts += 1
         if stageFails { throw FakeUtteranceRecoveryError.stageFailed }
         let id = PendingUtteranceID(
             sessionID: sessionID,
@@ -52,16 +55,62 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
         return UtteranceRecoveryPages { await source.next() }
     }
 
-    func markCompleted(_ id: PendingUtteranceID) throws {
-        guard records.removeValue(forKey: id) != nil else {
+    func summary(for sessionID: UUID) -> UtteranceRecoverySessionSummary {
+        let pendingCount = records.values.filter { $0.id.sessionID == sessionID }.count
+        let rejections = resolutions.flatMap { id, resolution -> [UtteranceRejectionReceipt] in
+            guard id.sessionID == sessionID,
+                case .terminallyRejected(let receipts) = resolution
+            else { return [] }
+            return receipts
+        }
+        return UtteranceRecoverySessionSummary(
+            pendingRecordCount: pendingCount,
+            rejections: rejections,
+            quarantinedArtifactCount: 0
+        )
+    }
+
+    func resolve(
+        _ id: PendingUtteranceID,
+        as resolution: UtteranceRecoveryResolution
+    ) throws {
+        guard records[id] != nil else {
+            if isRepeatedTerminalResolution(id, resolution: resolution) { return }
             throw UtteranceRecoveryError.recordNotFound(id)
         }
-        completed.append(id)
+        records.removeValue(forKey: id)
+        resolutions.append((id, resolution))
+        if resolution == .completed || resolution == .ignored {
+            completed.append(id)
+        }
+    }
+
+    func deleteArtifacts(for sessionID: UUID) {
+        records = records.filter { $0.key.sessionID != sessionID }
+        resolutions.removeAll { $0.0.sessionID == sessionID }
+        completed.removeAll { $0.sessionID == sessionID }
     }
 
     func pendingRecords() -> [PendingUtteranceRecord] { Array(records.values) }
     func completedIDs() -> [PendingUtteranceID] { completed }
+    func terminalRejections() -> [(PendingUtteranceID, [UtteranceRejectionReceipt])] {
+        resolutions.compactMap { id, resolution in
+            guard case .terminallyRejected(let receipts) = resolution else { return nil }
+            return (id, receipts)
+        }
+    }
     func recoveryPageSizes() -> [Int] { requestedPageSizes }
+    func stageAttemptCount() -> Int { stageAttempts }
+
+    private func isRepeatedTerminalResolution(
+        _ id: PendingUtteranceID,
+        resolution: UtteranceRecoveryResolution
+    ) -> Bool {
+        guard case .terminallyRejected = resolution else { return false }
+        return resolutions.contains { resolvedID, storedResolution in
+            resolvedID == id && storedResolution == resolution
+        }
+    }
 
     private func orderedRecords() -> [PendingUtteranceRecord] {
         let sessions = Dictionary(grouping: records.values, by: { $0.id.sessionID })

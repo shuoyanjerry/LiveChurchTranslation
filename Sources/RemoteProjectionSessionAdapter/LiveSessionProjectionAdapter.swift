@@ -51,7 +51,7 @@ public actor LiveSessionProjectionAdapter {
         if let sessionID = snapshot.sessionID, sessionID != projectedSessionID {
             projectedSessionID = sessionID
             projectedEntryIDs.removeAll(keepingCapacity: true)
-            await projection.beginSession(id: sessionID, message: "Preparing local translation")
+            await projection.beginSession(id: sessionID, message: "正在准备本地翻译")
         }
         for entry in snapshot.transcript where !projectedEntryIDs.contains(entry.id) {
             await project(entry)

@@ -22,6 +22,7 @@ extension TranscriptEntry {
             sourceCorrections: sourceCorrections,
             sourcePronounDecisions: sourcePronounDecisions,
             targetText: targetText,
+            translationReview: translationReview,
             startedMilliseconds: startedMilliseconds,
             endedMilliseconds: endedMilliseconds,
             translationMilliseconds: translationMilliseconds,

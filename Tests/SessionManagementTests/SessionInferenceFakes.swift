@@ -9,6 +9,7 @@ actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
     private let loadFails: Bool
     private let recognitionFails: Bool
     private let recognitionError: ASRError?
+    private let recognitionErrorsByIndex: [Int: ASRError]
     private let recognitionDelay: Duration?
     private var requests: [ASRRequest] = []
     private var loads = 0
@@ -19,12 +20,14 @@ actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
         loadFails: Bool = false,
         recognitionFails: Bool = false,
         recognitionError: ASRError? = nil,
+        recognitionErrorsByIndex: [Int: ASRError] = [:],
         recognitionDelay: Duration? = nil
     ) {
         texts = [text]
         self.loadFails = loadFails
         self.recognitionFails = recognitionFails
         self.recognitionError = recognitionError
+        self.recognitionErrorsByIndex = recognitionErrorsByIndex
         self.recognitionDelay = recognitionDelay
     }
 
@@ -34,6 +37,7 @@ actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
         loadFails = false
         recognitionFails = false
         recognitionError = nil
+        recognitionErrorsByIndex = [:]
         recognitionDelay = nil
     }
 
@@ -48,6 +52,7 @@ actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
         requests.append(request)
         if let recognitionDelay { try await Task.sleep(for: recognitionDelay) }
         if recognitionFails { throw SessionPipelineFakeError.recognition }
+        if let indexedError = recognitionErrorsByIndex[requestIndex] { throw indexedError }
         if let recognitionError { throw recognitionError }
         let text = texts[min(requestIndex, max(texts.count - 1, 0))]
         return RecognizedUtterance(
@@ -68,24 +73,43 @@ actor FakeMandarinASRProvider: ASRProvider, ModelRuntimeHealthChecking {
 actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking {
     nonisolated let identifier = "fake-hy-mt2"
     private let shouldFail: Bool
+    private let rejectedRequestIndices: Set<Int>
+    private let reviewedRequestIndices: Set<Int>
     private var requests: [TranslationRequest] = []
     private var loads = 0
     private var runtimeIsReady = false
 
-    init(shouldFail: Bool) { self.shouldFail = shouldFail }
+    init(
+        shouldFail: Bool,
+        rejectsFirstOutput: Bool = false,
+        rejectedRequestIndices: Set<Int> = [],
+        reviewedRequestIndices: Set<Int> = []
+    ) {
+        self.shouldFail = shouldFail
+        self.rejectedRequestIndices =
+            rejectedRequestIndices.union(rejectsFirstOutput ? [0] : [])
+        self.reviewedRequestIndices = reviewedRequestIndices
+    }
     func loadModel(at _: URL) {
         loads += 1
         runtimeIsReady = true
     }
 
     func translate(_ request: TranslationRequest) throws -> TranslationResult {
+        let requestIndex = requests.count
         requests.append(request)
         if shouldFail { throw SessionPipelineFakeError.translation }
+        if rejectedRequestIndices.contains(requestIndex) {
+            throw TranslationProviderError.invalidOutput
+        }
         return TranslationResult(
             requestID: request.id,
             sourceText: request.sourceText,
             targetText: "We are justified by faith; this is grace.",
-            duration: .milliseconds(35)
+            duration: .milliseconds(35),
+            review: reviewedRequestIndices.contains(requestIndex)
+                ? TranslationReview(issueCodes: ["quality.missing_required_term"])
+                : nil
         )
     }
 

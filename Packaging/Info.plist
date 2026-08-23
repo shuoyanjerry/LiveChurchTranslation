@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key>
-  <string>en</string>
+  <string>zh-Hans</string>
   <key>CFBundleDisplayName</key>
-  <string>Quiet Liturgy Reader</string>
+  <string>教会实时翻译</string>
   <key>CFBundleExecutable</key>
   <string>LiveChurchTranslation</string>
   <key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Quiet Liturgy Reader</string>
+  <string>教会实时翻译</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -36,9 +36,9 @@
   <key>NSHumanReadableCopyright</key>
   <string>Copyright © 2026 shuoyanjerry. MIT License.</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>After you confirm participants are informed, Quiet Liturgy Reader uses the selected microphone for live recognition and translation and saves the meeting audio and transcript locally. A red indicator remains visible while recording.</string>
+  <string>确认现场参与者知悉后，本应用会使用所选麦克风进行实时听抄和翻译，并在本机保存会议完整录音和听抄稿。录音期间会持续显示红色提示。</string>
   <key>NSLocalNetworkUsageDescription</key>
-  <string>Quiet Liturgy Reader shares live translations only with devices you explicitly pair on your local network.</string>
+  <string>本应用仅通过本地网络向你明确配对的设备共享实时听抄和翻译内容。</string>
   <key>NSBonjourServices</key>
   <array>
     <string>_churchtranslate._tcp</string>

@@ -9,14 +9,10 @@ extension HyMT2FidelityValidator {
     }
 
     static func containsMetaText(_ target: String) -> Bool {
-        let lower = target.lowercased()
-        let prefixes = [
-            "here is the translation", "the translation is", "translation:",
-            "translated result:", "as an ai", "i cannot translate", "source text:",
-            "reference the following translations",
-            "以下是翻译", "翻译如下", "译文：", "作为一个ai", "原文：",
-        ]
-        return prefixes.contains(where: lower.hasPrefix)
+        HyMT2MetaText.occurs(in: target)
+            || HyMT2MetaText.normalized(target).lowercased().hasPrefix(
+                "reference the following translations"
+            )
     }
 
     static func hasUnexpectedScript(

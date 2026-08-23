@@ -98,7 +98,7 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
         )
         let clock = ContinuousClock()
         let started = clock.now
-        let target = try await HyMT2TranslationExecutor(
+        let output = try await HyMT2TranslationExecutor(
             configuration: configuration,
             transport: transport,
             attemptObserver: attemptObserver,
@@ -112,8 +112,9 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
         return TranslationResult(
             requestID: request.id,
             sourceText: request.sourceText,
-            targetText: target,
-            duration: started.duration(to: clock.now)
+            targetText: output.target,
+            duration: started.duration(to: clock.now),
+            review: output.review
         )
     }
 

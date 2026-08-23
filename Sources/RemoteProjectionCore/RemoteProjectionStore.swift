@@ -5,7 +5,7 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
     let configuration: ProjectionConfiguration
     var sessionID: UUID?
     var phase = RemoteSessionPhase.idle
-    var statusMessage = "Ready"
+    var statusMessage = "等待 Mac 开始"
     var revision: UInt64 = 0
     var entries: [UUID: RemoteTranscriptEntry] = [:]
     var outboxes: [RemotePeerID: PeerOutbox] = [:]
@@ -33,7 +33,7 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
 
     public func snapshot() -> RemoteProjectionSnapshot { makeSnapshot() }
 
-    public func beginSession(id: UUID, message: String = "Preparing") {
+    public func beginSession(id: UUID, message: String = "正在准备本地翻译") {
         sessionID = id
         entries.removeAll(keepingCapacity: true)
         updateState(phase: .preparing, message: message)

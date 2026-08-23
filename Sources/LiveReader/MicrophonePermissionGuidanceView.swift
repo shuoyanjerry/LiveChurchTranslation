@@ -90,7 +90,7 @@ struct MicrophonePermissionGuidanceView: View {
                 + "仅在你点按“允许麦克风”后，应用才会显示 macOS 授权窗口。"
         case .denied:
             "麦克风权限当前已关闭。请在“系统设置 > 隐私与安全性 > 麦克风”中"
-                + "允许 Quiet Liturgy 使用麦克风。"
+                + "允许“教会实时翻译”使用麦克风。"
         case .restricted:
             "此 Mac 的管理或家长控制策略限制了麦克风访问。你可以打开系统设置检查限制。"
         case nil: ""

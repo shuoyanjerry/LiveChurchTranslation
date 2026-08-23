@@ -3,53 +3,6 @@ import PersistenceAPI
 import TranscriptAPI
 
 extension FileTranscriptStore {
-    func enforcePrivatePermissions(sessionID: UUID) throws {
-        for directory in [root, sessionDirectory(sessionID)] {
-            try fileManager.setAttributes(
-                [.posixPermissions: NSNumber(value: 0o700)],
-                ofItemAtPath: directory.path
-            )
-        }
-        for file in [manifestURL(sessionID), jsonLinesURL(sessionID), markdownURL(sessionID)]
-        where fileManager.fileExists(atPath: file.path) {
-            try fileManager.setAttributes(
-                [.posixPermissions: NSNumber(value: 0o600)],
-                ofItemAtPath: file.path
-            )
-        }
-    }
-
-    func writeManifest(for session: TranscriptSession) throws {
-        let manifest = SessionManifest(
-            id: session.id,
-            startedAt: session.startedAt,
-            endedAt: session.endedAt,
-            entryCount: session.entries.count,
-            title: session.title,
-            kind: session.kind,
-            sourceLanguage: session.sourceLanguage,
-            targetLanguage: session.targetLanguage
-        )
-        try jsonEncoder.encode(manifest).write(to: manifestURL(session.id), options: .atomic)
-    }
-
-    func readSummary(_ directory: URL) throws -> StoredSessionSummary? {
-        let url = directory.appending(path: "session.json")
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        let manifest = try decoder().decode(SessionManifest.self, from: Data(contentsOf: url))
-        return StoredSessionSummary(
-            id: manifest.id,
-            startedAt: manifest.startedAt,
-            endedAt: manifest.endedAt,
-            entryCount: manifest.entryCount,
-            location: directory,
-            title: manifest.title,
-            kind: manifest.kind,
-            sourceLanguage: manifest.sourceLanguage,
-            targetLanguage: manifest.targetLanguage
-        )
-    }
-
     func append(_ data: Data, to url: URL) throws {
         let handle = try FileHandle(forWritingTo: url)
         defer { try? handle.close() }
@@ -70,17 +23,20 @@ extension FileTranscriptStore {
     }
 
     func markdownHeader(for session: TranscriptSession) -> String {
-        "# Quiet Liturgy Reader\n\nStarted: \(session.startedAt.formatted())\n\n"
+        "# 教会实时翻译\n\n开始时间：\(session.startedAt.formatted())\n\n"
     }
 
     func markdown(for entry: TranscriptEntry) -> String {
         "## \(entry.sequence)\n\n\(entry.targetText)\n\n> \(entry.sourceText)\n\n"
     }
 
-    func completeMarkdown(for session: TranscriptSession) -> String {
+    func completeMarkdown(
+        for session: TranscriptSession,
+        finalization: TranscriptFinalization
+    ) -> String {
         markdownHeader(for: session)
             + session.entries.map(markdown).joined()
-            + "\n---\nSession complete.\n"
+            + "\n---\n\(finalization.markdownNotice)\n"
     }
 
     func loadEntryIDsIfNeeded(sessionID: UUID) throws -> Set<UUID> {
@@ -127,5 +83,20 @@ extension FileTranscriptStore {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
+    }
+}
+
+extension TranscriptFinalization {
+    fileprivate var markdownNotice: String {
+        switch integrity {
+        case .complete:
+            "会议记录完整。"
+        case .incomplete:
+            "会议记录未完整处理，请结合完整录音核对。"
+        case .recoveredAfterInterruption:
+            "会议记录已在意外中断后恢复，内容可能不完整，请结合录音核对。"
+        case .active:
+            "会议记录仍在处理中。"
+        }
     }
 }

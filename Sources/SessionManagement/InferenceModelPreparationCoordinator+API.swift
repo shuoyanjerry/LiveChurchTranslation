@@ -10,7 +10,8 @@ extension InferenceModelPreparationCoordinator {
             continuations[id] = continuation
             continuation.yield(snapshot)
             continuation.onTermination = { [weak self] _ in
-                Task { await self?.removeContinuation(id) }
+                guard let self else { return }
+                Task { await self.removeContinuation(id) }
             }
         }
     }
@@ -28,7 +29,8 @@ extension InferenceModelPreparationCoordinator {
                 waiters[waiterID] = continuation
             }
         } onCancel: { [weak self] in
-            Task { await self?.cancelWaiter(waiterID) }
+            guard let self else { return }
+            Task { await self.cancelWaiter(waiterID) }
         }
     }
 }

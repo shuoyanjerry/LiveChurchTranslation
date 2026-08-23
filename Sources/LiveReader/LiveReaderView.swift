@@ -53,15 +53,15 @@ public struct LiveReaderView: View {
             SettingsView(viewModel: viewModel)
         }
         .alert(
-            "Live Translation",
+            "实时翻译",
             isPresented: Binding(
                 get: { viewModel.presentedError != nil },
                 set: { if !$0 { viewModel.presentedError = nil } }
             )
         ) {
-            Button("OK") { viewModel.presentedError = nil }
+            Button("好") { viewModel.presentedError = nil }
         } message: {
-            Text(viewModel.presentedError ?? "Unknown error")
+            Text(viewModel.presentedError ?? "发生未知错误")
         }
         .alert("开始录音和翻译？", isPresented: $viewModel.presentsRecordingNotice) {
             Button("取消", role: .cancel) {}

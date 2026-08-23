@@ -13,9 +13,9 @@ public enum AudioImportError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .liveSessionRunning:
-            "Stop live translation before importing an audio file."
+            "请先停止实时翻译，再导入音频文件。"
         case .transcriptionFailed(let message):
-            "Audio transcription failed: \(message)"
+            "音频听抄失败：\(message)"
         }
     }
 }
@@ -30,17 +30,21 @@ public enum AudioImportCompletionValidator {
             return
         case .savedWithUnresolvedUtterances(let count):
             throw AudioImportError.transcriptionFailed(
-                "The transcript has \(count) unfinished segment(s) saved for recovery. "
-                    + "Retry the original file to create a complete transcript."
+                "听抄稿仍有 \(count) 段等待自动恢复。请重新导入原文件以生成完整听抄稿。"
+            )
+        case .savedWithIncompleteTranscript(let rejected, let recoverable):
+            throw AudioImportError.transcriptionFailed(
+                "听抄稿不完整：\(rejected) 句未通过质量校验，"
+                    + "\(recoverable) 句等待自动恢复。完整录音已保留。"
             )
         case .saveFailed(let message, _):
             throw AudioImportError.transcriptionFailed(message)
         case .cancelledBeforeCapture:
-            throw AudioImportError.transcriptionFailed("Processing was cancelled before decoding.")
+            throw AudioImportError.transcriptionFailed("音频尚未开始解码，处理已取消。")
         case .failedBeforeCapture:
             throw AudioImportError.transcriptionFailed(snapshot.statusMessage)
         case nil:
-            throw AudioImportError.transcriptionFailed("Processing ended without a result.")
+            throw AudioImportError.transcriptionFailed("处理已结束，但没有生成结果。")
         }
     }
 }

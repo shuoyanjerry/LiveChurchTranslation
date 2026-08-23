@@ -30,9 +30,9 @@ public enum LiveSessionRemoteMutationError: LocalizedError, Equatable, Sendable 
     public var errorDescription: String? {
         switch self {
         case .localRecordingAuthorizationRequired:
-            "Recording can only be started from the Mac after the local notice is accepted."
+            "请在 Mac 上确认录音提示后开始会议。"
         case .noActiveSession:
-            "There is no active session to stop."
+            "当前没有正在进行的会议。"
         }
     }
 }

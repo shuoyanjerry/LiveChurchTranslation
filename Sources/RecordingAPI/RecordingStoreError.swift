@@ -22,39 +22,39 @@ public enum RecordingStoreError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .invalidSampleRate(let value):
-            "The recording sample rate is invalid: \(value)."
+            "录音采样率无效：\(value)。"
         case .invalidChannelCount(let value):
-            "The recording channel count is invalid: \(value)."
+            "录音声道数无效：\(value)。"
         case .unsupportedFormat(let format):
-            "PCM16 CAF cannot represent \(format.sampleRate) Hz with \(format.channelCount) channels."
+            "PCM16 CAF 无法保存 \(format.sampleRate) Hz、\(format.channelCount) 声道的音频。"
         case .emptyFrame:
-            "An empty audio frame cannot be recorded."
+            "无法写入空音频帧。"
         case .unalignedSamples(let count, let channels):
-            "The \(count) samples do not contain complete \(channels)-channel frames."
+            "\(count) 个样本无法组成完整的 \(channels) 声道音频帧。"
         case .nonFiniteSample(let index):
-            "Audio sample \(index) is not finite."
+            "音频样本 \(index) 不是有限数值。"
         case .sampleOutOfRange(let index):
-            "Audio sample \(index) is outside the normalized range."
+            "音频样本 \(index) 超出标准化范围。"
         case .formatChanged(let expected, let actual):
-            "Recording format changed from \(expected) to \(actual)."
+            "录音格式从 \(expected) 意外变为 \(actual)。"
         case .sessionAlreadyActive:
-            "The recording session is already active."
+            "录音会话已经在进行。"
         case .sessionNotActive:
-            "The recording session is not active."
+            "录音会话尚未开始。"
         case .recordingAlreadyExists:
-            "A completed recording already exists for the session."
+            "这场会议已经存在完整录音。"
         case .interruptedRecordingExists:
-            "An interrupted recording must be repaired before recording can resume."
+            "继续录音前必须先修复上次中断的录音。"
         case .noAudio:
-            "The recording contains no audio."
+            "录音中没有音频内容。"
         case .dataLimitExceeded(let attempted, let maximum):
-            "The recording would use \(attempted) audio bytes; the limit is \(maximum)."
+            "录音将使用 \(attempted) 字节，超过 \(maximum) 字节上限。"
         case .malformedPartialRecording(_, let reason):
-            "The interrupted recording is malformed: \(reason)."
+            "中断的录音已损坏：\(reason)。"
         case .invalidConfiguration(let reason):
-            "The recording configuration is invalid: \(reason)."
+            "录音配置无效：\(reason)。"
         case .fileSystem(let operation, let reason):
-            "Recording storage failed during \(operation): \(reason)"
+            "录音存储在执行 \(operation) 时失败：\(reason)"
         }
     }
 }

@@ -35,6 +35,9 @@ struct SessionPreparer: Sendable {
         let recoveryIssues = await replayRecoverableUtterances(
             excludingSessionID: excludingSessionID
         )
+        // Replay exercises both inference runtimes. Revalidate them before the
+        // new session starts in case recovery exposed a crashed helper.
+        try await loadModels()
         try Task.checkCancellation()
         // Recovery can temporarily select a prior session's language pair.
         await utteranceProcessor.configure(mode: mode)

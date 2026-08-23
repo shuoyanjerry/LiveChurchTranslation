@@ -58,6 +58,15 @@ private actor LegacyOnlyRecoveryStore: UtteranceRecoveryStore {
         return UtteranceRecoveryBatch(pending: [record], quarantined: [])
     }
 
-    func markCompleted(_: PendingUtteranceID) {}
+    func summary(for _: UUID) -> UtteranceRecoverySessionSummary {
+        UtteranceRecoverySessionSummary(
+            pendingRecordCount: 1,
+            rejections: [],
+            quarantinedArtifactCount: 0
+        )
+    }
+
+    func resolve(_: PendingUtteranceID, as _: UtteranceRecoveryResolution) {}
+    func deleteArtifacts(for _: UUID) {}
     func legacyRecoveryCalls() -> Int { recoveryCalls }
 }

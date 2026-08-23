@@ -1,19 +1,25 @@
 import DiagnosticsAPI
 import Foundation
 import LoggingAPI
+import PersistenceAPI
 import TranscriptAPI
 
 enum SessionPersistenceResult: Sendable {
     case noTranscript
-    case saved
+    case saved(finalization: TranscriptFinalization)
     case failed(transcript: TranscriptSession, message: String)
 }
 
 struct SessionFinalizer: Sendable {
     let dependencies: LiveSessionDependencies
 
-    func finish(sessionID: UUID) async -> SessionPersistenceResult {
-        let result = await persistFinishedTranscript()
+    func finish(
+        sessionID: UUID,
+        hasUnrecoverableFailure: Bool
+    ) async -> SessionPersistenceResult {
+        let result = await persistFinishedTranscript(
+            hasUnrecoverableFailure: hasUnrecoverableFailure
+        )
         dependencies.logger.write(
             LogRecord(
                 level: result.completedCleanly ? .notice : .error,
@@ -25,11 +31,16 @@ struct SessionFinalizer: Sendable {
         return result
     }
 
-    func fail(_ message: String) async -> SessionPersistenceResult {
+    func fail(
+        _ message: String,
+        hasUnrecoverableFailure: Bool
+    ) async -> SessionPersistenceResult {
         await dependencies.diagnostics.record(
             DiagnosticEvent(severity: .error, component: "Session", message: message)
         )
-        return await persistFinishedTranscript()
+        return await persistFinishedTranscript(
+            hasUnrecoverableFailure: hasUnrecoverableFailure
+        )
     }
 
     func logRecoverable(_ error: Error) {
@@ -38,13 +49,23 @@ struct SessionFinalizer: Sendable {
         )
     }
 
-    private func persistFinishedTranscript() async -> SessionPersistenceResult {
+    private func persistFinishedTranscript(
+        hasUnrecoverableFailure: Bool
+    ) async -> SessionPersistenceResult {
         guard let transcript = await dependencies.transcript.finish(at: Date()) else {
             return .noTranscript
         }
         do {
-            try await dependencies.transcriptStore.finish(transcript)
-            return .saved
+            let recovery = try await dependencies.recoveryStore.summary(for: transcript.id)
+            let finalization = TranscriptFinalization(
+                recovery: recovery,
+                hasUnrecoverableFailure: hasUnrecoverableFailure
+            )
+            try await dependencies.transcriptStore.finish(
+                transcript,
+                finalization: finalization
+            )
+            return .saved(finalization: finalization)
         } catch {
             let message = error.localizedDescription
             await dependencies.diagnostics.record(

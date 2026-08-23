@@ -15,7 +15,7 @@ struct RecordingIndicator: View {
                     .foregroundStyle(ChurchTheme.muted)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Recording")
+            .accessibilityLabel("正在录音")
             .accessibilityValue(elapsed(at: context.date))
         }
     }

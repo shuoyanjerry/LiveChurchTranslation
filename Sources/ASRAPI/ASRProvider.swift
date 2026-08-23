@@ -55,7 +55,18 @@ public struct RecognizedUtterance: Identifiable, Equatable, Sendable {
     }
 }
 
-public enum ASRError: LocalizedError, Sendable {
+public enum ASRFailureImpact: Equatable, Sendable {
+    case ignoredUtterance
+    case terminalUtterance
+    case runtime
+}
+
+public protocol ASRFailureImpactProviding: Error, Sendable {
+    var asrFailureImpact: ASRFailureImpact { get }
+    var asrFailureCode: String { get }
+}
+
+public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
     case modelNotLoaded
     case emptyAudio
     case filteredNonspeech
@@ -66,13 +77,37 @@ public enum ASRError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .modelNotLoaded: "The speech recognition model is not loaded."
-        case .emptyAudio: "The speech segment contains no audio."
-        case .filteredNonspeech: "The segment was filtered as nonspeech."
-        case .promptOnlyHallucination: "The recognizer output only its prompt terms."
-        case .repetitiveHallucination: "The recognizer produced pathological repetition."
-        case .noSpeechRecognized: "No speech was recognized."
-        case .inferenceFailed(let message): "Speech recognition failed: \(message)"
+        case .modelNotLoaded: "尚未加载语音识别模型。"
+        case .emptyAudio: "语音片段不含音频。"
+        case .filteredNonspeech: "该片段已判定为非语音。"
+        case .promptOnlyHallucination: "识别结果仅包含提示词，已拒绝该句。"
+        case .repetitiveHallucination: "识别结果出现异常重复，已拒绝该句。"
+        case .noSpeechRecognized: "未识别到语音。"
+        case .inferenceFailed(let message): "语音识别失败：\(message)"
+        }
+    }
+
+    public var asrFailureImpact: ASRFailureImpact {
+        switch self {
+        case .modelNotLoaded, .inferenceFailed:
+            .runtime
+        case .filteredNonspeech:
+            .ignoredUtterance
+        case .emptyAudio, .promptOnlyHallucination, .repetitiveHallucination,
+            .noSpeechRecognized:
+            .terminalUtterance
+        }
+    }
+
+    public var asrFailureCode: String {
+        switch self {
+        case .modelNotLoaded: "asr.model_not_loaded"
+        case .emptyAudio: "asr.empty_audio"
+        case .filteredNonspeech: "asr.filtered_nonspeech"
+        case .promptOnlyHallucination: "asr.prompt_only_hallucination"
+        case .repetitiveHallucination: "asr.repetitive_hallucination"
+        case .noSpeechRecognized: "asr.no_speech_recognized"
+        case .inferenceFailed: "asr.inference_failed"
         }
     }
 }

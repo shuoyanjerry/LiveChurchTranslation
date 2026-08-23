@@ -1,0 +1,270 @@
+name: Release candidate
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build an ad-hoc candidate without signing, notarization, or GitHub Release mutation
+        required: true
+        type: boolean
+        default: true
+      version:
+        description: Numeric version used only by a dry run
+        required: true
+        type: string
+        default: "0.0.0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and audit candidate
+    runs-on: macos-15
+    timeout-minutes: 240
+    environment: production-release
+    outputs:
+      publish: ${{ steps.mode.outputs.publish }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+
+      - name: Resolve release mode
+        id: mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_DRY_RUN: ${{ inputs.dry_run }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          publish=false
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            [[ "$GITHUB_REF_TYPE" == "tag" ]] || {
+              echo "A tag-triggered release must run from a tag." >&2
+              exit 1
+            }
+            publish=true
+          elif [[ "$DISPATCH_DRY_RUN" == "false" ]]; then
+            [[ "$GITHUB_REF_TYPE" == "tag" ]] || {
+              echo "A non-dry workflow_dispatch must select an existing vX.Y.Z tag." >&2
+              exit 1
+            }
+            publish=true
+          fi
+
+          if [[ "$publish" == "true" ]]; then
+            [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+[.][0-9]+[.][0-9]+$ ]] || {
+              echo "Formal release tags must use vMAJOR.MINOR.PATCH." >&2
+              exit 1
+            }
+            [[ "$(git cat-file -t "$GITHUB_REF_NAME")" == "tag" ]] || {
+              echo "Formal releases require an annotated tag." >&2
+              exit 1
+            }
+            git merge-base --is-ancestor "$GITHUB_SHA" "origin/$DEFAULT_BRANCH" || {
+              echo "The release tag must point to the default branch history." >&2
+              exit 1
+            }
+            app_version="${GITHUB_REF_NAME#v}"
+            release_mode="developer-id-notarized"
+          else
+            [[ "$REQUESTED_VERSION" =~ ^[0-9]+([.][0-9]+){0,2}$ ]] || {
+              echo "Dry-run version must contain one to three numeric components." >&2
+              exit 1
+            }
+            app_version="$REQUESTED_VERSION"
+            release_mode="dry-run"
+          fi
+
+          printf 'publish=%s\n' "$publish" >>"$GITHUB_OUTPUT"
+          printf 'APP_VERSION=%s\n' "$app_version" >>"$GITHUB_ENV"
+          printf 'APP_BUILD_NUMBER=%s\n' "$GITHUB_RUN_NUMBER" >>"$GITHUB_ENV"
+          printf 'RELEASE_MODE=%s\n' "$release_mode" >>"$GITHUB_ENV"
+
+      - name: Require formal-release secrets
+        if: steps.mode.outputs.publish == 'true'
+        env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          RELEASE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.RELEASE_SIGNING_CERTIFICATE_BASE64 }}
+          RELEASE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.RELEASE_SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: ./Scripts/check_release_credentials.sh
+
+      - name: Install ephemeral signing credentials
+        if: steps.mode.outputs.publish == 'true'
+        env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          RELEASE_SIGNING_CERTIFICATE_BASE64: ${{ secrets.RELEASE_SIGNING_CERTIFICATE_BASE64 }}
+          RELEASE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.RELEASE_SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+        run: |
+          set -euo pipefail
+          certificate="$RUNNER_TEMP/developer-id-application.p12"
+          notary_key="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+          keychain="$RUNNER_TEMP/quiet-liturgy-release.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$RELEASE_SIGNING_CERTIFICATE_BASE64" \
+            | /usr/bin/base64 -D -o "$certificate"
+          printf '%s' "$APPLE_NOTARY_KEY_BASE64" \
+            | /usr/bin/base64 -D -o "$notary_key"
+          [[ -s "$certificate" && -s "$notary_key" ]] || {
+            echo "A signing secret did not decode to a non-empty file." >&2
+            exit 1
+          }
+          chmod 0600 "$certificate" "$notary_key"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -k "$keychain" \
+            -P "$RELEASE_SIGNING_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s \
+            "$keychain" "$HOME/Library/Keychains/login.keychain-db"
+          security find-identity -v -p codesigning "$keychain" \
+            | grep -F "$DEVELOPER_ID_APPLICATION" >/dev/null || {
+              echo "The imported certificate does not match DEVELOPER_ID_APPLICATION." >&2
+              exit 1
+            }
+
+          printf 'RELEASE_KEYCHAIN_PATH=%s\n' "$keychain" >>"$GITHUB_ENV"
+          printf 'APPLE_NOTARY_KEY_PATH=%s\n' "$notary_key" >>"$GITHUB_ENV"
+          printf 'RELEASE_CERTIFICATE_PATH=%s\n' "$certificate" >>"$GITHUB_ENV"
+
+      - name: Restore pinned inference assets
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            .artifacts/release-models
+            .artifacts/llama-b10549
+          key: release-assets-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Packaging/ProductionModels.sha256', 'Packaging/ProductionModels.sizes', 'Packaging/LlamaRuntime.sha256', 'Scripts/release_model_sources.tsv') }}
+
+      - name: Fetch and verify pinned inference assets
+        run: |
+          ./Scripts/fetch_release_models.sh
+          ./Scripts/fetch_llama_runtime.sh
+
+      - name: Record toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Resolve dependencies
+        run: swift package resolve
+
+      - name: Build dry-run candidate
+        if: steps.mode.outputs.publish != 'true'
+        env:
+          DEVELOPER_ID_APPLICATION: "-"
+        run: |
+          ./Scripts/package_release.sh
+          ./Scripts/create_dmg.sh
+          ./Scripts/generate_release_evidence.sh \
+            "dist/Quiet Liturgy Reader.app" \
+            "dist/Quiet Liturgy Reader.dmg" dry-run
+
+      - name: Build, sign, and notarize formal candidate
+        if: steps.mode.outputs.publish == 'true'
+        env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: ./Scripts/notarize_release.sh
+
+      - name: Remove ephemeral signing credentials
+        if: always() && steps.mode.outputs.publish == 'true'
+        run: |
+          if [[ -n "${RELEASE_KEYCHAIN_PATH:-}" ]]; then
+            security delete-keychain "$RELEASE_KEYCHAIN_PATH" || true
+          fi
+          if [[ -n "${APPLE_NOTARY_KEY_PATH:-}" ]]; then
+            rm -f "$APPLE_NOTARY_KEY_PATH"
+          fi
+          if [[ -n "${RELEASE_CERTIFICATE_PATH:-}" ]]; then
+            rm -f "$RELEASE_CERTIFICATE_PATH"
+          fi
+
+      - name: Upload audited candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quiet-liturgy-release-${{ github.run_id }}
+          path: |
+            dist/Quiet Liturgy Reader.dmg
+            dist/release-evidence/**
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish-draft:
+    name: Create draft GitHub prerelease
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Download audited candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: quiet-liturgy-release-${{ github.run_id }}
+          path: dist
+
+      - name: Reverify downloaded evidence
+        run: |
+          set -euo pipefail
+          cd dist
+          shasum -a 256 -c release-evidence/SHA256SUMS
+          bytes="$(stat -f '%z' 'Quiet Liturgy Reader.dmg')"
+          [[ "$bytes" -lt 2147483648 ]] || {
+            echo "The final DMG is not smaller than GitHub's 2 GiB asset limit." >&2
+            exit 1
+          }
+
+      - name: Attest DMG provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: dist/Quiet Liturgy Reader.dmg
+
+      - name: Create draft prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "A GitHub Release already exists for $GITHUB_REF_NAME; refusing to overwrite it." >&2
+            exit 1
+          fi
+          assets=("dist/Quiet Liturgy Reader.dmg")
+          while IFS= read -r file; do
+            assets+=("$file")
+          done < <(find dist/release-evidence -maxdepth 1 -type f | LC_ALL=C sort)
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+            --verify-tag --draft --prerelease \
+            --title "Quiet Liturgy Reader $GITHUB_REF_NAME — candidate" \
+            --notes-file dist/release-evidence/RELEASE-REPORT.md

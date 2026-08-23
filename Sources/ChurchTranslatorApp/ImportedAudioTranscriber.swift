@@ -17,7 +17,7 @@ final class ImportedAudioTranscriber: AudioImporting {
 
     func importAudio(from url: URL) async throws {
         guard activeController == nil else {
-            throw AudioImportError.transcriptionFailed("Another audio file is already processing.")
+            throw AudioImportError.transcriptionFailed("另一个音频文件正在处理中。")
         }
         let controller = try makeController(url)
         activeController = controller
@@ -49,6 +49,6 @@ final class ImportedAudioTranscriber: AudioImporting {
             try AudioImportCompletionValidator.validate(snapshot)
             return
         }
-        throw AudioImportError.transcriptionFailed("The processing stream ended unexpectedly.")
+        throw AudioImportError.transcriptionFailed("处理流程意外结束。")
     }
 }

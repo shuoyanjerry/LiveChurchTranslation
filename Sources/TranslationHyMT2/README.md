@@ -81,7 +81,7 @@ the helper from the already verified local GGUF without hashing it again.
 
 ## Failure Modes
 
-Missing/non-executable helper, missing/ambiguous GGUF, launch failure, early helper termination, health timeout, HTTP error, malformed JSON, empty input, and rejected output are surfaced as errors. Output is rejected when it loses a selected glossary term, Arabic number, negation, or Scripture-reference shape; contains model commentary; or has implausible length. A validation rejection gets exactly one stricter retry.
+Missing/non-executable helper, missing/ambiguous GGUF, launch failure, early helper termination, health timeout, HTTP error, malformed JSON, and empty input are surfaced as errors. A quality warning is recorded when output loses a selected glossary term, Arabic number, negation, Scripture-reference shape, or pronoun alignment; contains model commentary; or has implausible length. Quality warnings get exactly one stricter retry. If neither attempt is validator-approved, the safest candidate with fewer warnings is still returned and marked for backend review. It remains visible to listeners but is excluded from translation context.
 
 Before any model completion request, the current source, both fields of every
 context pair, and every glossary source, target, alias, and accepted target are
@@ -94,8 +94,10 @@ a reserved delimiter remains valid.
 Invalid, overlapping, duplicate, or non-pronoun guidance ranges fail before
 inference. Reserved protocol prefixes in guided source, context, or glossary data
 also fail closed. Missing, duplicate, unknown, malformed, structurally unbound, or
-policy-invalid target blocks enter the same single strict-retry path; a second failure is a typed
-`invalidOutput` and is never admitted as translation context.
+policy-invalid target blocks enter the same single strict-retry path. Complete protocol blocks are
+removed before a safe best-effort candidate is returned. Empty output, prompt-control delimiters,
+or residual protocol text are never published; if neither attempt has a safe candidate, a typed
+retryable `invalidOutput` keeps the source audio pending for later translation.
 When the initial rejection concerns the pronoun protocol, the strict retry receives
 only a fixed failure code and its corresponding protected-block repair rule. Failed output,
 source text, target text, marker IDs, and observed text are never replayed in that
@@ -105,7 +107,9 @@ Every llama.cpp completion request also supplies the exact closing CURRENT SOURC
 delimiter as a generation stop sequence. The server therefore stops before returning
 that prompt boundary when a model tries to echo it. This is only a generation aid:
 the output validator still independently rejects opening delimiters, disguised or
-residual prompt controls, protocol fragments, and source-script leakage.
+residual prompt controls, and protocol fragments. Unexpected script is a backend quality
+finding; an exact source echo or explicit model refusal is retained for retry because it is not a
+translation.
 
 The helper binds to `127.0.0.1` on a randomized high port with a per-launch random API key. Packaging must include the macOS network-client/server entitlements required by its sandbox policy.
 

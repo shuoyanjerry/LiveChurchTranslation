@@ -40,16 +40,23 @@ enum AppComposition {
         )
         let remote = makeRemoteServices(controller: controller, settings: services.settings)
         let audioImporter = makeAudioImporter(services: services, directories: directories)
+        let libraryViewModel = SessionLibraryViewModel(
+            store: services.transcripts,
+            recoveryArtifacts: services.recovery
+        )
         let permissionCoordinator = MicrophonePermissionCoordinator(
             permissionClient: AudioCaptureMicrophonePermissionClient(capture: services.capture),
             settingsOpener: MacMicrophoneSettingsOpener()
         )
         Task { await remote.projectionAdapter.start() }
-        Task { await recoverInterruptedRecordings(services: services) }
+        Task {
+            _ = await recoverInterruptedRecordings(services: services)
+            await libraryViewModel.load()
+        }
         return AppSceneDependencies(
             controller: controller,
             viewModel: viewModel,
-            libraryViewModel: SessionLibraryViewModel(store: services.transcripts),
+            libraryViewModel: libraryViewModel,
             permissionCoordinator: permissionCoordinator,
             sharingFeature: remote.sharingFeature,
             projectionAdapter: remote.projectionAdapter,

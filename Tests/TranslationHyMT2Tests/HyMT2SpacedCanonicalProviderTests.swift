@@ -75,14 +75,20 @@ import TranslationAPI
         #expect(await trace.values().map(\.phase) == [.strictRetry])
     }
 
-    @Test func wrongSpacedPronounRemainsRejected() async throws {
+    @Test func wrongSpacedPronounIsShownWithoutProtocolForBackendReview() async throws {
         let fixture = try makeSpacedProviderFixture()
         let strict = spacedCanonical(fixture.plan, 0, "He") + "continued."
         let harness = try await makeTranslationHarness(
             responses: [.success(fixture.initial), .success(strict)]
         )
 
-        await expectSpacedInvalid(harness, request: fixture.request)
+        defer { harness.model.remove() }
+        let result = try await harness.provider.translate(fixture.request)
+
+        #expect(result.targetText == "He continued.")
+        #expect(result.review?.issueCodes == ["quality.pronoun_alignment"])
+        #expect(!result.targetText.contains("QLR"))
+        #expect(await harness.transport.completionRequests().count == 2)
     }
 }
 
@@ -106,26 +112,6 @@ private func makeSpacedProviderFixture() throws -> SpacedProviderFixture {
             pronounGuidance: guidance
         )
     )
-}
-
-@MainActor
-private func expectSpacedInvalid(
-    _ harness: TranslationHarness,
-    request: TranslationRequest
-) async {
-    defer { harness.model.remove() }
-    do {
-        _ = try await harness.provider.translate(request)
-        Issue.record("Expected invalid output")
-    } catch let error as HyMT2Error {
-        guard case .invalidOutput = error else {
-            Issue.record("Unexpected error: \(error)")
-            return
-        }
-    } catch {
-        Issue.record("Unexpected error: \(error)")
-    }
-    #expect(await harness.transport.completionRequests().count == 2)
 }
 
 private actor SpacedCanonicalTraceRecorder: HyMT2PronounTraceObserving {

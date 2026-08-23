@@ -38,7 +38,9 @@ struct RecoveryRootScanner {
         )
         var accumulator = RecoveryRootIndexAccumulator(limits: limits)
         for url in urls.sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
-        where url.lastPathComponent != layout.rootQuarantineDirectory.lastPathComponent {
+        where url.lastPathComponent != layout.rootQuarantineDirectory.lastPathComponent
+            && url.lastPathComponent != layout.resolvedRootDirectory.lastPathComponent
+        {
             try process(url, accumulator: &accumulator)
         }
         return accumulator.result()

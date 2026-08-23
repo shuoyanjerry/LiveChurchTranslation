@@ -131,7 +131,7 @@ extension HyMTQualificationRunner {
             return HyMTQualificationOutcome(
                 hypothesis: result.targetText,
                 latencySeconds: seconds(started.duration(to: clock.now)),
-                error: nil
+                error: result.review.map { HyMT2Error.invalidOutput($0.issueCodes) }
             )
         } catch {
             return HyMTQualificationOutcome(

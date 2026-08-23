@@ -41,11 +41,8 @@ extension UtteranceProcessor {
                 )
             )
         } catch {
-            throw UtteranceProcessingFailure(
-                stage: .translation,
-                message: error.localizedDescription,
-                pendingEntry: nil
-            )
+            if error is CancellationError { throw CancellationError() }
+            throw failure(stage: .translation, error: error)
         }
     }
 
@@ -64,6 +61,7 @@ extension UtteranceProcessor {
             sourceCorrections: input.sourceAudit.corrections,
             sourcePronounDecisions: input.sourceAudit.pronounDecisions,
             targetText: translation.targetText,
+            translationReview: translation.review,
             startedMilliseconds: milliseconds(input.utterance.startedAt),
             endedMilliseconds: milliseconds(input.utterance.endedAt),
             translationMilliseconds: milliseconds(translation.duration)
@@ -77,12 +75,10 @@ extension UtteranceProcessor {
         do {
             try await dependencies.transcriptStore.append(entry, to: sessionID)
             return entry
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            throw UtteranceProcessingFailure(
-                stage: .persistence,
-                message: error.localizedDescription,
-                pendingEntry: entry
-            )
+            throw failure(stage: .persistence, error: error, pendingEntry: entry)
         }
     }
 

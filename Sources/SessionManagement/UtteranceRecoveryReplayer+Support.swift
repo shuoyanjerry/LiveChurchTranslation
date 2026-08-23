@@ -1,5 +1,6 @@
 import DiscourseResolutionAPI
 import Foundation
+import PersistenceAPI
 import SessionManagementAPI
 import TranscriptAPI
 import TranslationAPI
@@ -8,25 +9,22 @@ import UtteranceRecoveryAPI
 extension UtteranceRecoveryReplayer {
     func finish(
         stored: TranscriptSession,
-        entries: [TranscriptEntry],
-        issues: inout [LiveSessionIssue]
-    ) async {
-        do {
-            try await dependencies.transcriptStore.finish(
-                TranscriptSession(
-                    id: stored.id,
-                    startedAt: stored.startedAt,
-                    endedAt: Date(),
-                    entries: presentationEntries(from: entries),
-                    title: stored.title,
-                    kind: stored.kind,
-                    sourceLanguage: stored.sourceLanguage,
-                    targetLanguage: stored.targetLanguage
-                )
-            )
-        } catch {
-            issues.append(issue(message: error.localizedDescription))
-        }
+        entries: [TranscriptEntry]
+    ) async throws {
+        let recovery = try await dependencies.recoveryStore.summary(for: stored.id)
+        try await dependencies.transcriptStore.finish(
+            TranscriptSession(
+                id: stored.id,
+                startedAt: stored.startedAt,
+                endedAt: Date(),
+                entries: presentationEntries(from: entries),
+                title: stored.title,
+                kind: stored.kind,
+                sourceLanguage: stored.sourceLanguage,
+                targetLanguage: stored.targetLanguage
+            ),
+            finalization: TranscriptFinalization(recovery: recovery)
+        )
     }
 
     func contextEntries(
@@ -40,13 +38,13 @@ extension UtteranceRecoveryReplayer {
             return SequencedRecoveryEntry(sourceSequence: sequence, entry: entry)
         }
         .sorted(by: recoverySourceOrder)
-        let recent = earlier.suffix(2)
+        let recentApproved = earlier.filter { $0.entry.translationReview == nil }.suffix(2)
         return RecoveryProcessingContext(
             presentationSequence: recoveredPresentationSequence(
                 in: entries,
                 sourceSequence: sourceSequence
             ),
-            translation: recent.map {
+            translation: recentApproved.map {
                 TranslationContextEntry(
                     sourceText: $0.entry.sourceText,
                     targetText: $0.entry.targetText

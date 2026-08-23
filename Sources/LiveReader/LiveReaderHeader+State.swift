@@ -9,27 +9,27 @@ extension LiveReaderHeader {
     }
 
     var selectedInputName: String {
-        guard let id = viewModel.selectedInputID else { return "System Default" }
-        return viewModel.devices.first(where: { $0.id == id })?.name ?? "Selected Input"
+        guard let id = viewModel.selectedInputID else { return "系统默认麦克风" }
+        return viewModel.devices.first(where: { $0.id == id })?.name ?? "所选麦克风"
     }
 
     var sharingLabel: String {
         if case .on(_, let connectionCount, _, _) = sharingState, connectionCount > 0 {
-            return "Share · \(connectionCount)"
+            return "听众 · \(connectionCount)"
         }
-        return "Share"
+        return "听众共享"
     }
 
     var modelStatusText: String {
-        if viewModel.recordingStartedAt != nil { return "RECORDING · LOCAL" }
+        if viewModel.recordingStartedAt != nil { return "正在录音 · 仅本机" }
         switch viewModel.modelPreparationSnapshot.phase {
-        case .idle: return "LOCAL · ON-DEVICE"
-        case .checking: return "CHECKING MODELS"
-        case .downloading(let progress): return "DOWNLOADING \(Int(progress * 100))%"
-        case .loading: return "LOADING MODELS"
-        case .retrying(let attempt): return "RETRYING · \(attempt)"
-        case .ready: return "LOCAL · MODELS READY"
-        case .failed: return "MODEL ERROR"
+        case .idle: return "本机离线处理"
+        case .checking: return "正在校验内置模型"
+        case .downloading(let progress): return "正在修复模型 · \(Int(progress * 100))%"
+        case .loading: return "正在载入模型"
+        case .retrying(let attempt): return "正在重试 · 第 \(attempt) 次"
+        case .ready: return "本机模型已就绪"
+        case .failed: return "模型无法使用"
         }
     }
 
@@ -52,7 +52,7 @@ extension LiveReaderHeader {
     }
 
     var sessionButtonTitle: String {
-        viewModel.isRunning ? "Stop" : "Start Translation"
+        viewModel.isRunning ? "停止" : "开始翻译"
     }
 
     var sessionButtonIcon: String {

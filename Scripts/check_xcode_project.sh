@@ -37,6 +37,8 @@ PBX_PATTERNS=(
   'ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;'
   '$(SRCROOT)/Package.swift'
   'Scripts/embed_app_store_runtime.sh'
+  'Packaging/ProductionModels.sha256'
+  'Packaging/LicenseFiles.sha256'
   'ENABLE_APP_SANDBOX = YES;'
   'ENABLE_HARDENED_RUNTIME = YES;'
   'ENABLE_USER_SCRIPT_SANDBOXING = YES;'
@@ -45,6 +47,37 @@ PBX_PATTERNS=(
 )
 for pattern in "${PBX_PATTERNS[@]}"; do
   rg -Fq "$pattern" "$PBXPROJ" || fail "project is missing contract: $pattern"
+done
+MODEL_MEMBERS=(
+  qwen3-asr-0.6b-int8-2026-03-25/conv_frontend.onnx
+  qwen3-asr-0.6b-int8-2026-03-25/encoder.int8.onnx
+  qwen3-asr-0.6b-int8-2026-03-25/decoder.int8.onnx
+  qwen3-asr-0.6b-int8-2026-03-25/tokenizer/merges.txt
+  qwen3-asr-0.6b-int8-2026-03-25/tokenizer/tokenizer_config.json
+  qwen3-asr-0.6b-int8-2026-03-25/tokenizer/vocab.json
+  hy-mt2-1.8b-q4-k-m/Hy-MT2-1.8B-Q4_K_M.gguf
+)
+for member in "${MODEL_MEMBERS[@]}"; do
+  rg -Fq "\$(SRCROOT)/.artifacts/release-models/$member" "$PBXPROJ" \
+    || fail "model build phase is missing input: $member"
+  rg -Fq "\$(TARGET_BUILD_DIR)/\$(CONTENTS_FOLDER_PATH)/Resources/Models/$member" "$PBXPROJ" \
+    || fail "model build phase is missing output: $member"
+done
+LICENSE_MEMBERS=(
+  Hy-MT2-LICENSE.txt
+  ONNX-Runtime-LICENSE.txt
+  Qwen3-ASR-LICENSE.txt
+  Qwen3-ASR-NOTICE.txt
+  libfvad-AUTHORS.txt
+  libfvad-LICENSE.txt
+  libfvad-PATENTS.txt
+  sherpa-onnx-LICENSE.txt
+)
+for member in "${LICENSE_MEMBERS[@]}"; do
+  rg -Fq "\$(SRCROOT)/Packaging/Licenses/$member" "$PBXPROJ" \
+    || fail "license build phase is missing input: $member"
+  rg -Fq "\$(TARGET_BUILD_DIR)/\$(CONTENTS_FOLDER_PATH)/Resources/Licenses/$member" \
+    "$PBXPROJ" || fail "license build phase is missing output: $member"
 done
 RUNTIME_MEMBERS=(
   llama-server

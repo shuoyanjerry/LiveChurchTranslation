@@ -21,14 +21,14 @@ struct GlossaryEntryEditorRow: View {
                 Toggle("", isOn: $entry.isEnabled).labelsHidden()
                 TextField("中文词汇或经文短语", text: $entry.source)
                 Image(systemName: "arrow.right").foregroundStyle(.secondary)
-                TextField("Faithful English rendering", text: $entry.target)
+                TextField("忠实、合乎属灵语境的英语译法", text: $entry.target)
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
             }
             HStack(spacing: 8) {
-                Text("ASR aliases")
+                Text("识别别名")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextField("常见误听；用逗号分隔，例如：休恩", text: $aliasesText)

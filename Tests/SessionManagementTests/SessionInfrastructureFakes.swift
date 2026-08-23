@@ -29,6 +29,7 @@ actor FakeTranscriptStore: TranscriptStore {
     private var appendAttempts = 0
     private var appended: [TranscriptEntry] = []
     private var finished: [TranscriptSession] = []
+    private var finalizations: [TranscriptFinalization] = []
 
     init(failAppend: Bool, failFinish: Bool = false) {
         self.failAppend = failAppend
@@ -57,9 +58,13 @@ actor FakeTranscriptStore: TranscriptStore {
         )
     }
 
-    func finish(_ session: TranscriptSession) throws {
+    func finish(
+        _ session: TranscriptSession,
+        finalization: TranscriptFinalization
+    ) throws {
         if failFinish { throw SessionPipelineFakeError.finalization }
         finished.append(session)
+        finalizations.append(finalization)
     }
     func recentSessions(limit _: Int) -> [StoredSessionSummary] { [] }
     func isSessionActive(sessionID _: UUID) -> Bool { false }
@@ -70,6 +75,7 @@ actor FakeTranscriptStore: TranscriptStore {
     func attemptedAppendCount() -> Int { appendAttempts }
     func persistedEntries() -> [TranscriptEntry] { appended }
     func finishedSessions() -> [TranscriptSession] { finished }
+    func transcriptFinalizations() -> [TranscriptFinalization] { finalizations }
 }
 
 actor FakeSettingsStore: SettingsStore {

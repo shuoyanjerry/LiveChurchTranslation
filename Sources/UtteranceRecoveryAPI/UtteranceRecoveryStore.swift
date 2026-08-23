@@ -2,7 +2,11 @@ import Foundation
 import VADAPI
 
 /// Replaceable crash-recovery boundary between VAD and inference.
-public protocol UtteranceRecoveryStore: Sendable {
+public protocol SessionRecoveryArtifactDeleting: Sendable {
+    func deleteArtifacts(for sessionID: UUID) async throws
+}
+
+public protocol UtteranceRecoveryStore: SessionRecoveryArtifactDeleting, Sendable {
     /// Persists audio and metadata before the caller may start inference.
     func stage(
         _ segment: SpeechSegment,
@@ -20,11 +24,23 @@ public protocol UtteranceRecoveryStore: Sendable {
         maximumRecordsPerPage: Int
     ) async throws -> UtteranceRecoveryPages
 
-    /// Removes a committed record only after all downstream work is durable.
-    func markCompleted(_ id: PendingUtteranceID) async throws
+    /// Reports durable work and terminal audit evidence for one session.
+    func summary(for sessionID: UUID) async throws -> UtteranceRecoverySessionSummary
+
+    /// Atomically moves a record out of the retry queue after reaching a durable outcome.
+    func resolve(
+        _ id: PendingUtteranceID,
+        as resolution: UtteranceRecoveryResolution
+    ) async throws
+
 }
 
 extension UtteranceRecoveryStore {
+    /// Compatibility spelling for the successful terminal outcome.
+    public func markCompleted(_ id: PendingUtteranceID) async throws {
+        try await resolve(id, as: .completed)
+    }
+
     public func recoverAllPendingPages(
         maximumRecordsPerPage: Int
     ) async throws -> UtteranceRecoveryPages {

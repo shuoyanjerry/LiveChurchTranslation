@@ -4,8 +4,8 @@ import SwiftUI
 import UIDesignSystem
 
 enum LocalSharingPresentation {
-    static let subtitle = "Nearby devices can read the live transcript and translation."
-    static let transportWarning = "Trusted local network only · Traffic is not encrypted"
+    static let subtitle = "附近设备可查看实时听抄与翻译。"
+    static let transportWarning = "仅限可信局域网 · 传输尚未加密"
     static let localNetworkPermissionMessage =
         "本地网络访问已被 macOS 阻止。请在“系统设置 > 隐私与安全性 > 本地网络”中允许本应用。"
     static let invitationRole = LocalSharingInvitationRole.viewer
@@ -44,11 +44,11 @@ extension LocalSharingPopover {
 
     var statusLabel: String {
         switch state {
-        case .off: "Sharing off"
-        case .starting: "Sharing starting"
-        case .on: "Sharing on"
-        case .localNetworkPermissionDenied: "Local network permission denied"
-        case .failed: "Sharing failed"
+        case .off: "共享已关闭"
+        case .starting: "正在启动共享"
+        case .on: "共享已开启"
+        case .localNetworkPermissionDenied: "未获得本地网络权限"
+        case .failed: "共享失败"
         }
     }
 
@@ -65,8 +65,8 @@ extension LocalSharingPopover {
 extension LocalSharingPeerRole {
     var displayName: String {
         switch self {
-        case .viewer: "Viewer"
-        case .operator: "Operator · Stop only"
+        case .viewer: "听众"
+        case .operator: "协助者 · 仅可停止"
         }
     }
 }

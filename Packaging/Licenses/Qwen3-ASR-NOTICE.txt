@@ -1,0 +1,14 @@
+Qwen3-ASR 0.6B model attribution
+
+Copyright 2026 The Alibaba Qwen team.
+
+The bundled ONNX INT8 export is pinned to Hugging Face revision
+68818b2313fe77bd06f6a7c5068ff3ef59d02b8a and is derived from Qwen3-ASR 0.6B.
+The export repository attributes the original model and export author at:
+https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25
+https://www.modelscope.cn/models/zengshuishui/Qwen3-ASR-onnx
+https://huggingface.co/Qwen/Qwen3-ASR-0.6B
+https://github.com/QwenLM/Qwen3-ASR
+
+License: Apache License, Version 2.0. The complete license text is distributed
+alongside this notice as Qwen3-ASR-LICENSE.txt.
