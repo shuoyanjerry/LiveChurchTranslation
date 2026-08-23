@@ -52,7 +52,7 @@ import TranslationAPI
             Issue.record("Expected permission denial to fail the session")
             return
         }
-        #expect(message.contains("not authorized"))
+        #expect(message == "尚未允许麦克风访问。")
         #expect(snapshot.transcript.isEmpty)
     }
 
