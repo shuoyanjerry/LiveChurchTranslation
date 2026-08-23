@@ -13,14 +13,18 @@ enum ScriptureManifestShapeValidator {
             root,
             allowed: [
                 "schemaVersion", "corpusID", "createdAt", "visibility", "mustNotCommit",
-                "editionPair", "grants", "items", "translationPairs",
+                "editionPair", "sourceDeclarations", "items", "translationPairs",
             ],
             path: "$"
         )
         try validateEditionPair(root["editionPair"])
-        try array(root["grants"], path: "$.grants").enumerated().forEach {
-            try validateGrant($0.element, path: "$.grants[\($0.offset)]")
-        }
+        try array(root["sourceDeclarations"], path: "$.sourceDeclarations")
+            .enumerated().forEach {
+                try validateDeclaration(
+                    $0.element,
+                    path: "$.sourceDeclarations[\($0.offset)]"
+                )
+            }
         try array(root["items"], path: "$.items").enumerated().forEach {
             try validateItem($0.element, path: "$.items[\($0.offset)]")
         }
@@ -52,25 +56,24 @@ enum ScriptureManifestShapeValidator {
         )
     }
 
-    private static func validateGrant(_ value: Any, path: String) throws {
-        let grant = try object(value, path: path)
+    private static func validateDeclaration(_ value: Any, path: String) throws {
+        let declaration = try object(value, path: path)
         try exactKeys(
-            grant,
+            declaration,
             allowed: [
-                "id", "editionID", "licensor", "licensee", "agreementID", "evidencePath",
-                "evidenceSHA256", "validFrom", "expiresAt", "territories", "reviewedBy",
-                "reviewedAt", "rights",
+                "id", "editionID", "sourceAttribution", "declaredBy", "declarationPath",
+                "declarationSHA256", "declaredAt", "permittedUses",
             ],
             path: path
         )
         try exactKeys(
-            try object(grant["rights"], path: "\(path).rights"),
+            try object(declaration["permittedUses"], path: "\(path).permittedUses"),
             allowed: [
-                "textUseAuthorized", "audioUseAuthorized", "recordingUseAuthorized",
-                "asrEvaluationAuthorized", "crossLanguageEvaluationAuthorized",
-                "modelTrainingAuthorized", "redistributionAuthorized",
+                "textEvaluationAllowed", "audioEvaluationAllowed", "recordingEvaluationAllowed",
+                "asrEvaluationAllowed", "crossLanguageEvaluationAllowed",
+                "modelAdjustmentAllowed", "modelTrainingAllowed", "redistributionAllowed",
             ],
-            path: "\(path).rights"
+            path: "\(path).permittedUses"
         )
     }
 
@@ -78,10 +81,10 @@ enum ScriptureManifestShapeValidator {
         try exactKeys(
             try object(value, path: path),
             allowed: [
-                "id", "editionID", "textGrantID", "audioGrantID", "useKind", "partition",
-                "readingKind", "languageTag", "audioPath", "audioSHA256", "referencePath",
-                "referenceSHA256", "bookID", "chapter", "verseStart", "verseEnd", "speakerID",
-                "recordingEnvironment",
+                "id", "editionID", "textDeclarationID", "audioDeclarationID", "useKind",
+                "partition", "readingKind", "languageTag", "audioPath", "audioSHA256",
+                "referencePath", "referenceSHA256", "bookID", "chapter", "verseStart",
+                "verseEnd", "speakerID", "recordingEnvironment",
             ],
             path: path
         )

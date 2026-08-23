@@ -1,98 +1,75 @@
-# Scripture licensing request packet
+# Optional Scripture rights-holder request guide
 
-This project must receive written permission before importing ESV 2025 or
-CUNPSS-神 1988 text/audio into the private Scripture qualification lane. Church-only,
-free, and local use do not replace the required grants. Do not attach Bible text or
-audio to an issue, pull request, or public email thread.
+This guide is for requesting permission from a Bible text or narration rights holder. It
+is not church or denominational authorization, and it is not a prerequisite for the local
+ASR-only ephemeral preflight documented in `PrivateScriptureQualification.md`.
 
-## Information the church must supply
+Use it before distributing publisher text/audio, enabling exact verse retrieval or runtime
+quotation, publishing exact-verse bilingual results, or making a compliance claim. Do not
+attach Bible text or audio to an issue, pull request, or public email thread.
 
-- legal organization and ministry name;
-- authorized representative, address, email, and telephone;
-- expected number of Macs, listeners, churches, and countries;
-- whether transcripts, translations, recordings, or reports may be retained/exported;
-- whether the request covers evaluation only, prompt/hotword adaptation, fine-tuning,
-  or all three;
-- requested term and deletion/revocation procedure.
+## Information a requester may supply
+
+- requester name, which may be an individual, project, nonprofit, or organization;
+- contact email and the intended number of local devices/users;
+- whether text, translations, recordings, reports, or exports would be retained;
+- whether the request is evaluation-only, runtime display, distribution, prompt use, or
+  model training;
+- requested duration and deletion/revocation procedure.
+
+No legal church name, church representative, denomination, commercial registration, or
+ministry status is required by this project's local test schema. A rights holder may still
+ask for additional information when considering an optional permission request.
 
 ## Crossway request
 
-Submit both the [digital permission form](https://www.crossway.org/permissions/digital/)
-and [audio permission form](https://www.crossway.org/permissions/audio/), and copy
-`licensing@crossway.org`. The request must name **ESV Text Edition: 2025** and ask for:
+The official [digital permission form](https://www.crossway.org/permissions/digital/) and
+[audio permission form](https://www.crossway.org/permissions/audio/) are the relevant
+publisher channels. Name **ESV Text Edition: 2025** and describe the exact requested uses:
 
-- an authoritative 2025 digital text and corresponding audio identity;
-- local storage of the approved text/audio in an internal church application;
-- audio segmentation, speech-to-text, alignment, WER/CER, and regression evaluation;
-- non-training prompt, hotword, glossary, and decoder adaptation;
-- ESV-to-CUNPSS-神 bilingual alignment and Chinese translation evaluation;
-- real-time local-network display plus transcript/translation/recording retention;
-- separate, explicit permission before any model training or fine-tuning;
-- approved copyright notice, territories, device/user limits, expiry, reporting,
-  updates, and deletion obligations.
+- authoritative text and narration identity;
+- temporary local storage and deletion;
+- segmentation, speech-to-text, WER/CER, and regression evaluation;
+- ESV-to-Chinese bilingual alignment or translation evaluation;
+- any runtime display, export, publication, or distribution;
+- separate permission for prompt inclusion, retrieval, training, or fine-tuning;
+- required copyright notice, attribution, device/user limits, expiry, and reporting.
 
-Suggested subject:
-
-> Permission request — internal church ASR and ESV 2025 translation evaluation
-
-Suggested opening:
-
-> [Organization] requests a written license to use the ESV Text Edition: 2025 and an
-> approved ESV narration in a local-only macOS accessibility application. The application
-> transcribes live English speech and provides a Simplified Chinese listening aid. We will
-> not redistribute Bible files or train a model unless the signed grant explicitly permits
-> that use. The attached schedule defines devices, territories, retention, evaluation,
-> security, attribution, updates, and deletion.
+Crossway's standard policy expressly restricts translating ESV into another language, so
+an exact ESV-to-Chinese workflow must not be described as authorized or compliant without
+the rights holder's explicit permission.
 
 ## Hong Kong Bible Society request
 
-Send the organization request to [info@hkbs.org.hk](mailto:info@hkbs.org.hk). Name the
-edition exactly as **1988 新标点和合本，神版，简体中文 (`CUNPSS-神`)** and ask for:
+The public contact is [info@hkbs.org.hk](mailto:info@hkbs.org.hk). Name the edition exactly
+as **1988 新标点和合本，神版，简体中文 (`CUNPSS-神`, `CUNP1s`)** and describe:
 
-- the authoritative digital master and publisher-controlled version identifier;
-- local storage, automated comparison, punctuation/character fidelity evaluation,
-  Scripture-reference alignment, and bilingual pastoral review;
-- use as the Chinese target reference for ESV-to-Chinese evaluation and as the Chinese
-  source for Chinese-to-English evaluation;
-- runtime display, transcript/translation export, and meeting-record retention;
-- separate, explicit permission before prompt inclusion, retrieval, training, or
-  fine-tuning;
-- approved copyright notice, territories, device/user limits, expiry, reporting,
-  updates, and deletion obligations.
+- the authoritative digital master and version identifier;
+- temporary local comparison, punctuation/character fidelity, and reference alignment;
+- use as a Chinese reference for bilingual evaluation;
+- any runtime display, retrieval, export, publication, or distribution;
+- separate permission for prompt inclusion, training, or fine-tuning;
+- required attribution, limits, expiry, deletion, and reporting.
 
-Suggested subject:
+## Narration source
 
-> 申请授权：1988 新标点和合本神版用于教会内部语音识别与双语评测
+Text access does not establish permission for a particular recording. Identify the
+narrator/producer in `sourceAttribution`. Playback access is not proof that automated
+download, segmentation, transcription, repeated evaluation, or redistribution is allowed.
+The project does not scrape YouVersion or other playback services.
 
-Suggested opening:
+## Engineering boundary
 
-> [机构名称] 申请书面授权，在仅供教会内部使用的 macOS 无障碍辅助软件中，使用
-> 1988 新标点和合本神版（简体）权威数字文本。用途包括经授权朗读的语音转写评测、
-> 标点和字形校验、与 ESV 2025 的双语对齐及翻译评测、局域网实时显示，以及经批准的
-> 听抄稿和会议记录留存。除非书面授权明确许可，我们不会公开传播经文文件，也不会
-> 将正文用于模型训练或微调。
+The local V2 manifest records tester-provided provenance and intended use. It requires
+exact edition IDs, text/audio attribution, source/declaration hashes, private containment,
+and explicit no-training/no-redistribution values. It does not verify legal authenticity
+or replace a publisher license.
 
-## Narration rights
+A user's statement that they own or have permission for the supplied materials may serve
+as the hashed local declaration. `modelAdjustmentAllowed` covers hotwords, prompts,
+glossaries, decoding, and thresholds only; it does not authorize fine-tuning or any model
+weight update.
 
-Text permission does not grant recording rights. The signed schedule must identify the
-specific narrator/producer and allow local download, segmentation, transcription,
-alignment, repeated automated evaluation, and retention. For the Simplified Chinese
-audio shown by YouVersion, the identified producer is 好牧人网站; contact
-`haomuren316@gmail.com`. Do not scrape YouVersion or treat playback access as an ASR
-license.
-
-## Evidence returned to engineering
-
-After approval, place—not commit—the following files under the private path documented in
-`PrivateScriptureQualification.md`:
-
-- signed text grants and separate audio grants;
-- authoritative edition/version statement from each rights holder;
-- approved text/audio files and their SHA-256 values;
-- a machine-readable manifest mapping every clip to book/chapter/verse metadata;
-- expiry, territories, allowed purposes, and a contact for revocation;
-- a pastoral-review attestation for the sealed blind test set.
-
-Engineering will not activate the corpus from an email summary alone. The preflight must
-verify the signed evidence, exact production edition IDs, allowed purposes, file
-containment, and SHA-256 identity before a model sees any input.
+If optional publisher permission is later obtained, keep that evidence and all approved
+text/audio outside Git. Distribution and exact-quotation features need a separate product
+review; passing the ephemeral preflight alone cannot enable them.

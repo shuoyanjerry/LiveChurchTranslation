@@ -255,8 +255,11 @@ let package = Package(
         .testTarget(
             name: "ASRQwen3Tests",
             dependencies: [
-                "ASRAPI", "ASRNormalizationCore", "ASRQualificationSupport", "ASRQwen3",
-                "GlossaryAPI", "SessionManagement", "SettingsAPI", "VADAPI", sherpaOnnx,
+                "ASRAPI", "ASRNormalizationAPI", "ASRNormalizationCore",
+                "ASRQualificationSupport", "ASRQwen3", "AudioCaptureAPI",
+                "AudioFileAVFoundation", "AudioProcessingCore", "GlossaryAPI",
+                "ScriptureAPI", "ScriptureQualificationSupport", "SessionManagement",
+                "SettingsAPI", "TranslationAPI", "TranslationHyMT2", "VADAPI", sherpaOnnx,
             ],
             exclude: ["README.md"],
             swiftSettings: strict

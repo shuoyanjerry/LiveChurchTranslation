@@ -18,53 +18,56 @@ For Chinese output:
 
 - use `神`, not `上帝`, for the selected Shen Edition;
 - as a product and church-style rule, allow both `他` and `祂` when context makes the
-  referent clear; never mechanically replace either glyph in an exact licensed quotation;
+  referent clear; never mechanically replace either glyph in an exact source quotation;
 - use Simplified Chinese book names and preserve explicit chapter-and-verse numbers;
 - do not reconstruct, complete, or invent verse text that the speaker did not say.
 
 The production glossary contains names and short non-expressive theological terms, not
 an offline Bible text. Public test fixtures use original sentences or paraphrases. A
 machine-generated translation is a live listening aid and must not be presented as an
-authoritative Bible quotation. Only a version-pinned licensed source whose file and grant
-hashes passed the private qualification gate may be labeled as exact ESV 2025 or
-CUNPSS-神 1988 text.
+authoritative Bible quotation. A local aggregate test may record the declared edition and
+source hashes, but that does not authorize runtime quotation, publication, or distribution.
+Only an authorized, version-pinned source may be displayed as exact ESV 2025 or
+CUNPSS-神 1988 text in a distributed build.
 
-## Rights and qualification gate
+## Local ephemeral test versus distribution
 
-Neither CUNPSS-神 nor ESV full text or audio may be bundled, downloaded, cached as a
-corpus, used as a hidden retrieval source, or copied into test fixtures until the text and
-recording rights holders have approved the exact ASR and translation uses in writing.
-Internal, free, or church-only distribution does not create an exception to those grants.
+The product does not require a church, denomination, incorporated entity, or commercial
+account to run the local ephemeral preflight. A tester may identify as an individual or a
+project. The tester supplies files outside the workspace, records exact text/audio source
+attribution and intended evaluation use, and independently pins every file and declaration
+by SHA-256. The working copy is owner-only and is destroyed after success, failure, or a
+termination signal.
 
-Before enabling verse retrieval or distributing publisher text:
+This local path is evaluation-only. Its manifest must explicitly prohibit model training
+and redistribution. It may allow non-weight model adjustment—hotwords, prompts, glossaries,
+decoding, or thresholds—when the tester declares permission for that local use. It never
+downloads from ESV.org, YouVersion, API.Bible, or a publisher
+API, never commits source text/audio, and emits aggregate metrics rather than reference
+text. A tester declaration records provenance and intended use; it is not a license,
+publisher authorization, or proof that the source is authentic.
 
-1. Obtain Hong Kong Bible Society permission covering the CUNPSS-神 1988 digital master,
-   ASR evaluation, bilingual alignment, translation evaluation, local caching, runtime
-   display, exports, and the intended territories. The public
-   contact is [info@hkbs.org.hk](mailto:info@hkbs.org.hk); the
-   [Digital Bible Library](https://library.bible/) is an additional licensed-content
-   route for eligible organizations.
-2. Obtain Crossway digital and audio permission covering ESV Text Edition: 2025,
-   transcription/WER evaluation, bilingual alignment, and this product's
-   English-to-Chinese workflow. The standard ESV API and quotation policy are not a
-   substitute: ordinary terms restrict caching and expressly disallow translating ESV
-   into another language without permission.
-3. Obtain a separate recording grant from the producer of each Chinese or English
-   narration. Permission to display Bible text does not automatically license its audio
-   for speech-to-text evaluation, segmentation, or model adaptation.
-4. Record signed grants, approved copyright notices, territories, versions, expiry,
-   allowed AI purposes, reporting duties, and revocation procedures in the private
-   evidence set. Bind every grant, transcript, and audio file by SHA-256.
-5. Have bilingual pastoral reviewers approve semantic faithfulness and Scripture-reference
-   preservation. Exact-string scores alone are not sufficient translation evidence.
+The user's statement that they own or hold permission for the supplied spiritual materials
+may be stored as the hashed local source/use declaration. The product records that claim as
+provenance; it does not present it as publisher endorsement or permission to redistribute.
 
-No release may claim ESV/CUNPSS Scripture-reading optimization while a required text,
-audio, ASR-evaluation, or cross-language-evaluation grant is missing. Terminology
-alignment and book-name mapping may ship without embedding copyrighted text.
+The distinction does not expand publisher terms. Crossway's ordinary policy expressly
+disallows translating ESV text into another language without permission. Therefore an
+exact-verse ESV-to-Chinese lane without rights-holder permission may be used only as the
+tester's private experiment; it must not be described as compliant, published, shared, or
+used to support a release claim. Playback access likewise does not establish text or
+narration rights.
 
-The request checklist and draft language are in
-[ScriptureLicensing.md](ScriptureLicensing.md). Licensed files remain outside Git and are
-admitted only through the private qualification preflight.
+Before enabling exact verse retrieval, bundling publisher text/audio, runtime quotation,
+exports, or public/shared evaluation results, obtain the appropriate text and narration
+permissions directly from their rights holders. No church authorization is involved; the
+relevant permission is from the content or recording rights holder. Terminology alignment,
+book-name mapping, and generated listening-aid output may ship without embedding Bible
+text.
+
+The optional rights-holder request checklist is in
+[ScriptureLicensing.md](ScriptureLicensing.md). It is not a prerequisite for local
+ASR-only ephemeral preflight and is never a request for church authorization.
 
 ## Primary references
 

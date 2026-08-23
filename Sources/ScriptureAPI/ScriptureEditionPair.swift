@@ -16,6 +16,6 @@ public struct ScriptureEditionPair: Codable, Equatable, Hashable, Sendable {
         "These editions define terminology baselines; generated translation is not an exact Bible quotation."
 
     public static let exactQuotationNotice =
-        "Exact quotation requires a licensed, edition-pinned source that passed the private "
-        + "rights and hash gate; preserve its wording and glyphs, including 他/祂."
+        "Exact quotation requires a tester-supplied, edition-pinned source that passed the "
+        + "private provenance and hash gate; preserve its wording and glyphs, including 他/祂."
 }

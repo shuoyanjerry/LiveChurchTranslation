@@ -22,28 +22,34 @@ public enum ScriptureQualificationCorpusLoader {
         }
         let manifest = try ScriptureQualificationManifestDecoder.decode(data)
         try ScriptureQualificationManifestValidator(now: now).validate(manifest)
-        let grants = try verifyGrants(manifest.grants, verifier: verifier)
+        let declarations = try verifyDeclarations(
+            manifest.sourceDeclarations,
+            verifier: verifier
+        )
         let items = try verifyItems(manifest.items, verifier: verifier)
         return ScriptureQualificationCorpus(
             manifest: manifest,
             manifestSHA256: expectedManifestSHA256,
-            grants: grants,
+            sourceDeclarations: declarations,
             items: items
         )
     }
 
-    private static func verifyGrants(
-        _ grants: [ScriptureQualificationGrant],
+    private static func verifyDeclarations(
+        _ declarations: [ScriptureQualificationSourceDeclaration],
         verifier: ScriptureQualificationFileVerifier
-    ) throws -> [ScriptureQualificationVerifiedGrant] {
-        try grants.map { grant in
+    ) throws -> [ScriptureVerifiedSourceDeclaration] {
+        try declarations.map { declaration in
             let url = try verifier.file(
-                relativePath: grant.evidencePath,
-                expectedSHA256: grant.evidenceSHA256,
-                label: "grant evidence \(grant.id)",
-                maximumBytes: Limits.evidence
+                relativePath: declaration.declarationPath,
+                expectedSHA256: declaration.declarationSHA256,
+                label: "source declaration \(declaration.id)",
+                maximumBytes: Limits.declaration
             )
-            return ScriptureQualificationVerifiedGrant(metadata: grant, evidenceURL: url)
+            return ScriptureVerifiedSourceDeclaration(
+                metadata: declaration,
+                declarationURL: url
+            )
         }
     }
 
@@ -75,7 +81,7 @@ public enum ScriptureQualificationCorpusLoader {
 
 private enum Limits {
     static let manifest = 1_048_576
-    static let evidence = 16_777_216
+    static let declaration = 16_777_216
     static let reference = 16_777_216
     static let audio = 8_589_934_592
 }

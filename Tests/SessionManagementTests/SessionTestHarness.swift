@@ -4,7 +4,7 @@ import ASRNormalizationCore
 import Foundation
 import GlossaryAPI
 import ModelRuntimeAPI
-import SessionManagement
+@testable import SessionManagement
 import SessionManagementAPI
 import SettingsAPI
 import Testing
@@ -23,6 +23,7 @@ struct SessionTestHarness {
     let store: FakeTranscriptStore
     let recordingStore: FakeSessionRecordingStore
     let recoveryStore: FakeUtteranceRecoveryStore
+    let diagnostics: FakeDiagnosticsRecorder
     let coordinator: LiveSessionCoordinator
 
     init(
@@ -47,7 +48,8 @@ struct SessionTestHarness {
         emitsEveryFrame: Bool = false,
         translationMode: TranslationMode = .mandarinToEnglish,
         audioFrames: [AudioFrame]? = nil,
-        sessionKind: TranscriptSessionKind = .live
+        sessionKind: TranscriptSessionKind = .live,
+        sentenceVisibilityClock: (any SentenceVisibilityClock)? = nil
     ) {
         self.init(
             components: SessionTestComponents(
@@ -71,7 +73,9 @@ struct SessionTestHarness {
                 holdsCaptureOpen: holdsCaptureOpen,
                 emitsOnlyOnFlush: emitsOnlyOnFlush,
                 emitsEveryFrame: emitsEveryFrame,
-                translationMode: translationMode
+                translationMode: translationMode,
+                sentenceVisibilityClock:
+                    sentenceVisibilityClock ?? ContinuousSentenceVisibilityClock()
             ),
             sessionKind: sessionKind
         )
@@ -93,10 +97,12 @@ struct SessionTestHarness {
         store = components.store
         recordingStore = components.recordingStore
         recoveryStore = components.recoveryStore
+        diagnostics = components.diagnostics
         coordinator = LiveSessionCoordinator(
             dependencies: dependencies,
             models: Self.models,
-            sessionKind: sessionKind
+            sessionKind: sessionKind,
+            sentenceVisibilityClock: components.sentenceVisibilityClock
         )
     }
 
@@ -135,7 +141,8 @@ func verifyRecognitionRequest(from harness: SessionTestHarness) async throws {
     let recognition = try #require(requests.first)
     #expect(requests.count == 1)
     #expect(recognition.segment.samples.count == 320)
-    #expect(recognition.contextPrompt.contains("因信称义"))
+    #expect(recognition.contextPrompt.contains("因着信"))
+    #expect(recognition.contextPrompt.contains("称义"))
     #expect(recognition.contextPrompt.contains("恩典"))
     #expect(!recognition.contextPrompt.contains("我们"))
 }

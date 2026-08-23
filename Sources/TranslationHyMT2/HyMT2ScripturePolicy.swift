@@ -18,6 +18,9 @@ enum HyMT2ScripturePolicy {
             + "Preserve Arabic chapter-and-verse numbers (for example, 约翰福音 3:16), "
             + "use 神 rather than 上帝, allow 他 or 祂 according to context, and never "
             + "reconstruct or invent verse text that the current source did not supply. "
+            + "When the current source itself supplies a complete Scripture quotation, "
+            + "prefer the established wording of this edition over a loose paraphrase, "
+            + "but never add a clause that is absent from the source. "
             + ScriptureEditionPair.terminologyBaselineNotice
     }
 
@@ -27,6 +30,9 @@ enum HyMT2ScripturePolicy {
             + "\(edition.fullName) (\(edition.abbreviation)), \(edition.editionLabel). "
             + "Preserve conventional numeric references (for example, John 3:16), and never "
             + "reconstruct or invent verse text that the current source did not supply. "
+            + "When the current source itself supplies a complete Scripture quotation, "
+            + "prefer the established wording of this edition over a loose paraphrase, "
+            + "but never add a clause that is absent from the source. "
             + ScriptureEditionPair.terminologyBaselineNotice
     }
 }

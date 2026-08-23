@@ -7,6 +7,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 "$SCRIPT_DIR/check_architecture.sh"
+"$SCRIPT_DIR/test_ephemeral_scripture_qualification.sh"
 "$SCRIPT_DIR/check_app_store_packaging.sh"
 "$SCRIPT_DIR/check_xcode_project.sh"
 

@@ -24,7 +24,7 @@ import Testing
         #expect(notice.contains(ScriptureEditionPair.terminologyBaselineNotice))
         #expect(notice.contains(ScriptureEditionPair.exactQuotationNotice))
         #expect(notice.contains("not an exact Bible quotation"))
-        #expect(notice.contains("licensed, edition-pinned source"))
+        #expect(notice.contains("tester-supplied, edition-pinned source"))
         #expect(notice.contains("他/祂"))
     }
 }

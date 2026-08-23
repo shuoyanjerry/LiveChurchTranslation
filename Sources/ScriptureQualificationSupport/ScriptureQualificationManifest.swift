@@ -7,7 +7,7 @@ public struct ScriptureQualificationManifest: Codable, Sendable {
     public let visibility: ScriptureQualificationVisibility
     public let mustNotCommit: Bool
     public let editionPair: ScriptureEditionPair
-    public let grants: [ScriptureQualificationGrant]
+    public let sourceDeclarations: [ScriptureQualificationSourceDeclaration]
     public let items: [ScriptureQualificationItem]
     public let translationPairs: [ScriptureQualificationTranslationPair]
 
@@ -18,7 +18,7 @@ public struct ScriptureQualificationManifest: Codable, Sendable {
         visibility: ScriptureQualificationVisibility,
         mustNotCommit: Bool,
         editionPair: ScriptureEditionPair,
-        grants: [ScriptureQualificationGrant],
+        sourceDeclarations: [ScriptureQualificationSourceDeclaration],
         items: [ScriptureQualificationItem],
         translationPairs: [ScriptureQualificationTranslationPair]
     ) {
@@ -28,7 +28,7 @@ public struct ScriptureQualificationManifest: Codable, Sendable {
         self.visibility = visibility
         self.mustNotCommit = mustNotCommit
         self.editionPair = editionPair
-        self.grants = grants
+        self.sourceDeclarations = sourceDeclarations
         self.items = items
         self.translationPairs = translationPairs
     }

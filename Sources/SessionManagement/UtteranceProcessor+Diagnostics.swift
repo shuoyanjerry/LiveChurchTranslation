@@ -7,17 +7,6 @@ import TranslationAPI
 import VADAPI
 
 extension UtteranceProcessor {
-    func recordTranslation(duration: Duration) async {
-        await dependencies.diagnostics.record(
-            DiagnosticEvent(
-                severity: .info,
-                component: "Translation",
-                message: "Translated utterance",
-                measurements: ["latency_ms": duration.milliseconds]
-            )
-        )
-    }
-
     func makeEntry(
         recognition: RecognizedUtterance,
         translation: TranslationResult,
@@ -36,22 +25,39 @@ extension UtteranceProcessor {
         }
     }
 
-    func recordRecognition(
+    func recordRecognitionAfterCriticalPath(
         _ normalized: RecognizedUtterance,
         original: RecognizedUtterance,
         segment: SpeechSegment
-    ) async {
-        await dependencies.diagnostics.record(
-            DiagnosticEvent(
-                severity: .info,
-                component: "ASR",
-                message: "Recognized utterance",
-                measurements: [
-                    "audio_seconds": segment.duration.seconds,
-                    "normalization_applied": normalized.text == original.text ? 0.0 : 1.0,
-                ]
+    ) {
+        let diagnostics = dependencies.diagnostics
+        Task {
+            await diagnostics.record(
+                DiagnosticEvent(
+                    severity: .info,
+                    component: "ASR",
+                    message: "Recognized utterance",
+                    measurements: [
+                        "audio_seconds": segment.duration.seconds,
+                        "normalization_applied": normalized.text == original.text ? 0.0 : 1.0,
+                    ]
+                )
             )
-        )
+        }
+    }
+
+    func recordTranslationAfterCriticalPath(duration: Duration) {
+        let diagnostics = dependencies.diagnostics
+        Task {
+            await diagnostics.record(
+                DiagnosticEvent(
+                    severity: .info,
+                    component: "Translation",
+                    message: "Translated utterance",
+                    measurements: ["latency_ms": duration.milliseconds]
+                )
+            )
+        }
     }
 
     func failure(

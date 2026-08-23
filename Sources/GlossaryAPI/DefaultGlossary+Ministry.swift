@@ -6,6 +6,7 @@ extension DefaultGlossary {
         GlossaryEntry(
             source: "救恩",
             target: "salvation",
+            sourceAliases: ["得救"],
             recognitionAliases: ["休恩"],
             targetVariants: ["saved", "saving"],
             enforcement: .required),

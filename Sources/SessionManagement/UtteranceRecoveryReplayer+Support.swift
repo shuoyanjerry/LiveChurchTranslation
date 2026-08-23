@@ -33,14 +33,14 @@ extension UtteranceRecoveryReplayer {
         from entries: [TranscriptEntry],
         before sourceSequence: UInt64
     ) -> RecoveryProcessingContext {
-        let recent = entries.compactMap { entry -> SequencedRecoveryEntry? in
+        let earlier = entries.compactMap { entry -> SequencedRecoveryEntry? in
             guard let sequence = entry.sourceSegmentSequence,
                 sequence < sourceSequence
             else { return nil }
             return SequencedRecoveryEntry(sourceSequence: sequence, entry: entry)
         }
         .sorted(by: recoverySourceOrder)
-        .suffix(2)
+        let recent = earlier.suffix(2)
         return RecoveryProcessingContext(
             presentationSequence: recoveredPresentationSequence(
                 in: entries,
@@ -52,12 +52,7 @@ extension UtteranceRecoveryReplayer {
                     targetText: $0.entry.targetText
                 )
             },
-            discourse: recent.map {
-                VerifiedDiscourseTurn(
-                    sequence: Int(clamping: $0.sourceSequence),
-                    text: $0.entry.sourceText
-                )
-            }
+            discourse: discourseTurns(from: earlier)
         )
     }
 
@@ -84,8 +79,26 @@ extension UtteranceRecoveryReplayer {
         guard entries.allSatisfy({ $0.sourceSegmentSequence != nil }) else {
             return (entries.map(\.sequence).max() ?? 0) + 1
         }
-        return entries.compactMap(\.sourceSegmentSequence)
-            .filter { $0 < sourceSequence }.count + 1
+        return entries.filter {
+            guard let sequence = $0.sourceSegmentSequence else { return false }
+            return sequence < sourceSequence
+        }.count + 1
+    }
+
+    private func discourseTurns(
+        from entries: [SequencedRecoveryEntry]
+    ) -> [VerifiedDiscourseTurn] {
+        let grouped = Dictionary(grouping: entries, by: \.sourceSequence)
+        return grouped.keys.sorted().suffix(2).compactMap { sequence in
+            guard let values = grouped[sequence] else { return nil }
+            let text = values.sorted(by: recoverySourceOrder)
+                .map(\.entry.sourceText)
+                .joined(separator: " ")
+            return VerifiedDiscourseTurn(
+                sequence: Int(clamping: sequence),
+                text: text
+            )
+        }
     }
 
     private func recoverySourceOrder(
