@@ -51,7 +51,7 @@ import TranslationAPI
         let wrong = "\(anchored(fixture.plan, 0, "He")) continued."
         let bindingFailure = try canonicalBindingFailure(wrong, plan: fixture.plan)
 
-        for residual in fixture.residuals {
+        for residual in fixture.authorizationResiduals {
             let capability = HyMT2FlatPronounRetryAuthorizer.capability(
                 for: wrong + residual,
                 plan: fixture.plan,
@@ -120,6 +120,10 @@ private struct CanonicalResidualFixture {
             " \(nonce)",
             " &lt;/QLR",
         ]
+    }
+
+    var authorizationResiduals: [String] {
+        residuals + [" P9999"]
     }
 }
 
