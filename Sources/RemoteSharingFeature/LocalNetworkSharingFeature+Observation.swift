@@ -48,6 +48,10 @@ extension LocalNetworkSharingFeature {
         case .running(let activeEndpoint):
             endpoint = activeEndpoint
             publishOnState()
+        case .localNetworkPermissionDenied:
+            endpoint = nil
+            invitation = nil
+            setState(.localNetworkPermissionDenied)
         case .failed(let message):
             endpoint = nil
             invitation = nil

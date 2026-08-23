@@ -7,6 +7,7 @@ struct ModelInstaller: Sendable {
     let transport: any ModelHTTPTransport
     let locationStore: any ModelLocationStore
     let runtimeReporter: any ModelRuntimeReporting
+    let diskReservations: ModelDiskSpaceReservations
     private let verifier = ArtifactVerifier()
 
     func install(_ manifest: ModelDownloadManifest) async throws -> URL {
@@ -43,31 +44,31 @@ struct ModelInstaller: Sendable {
         let inventory = try await inventory(for: manifest, layout: layout)
         guard !inventory.pending.isEmpty else { return layout.outputURL }
 
-        await progress.begin(at: inventory.completedBytes)
-        var completedBytes = inventory.completedBytes
-        for pending in inventory.pending {
-            try await install(pending, after: completedBytes, layout: layout, progress: progress)
-            completedBytes += pending.artifact.expectedBytes
-        }
-        return layout.outputURL
-    }
-
-    private func inventory(
-        for manifest: ModelDownloadManifest,
-        layout: SecureInstallLayout
-    ) async throws -> InstallInventory {
-        var completedBytes: Int64 = 0
-        var pending: [PendingArtifact] = []
-        for artifact in manifest.artifacts {
-            try Task.checkCancellation()
-            let paths = try layout.prepare(for: artifact)
-            if try await verifier.isValid(paths.final, artifact: artifact) {
-                completedBytes += artifact.expectedBytes
-            } else {
-                pending.append(PendingArtifact(artifact: artifact, paths: paths))
+        let reservation = try await diskReservations.reserve(
+            additionalBytes: missingBytes(in: inventory.pending)
+        )
+        do {
+            await progress.begin(at: inventory.completedBytes)
+            var completedBytes = inventory.completedBytes
+            for pending in inventory.pending {
+                try await install(
+                    pending,
+                    after: completedBytes,
+                    layout: layout,
+                    progress: progress
+                )
+                await diskReservations.recordCommitted(
+                    pending.artifact.expectedBytes,
+                    for: reservation
+                )
+                completedBytes += pending.artifact.expectedBytes
             }
+            await diskReservations.release(reservation)
+            return layout.outputURL
+        } catch {
+            await diskReservations.release(reservation)
+            throw error
         }
-        return InstallInventory(completedBytes: completedBytes, pending: pending)
     }
 
     private func install(
@@ -127,6 +128,37 @@ struct ModelInstaller: Sendable {
         }
     }
 
+}
+
+extension ModelInstaller {
+    fileprivate func inventory(
+        for manifest: ModelDownloadManifest,
+        layout: SecureInstallLayout
+    ) async throws -> InstallInventory {
+        var completedBytes: Int64 = 0
+        var pending: [PendingArtifact] = []
+        for artifact in manifest.artifacts {
+            try Task.checkCancellation()
+            let paths = try layout.prepare(for: artifact)
+            let isValid = try await verifier.isValid(paths.final, artifact: artifact)
+            try layout.removeReplaceableItem(at: paths.part)
+            if isValid {
+                completedBytes += artifact.expectedBytes
+            } else {
+                try layout.removeReplaceableItem(at: paths.final)
+                pending.append(PendingArtifact(artifact: artifact, paths: paths))
+            }
+        }
+        return InstallInventory(completedBytes: completedBytes, pending: pending)
+    }
+
+    fileprivate func missingBytes(in pending: [PendingArtifact]) throws -> Int64 {
+        try pending.reduce(0) { total, item in
+            let result = total.addingReportingOverflow(item.artifact.expectedBytes)
+            guard !result.overflow else { throw ModelDownloadError.invalidArtifact }
+            return result.partialValue
+        }
+    }
 }
 
 private struct PendingArtifact: Sendable {

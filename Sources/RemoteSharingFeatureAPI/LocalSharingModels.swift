@@ -32,6 +32,7 @@ public struct LocalSharingInvitation: Equatable, Sendable {
 public enum LocalSharingViewState: Equatable, Sendable {
     case off
     case starting
+    case localNetworkPermissionDenied
     case on(
         endpoint: URL,
         connectionCount: Int,

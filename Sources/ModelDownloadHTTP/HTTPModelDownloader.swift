@@ -18,13 +18,39 @@ public actor HTTPModelDownloader: ModelDownloadProvider {
         locationStore: any ModelLocationStore,
         runtimeReporter: any ModelRuntimeReporting
     ) throws {
+        try self.init(
+            manifests: manifests,
+            rootDirectory: rootDirectory,
+            transport: transport,
+            locationStore: locationStore,
+            runtimeReporter: runtimeReporter,
+            diskCapacityProvider: VolumeModelDiskCapacityProvider(),
+            diskSafetyMarginBytes: ModelDiskSpaceReservations.productionSafetyMarginBytes
+        )
+    }
+
+    init(
+        manifests: [ModelDownloadManifest],
+        rootDirectory: URL,
+        transport: any ModelHTTPTransport,
+        locationStore: any ModelLocationStore,
+        runtimeReporter: any ModelRuntimeReporting,
+        diskCapacityProvider: any ModelDiskCapacityProviding,
+        diskSafetyMarginBytes: Int64
+    ) throws {
         try ModelDownloadRootValidator.validate(rootDirectory)
         self.manifests = try ModelManifestIndex(manifests: manifests).manifests
+        let diskReservations = try ModelDiskSpaceReservations(
+            rootDirectory: rootDirectory,
+            capacityProvider: diskCapacityProvider,
+            safetyMarginBytes: diskSafetyMarginBytes
+        )
         installer = ModelInstaller(
             rootDirectory: rootDirectory,
             transport: transport,
             locationStore: locationStore,
-            runtimeReporter: runtimeReporter
+            runtimeReporter: runtimeReporter,
+            diskReservations: diskReservations
         )
     }
 
@@ -81,12 +107,14 @@ public actor HTTPModelDownloader: ModelDownloadProvider {
 /// Errors that make the downloader unsafe to construct.
 public enum ModelDownloadConfigurationError: LocalizedError, Equatable, Sendable {
     case invalidRootDirectory
+    case invalidDiskSafetyMargin
     case duplicateManifest(ModelID)
     case duplicateInstallDirectory(String)
 
     public var errorDescription: String? {
         switch self {
         case .invalidRootDirectory: "The model download root must be a specific file URL."
+        case .invalidDiskSafetyMargin: "The model disk safety margin cannot be negative."
         case .duplicateManifest(let id): "Multiple manifests use model ID \(id.rawValue)."
         case .duplicateInstallDirectory(let name):
             "Multiple manifests use installation directory \(name)."

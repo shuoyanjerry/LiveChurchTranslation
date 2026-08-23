@@ -20,6 +20,10 @@ The feature contains no audio processing, inference, translation, persistence, o
 Local sharing state and intent are injected from `RemoteSharingFeatureAPI`; this target does not define or
 implement networking contracts.
 
+The initial reader task starts model preparation automatically, observes the
+combined ASR and translation progress, and exposes a retry only after bounded
+automatic retries are exhausted.
+
 ## Dependencies
 
 The target imports only API boundaries for audio capture, glossary, model runtime, session management, settings, and transcript data, plus `UIDesignSystem`. It does not import concrete model, storage, audio, or LAN implementations.

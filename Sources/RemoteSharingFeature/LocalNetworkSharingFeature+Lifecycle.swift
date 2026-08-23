@@ -1,12 +1,13 @@
 import Foundation
 import RemoteSharingFeatureAPI
+import RemoteTransportAPI
 
 extension LocalNetworkSharingFeature {
     func toggle() async {
         operationRevision += 1
         let revision = operationRevision
         switch currentState {
-        case .off, .failed:
+        case .off, .localNetworkPermissionDenied, .failed:
             await enable(revision: revision)
         case .starting, .on:
             await disable(revision: revision)
@@ -24,8 +25,15 @@ extension LocalNetworkSharingFeature {
             }
             endpoint = started
             await refreshPeers()
-        } catch {
+        } catch RemoteTransportLifecycleError.localNetworkPermissionDenied {
+            guard revision == operationRevision else { return }
             await sharing.setEnabled(false)
+            guard revision == operationRevision else { return }
+            setState(.localNetworkPermissionDenied)
+        } catch {
+            guard revision == operationRevision else { return }
+            await sharing.setEnabled(false)
+            guard revision == operationRevision else { return }
             setState(.failed(message: bounded(error)))
         }
     }

@@ -39,7 +39,7 @@ struct MultifileDownloadFixture {
         transport = modelTransport
         locations = locationStore
         reporter = runtimeReporter
-        downloader = try HTTPModelDownloader(
+        downloader = try testDownloader(
             manifests: [modelManifest],
             rootDirectory: directory.url,
             transport: modelTransport,

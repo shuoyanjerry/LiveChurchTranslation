@@ -77,6 +77,7 @@ import Testing
             LocalSharingPresentation.transportWarning
                 == "Trusted local network only · Traffic is not encrypted"
         )
+        #expect(LocalSharingPresentation.localNetworkPermissionMessage.contains("本地网络"))
     }
 
     @Test func localSharingOffersOnlyViewerInvitations() {

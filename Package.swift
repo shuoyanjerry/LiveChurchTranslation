@@ -130,7 +130,7 @@ let package = Package(
             "TranslationApple",
             dependencies: ["TranslationAPI", "ModelRuntimeAPI"]
         ),
-        target("TranslationHyMT2", dependencies: ["TranslationAPI"]),
+        target("TranslationHyMT2", dependencies: ["ModelRuntimeAPI", "TranslationAPI"]),
         target("GlossaryCore", dependencies: ["GlossaryAPI"]),
         target("GlossaryFileSystem", dependencies: ["GlossaryAPI"]),
         target("ModelRuntimeCore", dependencies: ["ModelRuntimeAPI"]),

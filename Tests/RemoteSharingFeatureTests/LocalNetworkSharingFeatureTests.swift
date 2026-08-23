@@ -2,7 +2,7 @@ import Foundation
 import RemoteDiscoveryAPI
 import RemotePairingAPI
 import RemoteSharingAPI
-import RemoteSharingFeature
+@testable import RemoteSharingFeature
 import RemoteSharingFeatureAPI
 import RemoteTransportAPI
 import Testing
@@ -63,6 +63,50 @@ struct LocalNetworkSharingFeatureTests {
         #expect(invitation == nil)
     }
 
+    @Test("Local-network policy denial remains a typed recovery state")
+    func localNetworkPermissionDenial() async {
+        let sharing = SharingFake()
+        let feature = LocalNetworkSharingFeature(
+            sharing: sharing,
+            pairing: PairingManagerFake(),
+            transport: TransportFake(startError: .localNetworkPermissionDenied),
+            configuration: configuration
+        )
+
+        await feature.send(.toggle)
+
+        #expect(await feature.state() == .localNetworkPermissionDenied)
+        #expect(!(await sharing.isEnabled()))
+    }
+
+    @Test("A delayed old failure cannot overwrite a successful retry")
+    func staleEnableFailureDoesNotOverwriteRetry() async {
+        let sharing = SharingFake()
+        let transport = DelayedFailureThenSuccessTransport()
+        let feature = LocalNetworkSharingFeature(
+            sharing: sharing,
+            pairing: PairingManagerFake(),
+            transport: transport,
+            configuration: configuration
+        )
+        let firstAttempt = Task { await feature.send(.toggle) }
+        await transport.waitUntilFirstStartBegins()
+        await feature.receive(.statusChanged(.localNetworkPermissionDenied))
+
+        let retry = Task { await feature.send(.toggle) }
+        await retry.value
+        await transport.releaseFirstFailure()
+        await firstAttempt.value
+
+        guard case .on(let endpoint, _, _, _) = await feature.state() else {
+            Issue.record("Expected the successful retry to remain authoritative")
+            return
+        }
+        #expect(endpoint.port == 8_123)
+        #expect(await sharing.isEnabled())
+        #expect(await transport.startCount() == 2)
+    }
+
     private var configuration: RemoteTransportConfiguration {
         RemoteTransportConfiguration(
             advertisedHostName: "quiet-reader.local",
@@ -83,8 +127,15 @@ private actor SharingFake: RemoteSharingControlling {
 
 private actor TransportFake: RemoteTransportServing {
     private var stops = 0
+    private let startError: RemoteTransportLifecycleError?
+
+    init(startError: RemoteTransportLifecycleError? = nil) {
+        self.startError = startError
+    }
+
     func start(configuration: RemoteTransportConfiguration) throws -> RemoteEndpoint {
-        RemoteEndpoint(
+        if let startError { throw startError }
+        return RemoteEndpoint(
             baseURL: URL(string: "http://\(configuration.advertisedHostName):8123")!,
             port: 8_123
         )

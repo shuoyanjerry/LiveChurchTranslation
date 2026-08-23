@@ -4,6 +4,7 @@ import Testing
 
 enum ExpectedModelDownloadError {
     case cancelled
+    case downloadFailed
     case invalidArtifact
 }
 
@@ -35,7 +36,9 @@ private func matches(
     expected: ExpectedModelDownloadError
 ) -> Bool {
     switch (error, expected) {
-    case (.cancelled, .cancelled), (.invalidArtifact, .invalidArtifact): true
+    case (.cancelled, .cancelled), (.downloadFailed, .downloadFailed),
+        (.invalidArtifact, .invalidArtifact):
+        true
     default: false
     }
 }

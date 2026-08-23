@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
-import ModelDownloadHTTP
+@testable import ModelDownloadHTTP
+import ModelDownloadAPI
 import ModelRuntimeAPI
 
 actor FakeModelHTTPTransport: ModelHTTPTransport {
@@ -87,6 +88,34 @@ actor TestRuntimeReporter: ModelRuntimeReporting {
     }
 
     func history() -> [ModelRuntimeStatus] { recorded }
+}
+
+struct FixedModelDiskCapacityProvider: ModelDiskCapacityProviding {
+    let availableBytes: Int64
+
+    func availableCapacity(at _: URL) throws -> Int64 { availableBytes }
+}
+
+func testDownloader(
+    manifests: [ModelDownloadManifest],
+    rootDirectory: URL,
+    transport: any ModelHTTPTransport,
+    locationStore: any ModelLocationStore,
+    runtimeReporter: any ModelRuntimeReporting,
+    availableBytes: Int64 = .max,
+    diskSafetyMarginBytes: Int64 = 0
+) throws -> HTTPModelDownloader {
+    try HTTPModelDownloader(
+        manifests: manifests,
+        rootDirectory: rootDirectory,
+        transport: transport,
+        locationStore: locationStore,
+        runtimeReporter: runtimeReporter,
+        diskCapacityProvider: FixedModelDiskCapacityProvider(
+            availableBytes: availableBytes
+        ),
+        diskSafetyMarginBytes: diskSafetyMarginBytes
+    )
 }
 
 struct TestArtifact {

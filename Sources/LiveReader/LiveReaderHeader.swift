@@ -13,7 +13,18 @@ struct LiveReaderHeader: View {
     var body: some View {
         HStack(spacing: 14) {
             title
-            StatusPill(text: modelStatusText, color: statusColor, pulses: viewModel.isRunning)
+            StatusPill(
+                text: modelStatusText,
+                color: statusColor,
+                pulses: viewModel.isRunning || viewModel.modelPreparationIsActive
+            )
+            if viewModel.modelPreparationSnapshot.canRetry, !viewModel.isRunning {
+                Button("重试模型", systemImage: "arrow.clockwise") {
+                    Task { await viewModel.retryModelPreparation() }
+                }
+                .buttonStyle(ChurchSecondaryButtonStyle())
+                .help("重新下载、校验并载入本地模型")
+            }
             if let startedAt = viewModel.recordingStartedAt {
                 RecordingIndicator(startedAt: startedAt)
             }
@@ -39,7 +50,7 @@ struct LiveReaderHeader: View {
                 Text("Quiet Liturgy Reader")
                     .font(.system(size: 21, weight: .semibold, design: .serif))
                     .foregroundStyle(ChurchTheme.ink)
-                Text(viewModel.snapshot.statusMessage)
+                Text(viewModel.displayedStatusMessage)
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
                     .lineLimit(1)

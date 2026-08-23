@@ -34,6 +34,7 @@ public enum RemoteTransportStatus: Equatable, Sendable {
     case stopped
     case starting
     case running(RemoteEndpoint)
+    case localNetworkPermissionDenied
     case failed(message: String)
 }
 
@@ -45,5 +46,6 @@ public enum RemoteTransportEvent: Equatable, Sendable {
 public enum RemoteTransportLifecycleError: Error, Equatable, Sendable {
     case alreadyRunning
     case invalidConfiguration
+    case localNetworkPermissionDenied
     case listenerFailed(String)
 }

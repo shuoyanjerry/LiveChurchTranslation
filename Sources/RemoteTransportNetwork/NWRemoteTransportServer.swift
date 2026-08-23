@@ -16,6 +16,7 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
     let limits: RemoteTransportLimits
     private let queue = DispatchQueue(label: "org.churchtranslation.remote.listener")
     var listener: NWListener?
+    var activeListenerID: UUID?
     var components: RemoteServerComponents?
     var connections: [UUID: NWRemoteConnectionHandler] = [:]
     var currentStatus = RemoteTransportStatus.stopped
@@ -60,14 +61,16 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
                     newListener = try NWListener(using: .tcp, on: port)
                 }
                 listener = newListener
+                let listenerID = UUID()
+                activeListenerID = listenerID
                 NWListenerBonjourAttachment.attach(
                     descriptor: configuration.bonjour,
                     to: newListener
                 )
-                installHandlers(on: newListener)
+                installHandlers(on: newListener, listenerID: listenerID)
                 newListener.start(queue: queue)
             } catch {
-                failStart(error.localizedDescription)
+                failStart(caught: error)
             }
         }
     }
@@ -75,8 +78,10 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
     public func stop() async {
         heartbeatTask?.cancel()
         heartbeatTask = nil
-        listener?.cancel()
+        let activeListener = listener
         listener = nil
+        activeListenerID = nil
+        activeListener?.cancel()
         startContinuation?.resume(throwing: RemoteTransportLifecycleError.listenerFailed("Stopped"))
         startContinuation = nil
         let openConnections = connections.values

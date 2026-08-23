@@ -29,7 +29,7 @@ import VADAPI
         #expect(await harness.recordingStore.discardedSessionCount() == 0)
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
         #expect((await harness.recoveryStore.completedIDs()).isEmpty)
-        #expect((await harness.downloader.cancelledDescriptors()).count == 2)
+        #expect((await harness.downloader.cancelledDescriptors()).isEmpty)
         try await Task.sleep(for: .milliseconds(20))
         #expect((await harness.coordinator.currentSnapshot()).phase == .idle)
     }

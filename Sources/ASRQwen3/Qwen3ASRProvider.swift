@@ -1,24 +1,29 @@
 import ASRAPI
 import Foundation
+import ModelRuntimeAPI
 import SherpaOnnx
 
 /// Sentence-level Mandarin ASR backed by Qwen3-ASR INT8 and sherpa-onnx.
-public actor Qwen3ASRProvider: ASRProvider {
+public actor Qwen3ASRProvider: ASRProvider, ModelRuntimeHealthChecking {
     public nonisolated let identifier = "qwen.qwen3-asr.sherpa-onnx"
 
     private let configuration: Qwen3ASRConfiguration
     private var recognizer: SherpaOnnxOfflineRecognizer?
+    private var loadedModelURL: URL?
 
     public init(configuration: Qwen3ASRConfiguration = .init()) {
         self.configuration = configuration
     }
 
     public func loadModel(at location: URL) async throws {
-        let layout = try Qwen3ModelLayout(directory: location)
+        let normalizedLocation = location.standardizedFileURL
+        if loadedModelURL == normalizedLocation, recognizer != nil { return }
+        let layout = try Qwen3ModelLayout(directory: normalizedLocation)
         recognizer = Qwen3RecognizerFactory.make(
             layout: layout,
             configuration: configuration
         )
+        loadedModelURL = normalizedLocation
     }
 
     public func transcribe(_ request: ASRRequest) async throws -> RecognizedUtterance {
@@ -43,7 +48,10 @@ public actor Qwen3ASRProvider: ASRProvider {
 
     public func unloadModel() async {
         recognizer = nil
+        loadedModelURL = nil
     }
+
+    public func isModelRuntimeReady() -> Bool { recognizer != nil }
 
     private func recognizedUtterance(
         from selection: Qwen3DecodeSelection,

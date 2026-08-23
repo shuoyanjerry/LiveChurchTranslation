@@ -22,11 +22,12 @@ extension LiveReaderHeader {
 
     var modelStatusText: String {
         if viewModel.recordingStartedAt != nil { return "RECORDING · LOCAL" }
-        guard let status = viewModel.snapshot.modelStatus else { return "LOCAL · ON-DEVICE" }
-        switch status.state {
-        case .missing: return "MODELS REQUIRED"
+        switch viewModel.modelPreparationSnapshot.phase {
+        case .idle: return "LOCAL · ON-DEVICE"
+        case .checking: return "CHECKING MODELS"
         case .downloading(let progress): return "DOWNLOADING \(Int(progress * 100))%"
-        case .available, .loading: return "LOADING MODELS"
+        case .loading: return "LOADING MODELS"
+        case .retrying(let attempt): return "RETRYING · \(attempt)"
         case .ready: return "LOCAL · MODELS READY"
         case .failed: return "MODEL ERROR"
         }
@@ -34,6 +35,14 @@ extension LiveReaderHeader {
 
     var statusColor: Color {
         if viewModel.recordingStartedAt != nil { return ChurchTheme.danger }
+        if case .failed = viewModel.snapshot.phase { return ChurchTheme.danger }
+        if !viewModel.isRunning {
+            return switch viewModel.modelPreparationSnapshot.phase {
+            case .failed: ChurchTheme.danger
+            case .checking, .downloading, .loading, .retrying: ChurchTheme.warning
+            case .idle, .ready: ChurchTheme.olive
+            }
+        }
         return switch viewModel.snapshot.phase {
         case .failed: ChurchTheme.danger
         case .idle: ChurchTheme.olive

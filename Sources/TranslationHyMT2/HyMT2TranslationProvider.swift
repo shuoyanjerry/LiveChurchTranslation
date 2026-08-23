@@ -1,8 +1,9 @@
 import Foundation
+import ModelRuntimeAPI
 import TranslationAPI
 
 /// Actor-isolated Hy-MT2 adapter backed by the app-bundled llama-server helper.
-public actor HyMT2TranslationProvider: TranslationProvider {
+public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthChecking {
     public nonisolated let identifier = "tencent.hy-mt2-1.8b.gguf.llama-cpp"
 
     private let configuration: HyMT2Configuration
@@ -120,5 +121,10 @@ public actor HyMT2TranslationProvider: TranslationProvider {
         await server.stop()
         endpoint = nil
         loadedModelURL = nil
+    }
+
+    public func isModelRuntimeReady() async -> Bool {
+        guard endpoint != nil, loadedModelURL != nil else { return false }
+        return await server.isRunning()
     }
 }

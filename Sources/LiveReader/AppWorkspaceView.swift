@@ -4,8 +4,10 @@ import UIDesignSystem
 import UniformTypeIdentifiers
 
 public struct AppWorkspaceView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var liveViewModel: LiveReaderViewModel
     @ObservedObject private var libraryViewModel: SessionLibraryViewModel
+    @ObservedObject private var permissionCoordinator: MicrophonePermissionCoordinator
     @State private var selection = WorkspaceSection.live
     @State private var showsAudioImporter = false
     private let sharingFeature: any LocalSharingFeature
@@ -14,11 +16,13 @@ public struct AppWorkspaceView: View {
     public init(
         liveViewModel: LiveReaderViewModel,
         libraryViewModel: SessionLibraryViewModel,
+        permissionCoordinator: MicrophonePermissionCoordinator,
         sharingFeature: any LocalSharingFeature,
         audioImporter: any AudioImporting
     ) {
         self.liveViewModel = liveViewModel
         self.libraryViewModel = libraryViewModel
+        self.permissionCoordinator = permissionCoordinator
         self.sharingFeature = sharingFeature
         self.audioImporter = audioImporter
     }
@@ -52,6 +56,15 @@ public struct AppWorkspaceView: View {
             }
         }
         .frame(minWidth: 900, minHeight: 600)
+        .task { await permissionCoordinator.load() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await permissionCoordinator.refresh() }
+        }
+        .sheet(isPresented: permissionPresentation) {
+            MicrophonePermissionGuidanceView(coordinator: permissionCoordinator)
+                .interactiveDismissDisabled(permissionCoordinator.isRequesting)
+        }
         .onChange(of: libraryViewModel.isImporting, initial: true) { _, isImporting in
             liveViewModel.setExternalSessionControlLock(isImporting)
         }
@@ -77,6 +90,15 @@ public struct AppWorkspaceView: View {
                 liveViewModel.setExternalSessionControlLock(false)
             }
         }
+    }
+
+    private var permissionPresentation: Binding<Bool> {
+        Binding(
+            get: { permissionCoordinator.isPresented },
+            set: { isPresented in
+                if !isPresented { permissionCoordinator.deferGuidance() }
+            }
+        )
     }
 
     private var brand: some View {

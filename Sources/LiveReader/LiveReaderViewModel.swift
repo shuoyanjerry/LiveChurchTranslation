@@ -23,20 +23,29 @@ public final class LiveReaderViewModel: ObservableObject {
     @Published public var presentsRecordingNotice = false
     @Published public private(set) var recordingStartedAt: Date?
     @Published public private(set) var externalSessionControlLock = false
+    @Published public private(set) var modelPreparationSnapshot = ModelPreparationSnapshot(
+        phase: .idle,
+        message: "正在准备本地语音与翻译模型…"
+    )
 
-    private let controller: any LiveSessionController
+    let controller: any LiveSessionController
+    let modelPreparation: any ModelPreparationController
     private let capture: any AudioCaptureProvider
     let glossary: any GlossaryService
     let settingsStore: any SettingsStore
     private var eventTask: Task<Void, Never>?
+    private var modelEventTask: Task<Void, Never>?
+    private var modelPreparationTask: Task<Void, Never>?
 
     public init(
         controller: any LiveSessionController,
+        modelPreparation: any ModelPreparationController,
         capture: any AudioCaptureProvider,
         glossary: any GlossaryService,
         settingsStore: any SettingsStore
     ) {
         self.controller = controller
+        self.modelPreparation = modelPreparation
         self.capture = capture
         self.glossary = glossary
         self.settingsStore = settingsStore
@@ -44,6 +53,8 @@ public final class LiveReaderViewModel: ObservableObject {
 
     deinit {
         eventTask?.cancel()
+        modelEventTask?.cancel()
+        modelPreparationTask?.cancel()
     }
 
     public var isRunning: Bool {
@@ -76,6 +87,17 @@ public final class LiveReaderViewModel: ObservableObject {
                 self?.receive(event)
             }
         }
+        modelEventTask?.cancel()
+        modelEventTask = Task { [weak self, modelPreparation] in
+            for await snapshot in await modelPreparation.modelPreparationEvents() {
+                guard !Task.isCancelled else { return }
+                self?.modelPreparationSnapshot = snapshot
+            }
+        }
+        modelPreparationTask?.cancel()
+        modelPreparationTask = Task { [modelPreparation] in
+            await modelPreparation.prepareModels()
+        }
         do {
             settings = try await settingsStore.load()
             selectedInputID = settings.selectedAudioDeviceID.map { AudioInputID(rawValue: $0) }
@@ -83,41 +105,6 @@ public final class LiveReaderViewModel: ObservableObject {
             devices = try await capture.availableInputs()
         } catch {
             presentedError = error.localizedDescription
-        }
-    }
-
-    public func toggleSession() async {
-        if isRunning {
-            await controller.stop()
-        } else if externalSessionControlLock {
-            presentedError = "Wait for the current audio import to finish before starting live capture."
-        } else {
-            presentsRecordingNotice = true
-        }
-    }
-
-    public func startRecordingAndTranslation() async {
-        presentsRecordingNotice = false
-        guard !sessionControlsLocked else { return }
-        guard await saveSettings() else { return }
-        await controller.start(inputDeviceID: selectedInputID)
-    }
-
-    public func selectTranslationMode(_ mode: TranslationMode) async {
-        guard !sessionControlsLocked, mode != settings.translationMode else { return }
-        let previous = settings
-        settings.translationMode = mode
-        if !(await saveSettings()) {
-            settings = previous
-        }
-    }
-
-    public func selectAudioInput(_ id: AudioInputID?) async {
-        guard !sessionControlsLocked, id != selectedInputID else { return }
-        let previousID = selectedInputID
-        selectedInputID = id
-        if !(await saveSettings()) {
-            selectedInputID = previousID
         }
     }
 }
