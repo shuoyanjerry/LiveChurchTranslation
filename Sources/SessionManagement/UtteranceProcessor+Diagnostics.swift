@@ -91,11 +91,11 @@ extension UtteranceProcessor {
     ) -> UtteranceProcessingFailure.Impact {
         switch stage {
         case .recognition:
-            recognitionFailureImpact(error)
+            return recognitionFailureImpact(error)
         case .translation:
-            translationFailureImpact(error)
+            return translationFailureImpact(error)
         case .preparation, .audioProcessing, .persistence, .finalization:
-            .pipeline
+            return .pipeline
         }
     }
 
@@ -106,8 +106,8 @@ extension UtteranceProcessor {
             return .pipeline
         }
         switch classified.asrFailureImpact {
-        case .terminalUtterance: .terminalUtterance
-        case .ignoredUtterance, .runtime: .pipeline
+        case .terminalUtterance: return .terminalUtterance
+        case .ignoredUtterance, .runtime: return .pipeline
         }
     }
 
@@ -118,9 +118,9 @@ extension UtteranceProcessor {
             return .pipeline
         }
         switch classified.translationFailureImpact {
-        case .terminalUtterance: .terminalUtterance
-        case .retryableUtterance: .retryableUtterance
-        case .runtime: .pipeline
+        case .terminalUtterance: return .terminalUtterance
+        case .retryableUtterance: return .retryableUtterance
+        case .runtime: return .pipeline
         }
     }
 
