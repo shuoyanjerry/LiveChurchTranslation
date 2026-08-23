@@ -15,7 +15,7 @@ import TranscriptAPI
             sessionKind: .importedAudio
         )
 
-        _ = try await harness.run()
+        _ = try await harness.run(timeout: .seconds(15))
 
         #expect((await harness.asr.receivedRequests()).count == frames.count)
         #expect((await harness.translator.receivedRequests()).count == frames.count)

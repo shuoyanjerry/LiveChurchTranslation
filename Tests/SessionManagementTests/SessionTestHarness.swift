@@ -116,10 +116,13 @@ struct SessionTestHarness {
         )
     }
 
-    func run() async throws -> [LiveSessionEvent] {
+    func run(timeout: Duration = .seconds(2)) async throws -> [LiveSessionEvent] {
         let stream = await coordinator.events()
         await coordinator.start(inputDeviceID: nil)
-        return try await SessionEventWaiter.eventsUntilTerminal(from: stream)
+        return try await SessionEventWaiter.eventsUntilTerminal(
+            from: stream,
+            timeout: timeout
+        )
     }
 
 }

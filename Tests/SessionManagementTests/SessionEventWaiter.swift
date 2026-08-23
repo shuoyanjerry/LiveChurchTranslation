@@ -8,12 +8,13 @@ enum SessionEventWaitError: Error {
 
 enum SessionEventWaiter {
     static func eventsUntilTerminal(
-        from stream: AsyncStream<LiveSessionEvent>
+        from stream: AsyncStream<LiveSessionEvent>,
+        timeout: Duration = .seconds(2)
     ) async throws -> [LiveSessionEvent] {
         try await withThrowingTaskGroup(of: [LiveSessionEvent].self) { group in
             group.addTask { try await collect(from: stream) }
             group.addTask {
-                try await Task.sleep(for: .seconds(2))
+                try await Task.sleep(for: timeout)
                 throw SessionEventWaitError.timedOut
             }
             guard let result = try await group.next() else {

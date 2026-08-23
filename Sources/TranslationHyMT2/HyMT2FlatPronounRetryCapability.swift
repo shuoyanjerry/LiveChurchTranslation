@@ -30,6 +30,12 @@ enum HyMT2FlatPronounRetryAuthorizer {
                     .cleanTargetAfterSurfaceValidation(initialOutput, plan: plan)
             else { return nil }
             guard
+                (try? HyMT2FlatPronounTokenizer.validateNoResidualIdentifiers(
+                    in: target,
+                    excluding: []
+                )) != nil
+            else { return nil }
+            guard
                 HyMT2FidelityValidator.issues(
                     target: target,
                     source: source,
