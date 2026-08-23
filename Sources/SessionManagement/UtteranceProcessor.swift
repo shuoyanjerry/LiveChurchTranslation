@@ -5,6 +5,7 @@ import Foundation
 import GlossaryAPI
 import PersistenceAPI
 import SessionManagementAPI
+import SettingsAPI
 import TranscriptAPI
 import TranslationAPI
 import VADAPI
@@ -20,13 +21,16 @@ struct UtteranceProcessingFailure: LocalizedError, Sendable {
 actor UtteranceProcessor {
     struct RecognizedInput: Sendable {
         let utterance: RecognizedUtterance
+        let sourceSegmentSequence: UInt64
         let glossary: [GlossaryEntry]
         let sourceAudit: TranscriptSourceAudit
+        let pronounGuidance: [TranslationPronounGuidance]
     }
 
     let dependencies: LiveSessionDependencies
     private var translationContext = TranslationContextWindow()
     private var discourseContext = DiscourseContextWindow()
+    var mode = TranslationMode.mandarinToEnglish
 
     init(dependencies: LiveSessionDependencies) {
         self.dependencies = dependencies
@@ -35,6 +39,11 @@ actor UtteranceProcessor {
     func resetContext() {
         translationContext.removeAll()
         discourseContext.removeAll()
+    }
+
+    func configure(mode: TranslationMode) {
+        self.mode = mode
+        resetContext()
     }
 
     func recognize(_ segment: SpeechSegment) async throws -> RecognizedInput {
@@ -51,11 +60,12 @@ actor UtteranceProcessor {
             let recognition = try await dependencies.asr.transcribe(
                 ASRRequest(
                     segment: segment,
-                    contextPrompt: asrPrompt(from: enabled)
+                    languageCode: mode.sourceRecognitionCode,
+                    contextPrompt: asrPrompt(from: enabled, mode: mode)
                 )
             )
-            let normalized = normalizedRecognition(recognition, entries: enabled)
-            let resolved = resolveDiscourse(
+            let normalized = normalizedRecognition(recognition, entries: enabled, mode: mode)
+            let resolved = resolvedRecognition(
                 normalized,
                 sequence: Int(clamping: segment.sequenceNumber),
                 context: discourseContext
@@ -63,8 +73,10 @@ actor UtteranceProcessor {
             await recordRecognition(resolved.utterance, original: recognition, segment: segment)
             return RecognizedInput(
                 utterance: resolved.utterance,
+                sourceSegmentSequence: segment.sequenceNumber,
                 glossary: enabled,
-                sourceAudit: resolved.audit
+                sourceAudit: resolved.audit,
+                pronounGuidance: resolved.pronounGuidance
             )
         } catch let failure as UtteranceProcessingFailure {
             throw failure
@@ -82,7 +94,8 @@ actor UtteranceProcessor {
         let entry = try await makeEntry(
             recognition: input.utterance,
             translation: translation,
-            sourceAudit: input.sourceAudit
+            sourceAudit: input.sourceAudit,
+            sourceSegmentSequence: input.sourceSegmentSequence
         )
         try await persist(entry, sessionID: sessionID)
         translationContext.append(
@@ -92,7 +105,10 @@ actor UtteranceProcessor {
             )
         )
         discourseContext.append(
-            VerifiedDiscourseTurn(sequence: entry.sequence, text: entry.sourceText)
+            VerifiedDiscourseTurn(
+                sequence: Int(clamping: input.sourceSegmentSequence),
+                text: entry.sourceText
+            )
         )
         await dependencies.transcript.append(entry)
         await recordTranslation(duration: translation.duration)
@@ -103,13 +119,38 @@ actor UtteranceProcessor {
         do {
             let request = TranslationRequest(
                 sourceText: input.utterance.text,
-                glossary: matchedTerms(in: input.utterance.text, entries: input.glossary),
-                context: translationContext.entries
+                sourceLanguage: mode.sourceLanguageTag,
+                targetLanguage: mode.targetLanguageTag,
+                glossary: matchedTerms(
+                    in: input.utterance.text,
+                    entries: input.glossary,
+                    mode: mode
+                ),
+                context: translationContext.entries,
+                pronounGuidance: input.pronounGuidance
             )
             return try await dependencies.translator.translate(request)
         } catch {
             throw failure(stage: .translation, error: error)
         }
+    }
+
+}
+
+extension UtteranceProcessor {
+    private func resolvedRecognition(
+        _ normalized: (utterance: RecognizedUtterance, audit: TranscriptSourceAudit),
+        sequence: Int,
+        context: [VerifiedDiscourseTurn]
+    ) -> ResolvedDiscourseUtterance {
+        guard mode == .mandarinToEnglish else {
+            return ResolvedDiscourseUtterance(
+                utterance: normalized.utterance,
+                audit: normalized.audit,
+                pronounGuidance: []
+            )
+        }
+        return resolveDiscourse(normalized, sequence: sequence, context: context)
     }
 
     private func persist(_ entry: TranscriptEntry, sessionID: UUID) async throws {

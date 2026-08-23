@@ -9,6 +9,8 @@ public actor LiveSessionProjectionAdapter {
     private var observationTask: Task<Void, Never>?
     private var projectedSessionID: UUID?
     private var projectedEntryIDs: Set<UUID> = []
+    private var sourceLanguage: String?
+    private var targetLanguage: String?
 
     public init(
         controller: any LiveSessionController,
@@ -44,6 +46,8 @@ public actor LiveSessionProjectionAdapter {
     }
 
     private func project(_ snapshot: LiveSessionSnapshot) async {
+        sourceLanguage = snapshot.sourceLanguage
+        targetLanguage = snapshot.targetLanguage
         if let sessionID = snapshot.sessionID, sessionID != projectedSessionID {
             projectedSessionID = sessionID
             projectedEntryIDs.removeAll(keepingCapacity: true)
@@ -67,7 +71,9 @@ public actor LiveSessionProjectionAdapter {
                     sequence: entry.sequence,
                     sourceText: entry.sourceText,
                     targetText: entry.targetText,
-                    createdAt: entry.createdAt
+                    createdAt: entry.createdAt,
+                    sourceLanguage: sourceLanguage,
+                    targetLanguage: targetLanguage
                 )
             )
             projectedEntryIDs.insert(entry.id)

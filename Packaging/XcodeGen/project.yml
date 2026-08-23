@@ -1,0 +1,133 @@
+name: QuietLiturgyReader
+
+options:
+  minimumXcodeGenVersion: 2.45.4
+  xcodeVersion: "16.4"
+  projectFormat: xcode16_3
+  developmentLanguage: en
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "15.0"
+
+attributes:
+  ORGANIZATIONNAME: shuoyanjerry
+
+fileGroups:
+  - Packaging/Info.plist
+  - Packaging/LiveChurchTranslation.entitlements
+  - Packaging/Helper.entitlements
+  - Packaging/LlamaRuntime.sha256
+  - Packaging/XcodeGen/project.yml
+  - Scripts/embed_app_store_runtime.sh
+  - Docs/AppStoreSubmission.md
+
+packages:
+  LiveChurchTranslationPackage:
+    path: .
+    group: Packages
+
+settings:
+  base:
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+
+targets:
+  QuietLiturgyReader:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Packaging/AppHost
+      - path: Assets/AppIcon.xcassets
+        buildPhase: resources
+      - path: Packaging/PrivacyInfo.xcprivacy
+        buildPhase: resources
+      - path: PRIVACY.md
+        buildPhase: resources
+      - path: THIRD_PARTY_NOTICES.md
+        buildPhase: resources
+    dependencies:
+      - package: LiveChurchTranslationPackage
+        product: ChurchTranslatorApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shuoyan.LiveChurchTranslation
+        PRODUCT_NAME: QuietLiturgyReader
+        PRODUCT_MODULE_NAME: QuietLiturgyReaderHost
+        EXECUTABLE_NAME: LiveChurchTranslation
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Packaging/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Packaging/LiveChurchTranslation.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_REQUIRED: YES
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        SUPPORTS_MACCATALYST: NO
+        ARCHS: arm64
+        DEAD_CODE_STRIPPING: YES
+        COPY_PHASE_STRIP: NO
+        COMBINE_HIDPI_IMAGES: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          ONLY_ACTIVE_ARCH: YES
+        Release:
+          ONLY_ACTIVE_ARCH: NO
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+    postBuildScripts:
+      - path: Scripts/embed_app_store_runtime.sh
+        name: Embed and Sign Pinned llama.cpp Runtime
+        shell: /bin/bash
+        showEnvVars: false
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - $(SRCROOT)/Package.swift
+          - $(SRCROOT)/Scripts/embed_app_store_runtime.sh
+          - $(SRCROOT)/Packaging/Helper.entitlements
+          - $(SRCROOT)/Packaging/LlamaRuntime.sha256
+          - $(SRCROOT)/.artifacts/llama-b10549/llama-server
+          - $(SRCROOT)/.artifacts/llama-b10549/libllama-server-impl.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libllama-common.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libmtmd.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libllama.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml-cpu.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml-blas.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml-metal.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml-rpc.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/libggml-base.0.dylib
+          - $(SRCROOT)/.artifacts/llama-b10549/LICENSE
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/llama-server
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama-server-impl.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama-common.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libmtmd.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-cpu.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-blas.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-metal.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-rpc.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-base.0.dylib
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/llama.cpp-LICENSE
+
+schemes:
+  QuietLiturgyReader:
+    build:
+      targets:
+        QuietLiturgyReader: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+      customArchiveName: Quiet Liturgy Reader
+      revealArchiveInOrganizer: true

@@ -4,6 +4,7 @@ public enum VoiceActivityError: Error, Sendable, Equatable {
     case unexpectedSampleRate(expected: Double, actual: Double)
     case nonFiniteSample(index: Int)
     case nonMonotonicTimestamp(previous: Duration, current: Duration)
+    case discontinuousTimestamp(expected: Duration, current: Duration)
 }
 
 extension VoiceActivityError: CustomStringConvertible {
@@ -17,6 +18,8 @@ extension VoiceActivityError: CustomStringConvertible {
             "Processed sample at index \(index) is not finite."
         case .nonMonotonicTimestamp(let previous, let current):
             "Audio timestamp moved backwards from \(previous) to \(current)."
+        case .discontinuousTimestamp(let expected, let current):
+            "Audio timestamp discontinuity: expected \(expected), received \(current)."
         }
     }
 }

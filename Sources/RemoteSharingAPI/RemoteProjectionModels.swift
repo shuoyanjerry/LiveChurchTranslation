@@ -17,6 +17,8 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
     public let sourceText: String
     public let targetText: String
     public let createdAt: Date
+    public let sourceLanguage: String?
+    public let targetLanguage: String?
 
     public init(
         id: UUID,
@@ -24,7 +26,9 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
         revision: UInt64,
         sourceText: String,
         targetText: String,
-        createdAt: Date
+        createdAt: Date,
+        sourceLanguage: String? = nil,
+        targetLanguage: String? = nil
     ) {
         self.id = id
         self.sequence = sequence
@@ -32,6 +36,8 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
         self.sourceText = sourceText
         self.targetText = targetText
         self.createdAt = createdAt
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
     }
 }
 

@@ -6,26 +6,44 @@ enum PronounLocator {
     ]
     private static let sentenceEndings: Set<Character> = ["。", "！", "？", "!", "?", "；", ";"]
     private static let separators: Set<Character> = ["，", ",", "、", "：", ":"]
+    private static let protectedLexemes = [
+        "他们", "她们", "它们", "祂们", "他們", "她們", "它們", "祂們",
+        "他俩", "她俩", "它俩", "祂俩", "他人", "其他", "其它", "吉他",
+    ]
 
     static func scan(_ text: String) -> PronounScan {
-        if containsProtectedLexeme(text) {
-            return PronounScan(candidates: [], constraints: [.lexicalOccurrenceProtected])
+        let protectedRanges = protectedLexemes.flatMap { ranges(of: $0, in: text) }
+        let pronouns = text.indices.filter { index in
+            isPronoun(text[index])
+                && !protectedRanges.contains(where: { $0.contains(index) })
         }
-        let pronouns = text.indices.filter { isPronoun(text[$0]) }
-        guard !pronouns.isEmpty else {
-            return PronounScan(candidates: [], constraints: [])
+        let observed = candidates(at: pronouns, in: text)
+        var constraints: [DiscourseResolutionConstraint] = []
+        if !protectedRanges.isEmpty { constraints.append(.lexicalOccurrenceProtected) }
+        guard let firstPronoun = pronouns.first else {
+            return PronounScan(observed: [], eligible: [], constraints: constraints)
         }
-        let eligible = candidateIndices(in: text)
-        guard let firstPronoun = pronouns.first, eligible.contains(firstPronoun) else {
-            return PronounScan(candidates: [], constraints: [.ineligiblePronounPosition])
+        let eligibleIndices = candidateIndices(in: text)
+        guard eligibleIndices.contains(firstPronoun) else {
+            constraints.append(.ineligiblePronounPosition)
+            return PronounScan(observed: observed, eligible: [], constraints: constraints)
         }
+        let eligible = pronouns.filter(eligibleIndices.contains)
         return PronounScan(
-            candidates: eligible.map { index in
-                let next = text.index(after: index)
-                return PronounCandidate(range: index..<next, original: String(text[index]))
-            },
-            constraints: []
+            observed: observed,
+            eligible: candidates(at: eligible, in: text),
+            constraints: constraints
         )
+    }
+
+    private static func candidates(
+        at indices: [String.Index],
+        in text: String
+    ) -> [PronounCandidate] {
+        indices.map { index in
+            let next = text.index(after: index)
+            return PronounCandidate(range: index..<next, original: String(text[index]))
+        }
     }
 
     private static func candidateIndices(in text: String) -> [String.Index] {
@@ -69,11 +87,25 @@ enum PronounLocator {
         return index
     }
 
-    private static func containsProtectedLexeme(_ text: String) -> Bool {
-        text.contains("他人") || text.contains("其他") || text.contains("吉他")
+    private static func ranges(
+        of term: String,
+        in text: String
+    ) -> [Range<String.Index>] {
+        var ranges: [Range<String.Index>] = []
+        var start = text.startIndex
+        while start < text.endIndex {
+            guard text[start...].hasPrefix(term) else {
+                start = text.index(after: start)
+                continue
+            }
+            let end = text.index(start, offsetBy: term.count)
+            ranges.append(start..<end)
+            start = end
+        }
+        return ranges
     }
 
     private static func isPronoun(_ character: Character) -> Bool {
-        character == "他" || character == "她"
+        character == "他" || character == "她" || character == "祂"
     }
 }

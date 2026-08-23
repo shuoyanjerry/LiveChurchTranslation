@@ -20,6 +20,8 @@ struct RemoteWebAssetsTests {
         #expect(script.contains("Math.random() * ceiling"))
         #expect(script.contains("seen.add(`${sessionID}:${entry.id}:${entry.revision}`)"))
         #expect(script.contains("visibleAnchor"))
+        #expect(script.contains("target.lang = entry.targetLanguage"))
+        #expect(script.contains("source.lang = entry.sourceLanguage"))
         #expect(script.contains("Jump to Live") == false)
     }
 }

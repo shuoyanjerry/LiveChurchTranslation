@@ -1,93 +1,95 @@
-import Foundation
 import TranslationAPI
 
 enum HyMT2PromptBuilder {
     static func prompt(
         source: String,
         targetLanguage: String,
+        sourceLanguage: String = "zh-Hans",
         terms: [TranslationTerm],
         context: [TranslationContextEntry] = [],
+        pronounPlan: HyMT2PronounPlan? = nil,
+        pronounRetryCorrection: HyMT2PronounRetryCorrection? = nil,
         strict: Bool
     ) -> String {
         var sections: [String] = []
         if !terms.isEmpty {
-            let references = terms.map {
-                "\(singleLine($0.source)) translates to \(singleLine($0.target))"
-            }
-            sections.append("Reference the following translations:\n\(references.joined(separator: "\n"))")
+            sections.append(termSection(terms))
         }
+        sections.append(scriptureRule(targetLanguage: targetLanguage))
         if strict {
-            sections.append(strictRules)
+            sections.append(strictRules(targetLanguage: targetLanguage))
         }
-        sections.append(pronounRule)
-        let recentContext = context.suffix(maximumContextEntries)
+        if sourceLanguage.lowercased().hasPrefix("zh") {
+            sections.append(HyMT2PronounPrompt.generalRule)
+        }
+        let recentContext = Array(context.suffix(maximumContextEntries))
         if !recentContext.isEmpty {
-            sections.append(backgroundSection(Array(recentContext)))
+            sections.append(
+                HyMT2PromptText.backgroundSection(
+                    recentContext,
+                    sourceLanguage: sourceLanguage,
+                    targetLanguage: targetLanguage
+                )
+            )
+        }
+        if let pronounPlan {
+            sections.append(HyMT2PronounPrompt.section(pronounPlan.occurrences))
+            if strict, let pronounRetryCorrection {
+                sections.append(pronounRetryCorrection.section)
+            }
         }
         sections.append(
-            currentSourceSection(source, targetLanguage: targetLanguage)
+            HyMT2PromptText.currentSourceSection(
+                pronounPlan?.protectedSource ?? source,
+                targetLanguage: targetLanguage
+            )
         )
         return sections.joined(separator: "\n\n")
     }
 
     private static let maximumContextEntries = 2
 
-    private static let strictRules = [
-        "Translate every clause faithfully without summarizing, adding, or omitting meaning.",
-        "Preserve negation, names, and all numbers.",
-        "Render Scripture chapter-and-verse references in conventional English numeric form",
-        "(for example, John 3:16). Use required reference terms or an accepted grammatical variant.",
-    ].joined(separator: " ")
-
-    private static let pronounRule = [
-        "Spoken Mandarin tā may be transcribed as 他 or 她 even when the audio is ambiguous.",
-        "Use an English gendered pronoun only when explicit current or background evidence",
-        "identifies the same human referent; never infer gender from a name, occupation, or stereotype.",
-        "When no explicit evidence resolves it, use natural singular they instead of inventing gender.",
-    ].joined(separator: " ")
-
-    private static func backgroundSection(
-        _ context: [TranslationContextEntry]
-    ) -> String {
-        let pairs = context.enumerated().map { index, entry in
-            "Prior pair \(index + 1):\n"
-                + "Chinese: \(quotedSingleLine(entry.sourceText))\n"
-                + "English: \(quotedSingleLine(entry.targetText))"
+    private static func strictRules(targetLanguage: String) -> String {
+        var rules = [
+            "Translate every clause faithfully without summarizing, adding, or omitting meaning.",
+            "Preserve negation, names, and all numbers.",
+            "Use required reference terms or an accepted grammatical variant.",
+        ]
+        if targetLanguage.lowercased().hasPrefix("zh") {
+            rules.append(
+                "Output Simplified Chinese only; do not use 上帝, traditional Chinese, "
+                    + "Japanese, or Korean characters."
+            )
+            rules.append(
+                "For every 'without + action' construction, keep its scope explicit with "
+                    + "没有、不、未, or another faithful Chinese negative; never turn the "
+                    + "action into a positive clause."
+            )
         }
-        return [
-            "BACKGROUND FOR DISAMBIGUATION ONLY",
-            "These are prior, finalized, validator-approved Chinese/English pairs.",
-            "Use them only to resolve references and keep terminology consistent.",
-            "Do not translate, output, copy, repeat, or summarize any background text.",
-            pairs.joined(separator: "\n"),
-            "END BACKGROUND",
-        ].joined(separator: "\n")
+        return rules.joined(separator: " ")
     }
 
-    private static func currentSourceSection(
-        _ source: String,
-        targetLanguage: String
-    ) -> String {
-        "Translate only the text inside CURRENT SOURCE into "
-            + "\(languageName(targetLanguage)). You must ONLY output the translated result "
-            + "for CURRENT SOURCE without any additional explanation.\n"
-            + "<CURRENT_SOURCE>\n\(source)\n</CURRENT_SOURCE>"
-    }
-
-    private static func quotedSingleLine(_ value: String) -> String {
-        String(reflecting: singleLine(value))
-    }
-
-    private static func singleLine(_ value: String) -> String {
-        value.split(whereSeparator: \Character.isNewline)
-            .joined(separator: " ")
-            .trimmingCharacters(in: .whitespaces)
-    }
-
-    private static func languageName(_ code: String) -> String {
-        switch code.lowercased() {
-        case "en", "en-us", "en-gb": "English"
-        default: code
+    private static func scriptureRule(targetLanguage: String) -> String {
+        if targetLanguage.lowercased().hasPrefix("zh") {
+            return "Use book names and biblical terminology consistent with CUNPSS-神, the "
+                + "Simplified Chinese Union Version with New Punctuation, Shen Edition "
+                + "(新标点和合本，神版). Preserve Arabic chapter-and-verse numbers (for example, "
+                + "约翰福音 3:16), use 神 rather than 上帝, allow 他 or 祂 according to "
+                + "context, and never "
+                + "reconstruct or invent verse text that the current source did not supply."
         }
+        return "Use book names and biblical terminology consistent with The Holy Bible, English "
+            + "Standard Version (ESV), Text Edition: 2025. Preserve conventional numeric references "
+            + "(for example, John 3:16), and never reconstruct or invent verse text that the current "
+            + "source did not supply."
+    }
+
+    private static func termSection(_ terms: [TranslationTerm]) -> String {
+        let references = terms.map {
+            "\(HyMT2PromptText.singleLine($0.source)) translates to "
+                + HyMT2PromptText.singleLine($0.target)
+        }
+        return HyMT2PromptControlDelimiter.glossaryOpening + "\n"
+            + references.joined(separator: "\n")
     }
 }

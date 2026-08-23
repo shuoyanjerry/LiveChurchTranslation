@@ -84,15 +84,17 @@ private struct ChatRequest: Encodable {
     let repetitionPenalty = 1.05
     let seed = 42
     let maximumTokens: Int
+    let stop: [String]
     let stream = false
 
     init(_ request: LlamaCompletionRequest) {
         messages = [Message(role: "user", content: request.prompt)]
         maximumTokens = request.maximumTokens
+        stop = request.stopSequences
     }
 
     enum CodingKeys: String, CodingKey {
-        case messages, temperature, seed, stream
+        case messages, temperature, seed, stop, stream
         case topP = "top_p"
         case topK = "top_k"
         case repetitionPenalty = "repeat_penalty"

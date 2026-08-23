@@ -6,19 +6,25 @@ public struct RemoteProjectionEntryInput: Equatable, Sendable {
     public let sourceText: String
     public let targetText: String
     public let createdAt: Date
+    public let sourceLanguage: String?
+    public let targetLanguage: String?
 
     public init(
         id: UUID,
         sequence: Int,
         sourceText: String,
         targetText: String,
-        createdAt: Date
+        createdAt: Date,
+        sourceLanguage: String? = nil,
+        targetLanguage: String? = nil
     ) {
         self.id = id
         self.sequence = sequence
         self.sourceText = sourceText
         self.targetText = targetText
         self.createdAt = createdAt
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
     }
 }
 

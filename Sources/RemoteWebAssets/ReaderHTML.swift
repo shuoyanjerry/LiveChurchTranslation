@@ -13,7 +13,7 @@ enum ReaderHTML {
         <body>
           <header class="topbar">
             <div class="brand">
-              <span><strong>Quiet Liturgy</strong><small>Live English translation</small></span>
+              <span><strong>Quiet Liturgy</strong><small>Live translation</small></span>
             </div>
             <div id="connection" class="connection" role="status">Connecting</div>
           </header>
@@ -28,13 +28,13 @@ enum ReaderHTML {
               </div>
               <div id="empty" class="empty">
                 <h2>Waiting for the message</h2>
-                <p>The English translation will appear here as the speaker continues.</p>
+                <p>The translation will appear here as the speaker continues.</p>
               </div>
               <div id="transcript" class="transcript" aria-live="polite"></div>
             </section>
           </main>
           <div id="operator" class="operator" hidden>
-            <button id="start" type="button">Start</button><button id="stop" type="button">Stop</button>
+            <button id="stop" type="button">Stop on Mac</button>
           </div>
           <button id="jump" class="jump" type="button" hidden>Jump to Live <span id="unseen"></span></button>
           <div id="pairing" class="pairing" role="alert" hidden></div>

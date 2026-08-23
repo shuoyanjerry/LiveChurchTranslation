@@ -10,10 +10,11 @@ enum TextSafety {
         if text.contains(where: quotationMarks.contains) {
             constraints.append(.quotationProtected)
         }
-        if text.contains("神") || text.contains("祂") {
-            constraints.append(.deityReferenceProtected)
-        }
-        if ["他们", "她们", "他們", "她們", "他俩", "她俩"].contains(where: text.contains) {
+        let pluralForms = [
+            "他们", "她们", "它们", "祂们", "他們", "她們", "它們", "祂們",
+            "他俩", "她俩", "它俩", "祂俩",
+        ]
+        if pluralForms.contains(where: text.contains) {
             constraints.append(.pluralReferenceProtected)
         }
         return constraints

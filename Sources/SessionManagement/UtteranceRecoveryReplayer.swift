@@ -8,34 +8,67 @@ import UtteranceRecoveryAPI
 struct UtteranceRecoveryReplayer: Sendable {
     let dependencies: LiveSessionDependencies
     let processor: UtteranceProcessor
+    let excludedSessionID: UUID?
 
     func replay() async -> [LiveSessionIssue] {
-        let batch: UtteranceRecoveryBatch
         do {
-            batch = try await dependencies.recoveryStore.recoverAllPending()
+            let pages = try await dependencies.recoveryStore.recoverAllPendingPages(
+                maximumRecordsPerPage: recoveryPageSize
+            )
+            return await replay(pages)
         } catch {
             return [issue(message: error.localizedDescription)]
         }
-        var issues = batch.quarantined.map {
-            issue(message: "A pending sentence was quarantined: \($0.reason.rawValue).")
+    }
+
+    private func replay(_ pages: UtteranceRecoveryPages) async -> [LiveSessionIssue] {
+        var issues: [LiveSessionIssue] = []
+        var cursor: RecoverySessionCursor?
+        do {
+            for try await page in pages {
+                issues += quarantineIssues(page.quarantined)
+                for record in page.pending {
+                    await replay(record, cursor: &cursor, issues: &issues)
+                }
+            }
+        } catch {
+            issues += await close(&cursor)
+            issues.append(issue(message: error.localizedDescription))
         }
-        let sessions = Dictionary(grouping: batch.pending, by: { $0.id.sessionID })
-        for sessionID in orderedSessionIDs(sessions) {
-            issues += await replaySession(
-                id: sessionID,
-                records: sessions[sessionID] ?? []
-            )
-        }
+        issues += await close(&cursor)
         return issues
     }
 
-    private func orderedSessionIDs(
-        _ sessions: [UUID: [PendingUtteranceRecord]]
-    ) -> [UUID] {
-        sessions.keys.sorted {
-            let left = sessions[$0]?.map(\.stagedAt).min() ?? .distantPast
-            let right = sessions[$1]?.map(\.stagedAt).min() ?? .distantPast
-            return left == right ? $0.uuidString < $1.uuidString : left < right
+    private func replay(
+        _ record: PendingUtteranceRecord,
+        cursor: inout RecoverySessionCursor?,
+        issues: inout [LiveSessionIssue]
+    ) async {
+        guard record.id.sessionID != excludedSessionID else { return }
+        if cursor?.id != record.id.sessionID {
+            issues += await close(&cursor)
+            cursor = await makeCursor(sessionID: record.id.sessionID)
+        }
+        guard var active = cursor else { return }
+        await replay(record, cursor: &active)
+        cursor = active
+    }
+
+    private func close(
+        _ cursor: inout RecoverySessionCursor?
+    ) async -> [LiveSessionIssue] {
+        guard let active = cursor else { return [] }
+        cursor = nil
+        return await finalize(active)
+    }
+
+    private var recoveryPageSize: Int { 4 }
+
+    private func quarantineIssues(
+        _ artifacts: [QuarantinedUtterance]
+    ) -> [LiveSessionIssue] {
+        artifacts.map {
+            issue(message: "A pending sentence was quarantined: \($0.reason.rawValue).")
         }
     }
 

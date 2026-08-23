@@ -7,6 +7,7 @@ import GlossaryAPI
 import ModelDownloadAPI
 import ModelRuntimeAPI
 import SessionManagement
+import SettingsAPI
 import TranscriptAPI
 import TranscriptCore
 import TranslationAPI
@@ -27,8 +28,11 @@ enum SessionDependencyFactory {
             modelReporter: components.reporter,
             transcript: components.transcript,
             transcriptStore: components.store,
+            recordingStore: components.recordingStore,
             recoveryStore: components.recoveryStore,
-            settings: FakeSettingsStore(),
+            settings: FakeSettingsStore(
+                settings: AppSettings(translationMode: components.translationMode)
+            ),
             logger: NoopAppLogger(),
             diagnostics: FakeDiagnosticsRecorder()
         )
@@ -62,7 +66,9 @@ struct SessionTestComponents {
     let reporter: FakeModelRuntimeReporter
     let transcript: LiveTranscriptBuffer
     let store: FakeTranscriptStore
+    let recordingStore: FakeSessionRecordingStore
     let recoveryStore: FakeUtteranceRecoveryStore
+    let translationMode: TranslationMode
 
     init(
         permission: AudioCapturePermission,
@@ -74,12 +80,18 @@ struct SessionTestComponents {
         modelLoadFails: Bool,
         recognitionFails: Bool,
         recognitionError: ASRError? = nil,
+        recognitionDelay: Duration? = nil,
+        recoveryStageFails: Bool = false,
+        recordingAppendFails: Bool = false,
+        recordingFinishFails: Bool = false,
+        recordingRepairFails: Bool = false,
         modelPreparationDelay: Duration?,
         audioFrames: [AudioFrame],
         holdsPermissionRequest: Bool,
         holdsCaptureOpen: Bool,
         emitsOnlyOnFlush: Bool,
-        emitsEveryFrame: Bool = false
+        emitsEveryFrame: Bool = false,
+        translationMode: TranslationMode = .mandarinToEnglish
     ) {
         capture = FakeAudioCaptureProvider(
             permission: permission,
@@ -99,7 +111,8 @@ struct SessionTestComponents {
                 text: recognizedText,
                 loadFails: modelLoadFails,
                 recognitionFails: recognitionFails,
-                recognitionError: recognitionError
+                recognitionError: recognitionError,
+                recognitionDelay: recognitionDelay
             )
         }
         translator = FakeHyTranslationProvider(shouldFail: translationFails)
@@ -107,6 +120,12 @@ struct SessionTestComponents {
         reporter = FakeModelRuntimeReporter()
         transcript = LiveTranscriptBuffer()
         store = FakeTranscriptStore(failAppend: storageFails, failFinish: finishFails)
-        recoveryStore = FakeUtteranceRecoveryStore()
+        recordingStore = FakeSessionRecordingStore(
+            failAppendAfterWrite: recordingAppendFails,
+            failFinish: recordingFinishFails,
+            failRepair: recordingRepairFails
+        )
+        recoveryStore = FakeUtteranceRecoveryStore(stageFails: recoveryStageFails)
+        self.translationMode = translationMode
     }
 }

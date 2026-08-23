@@ -11,6 +11,7 @@ extension SpeechSegmentationThresholds {
         let reachedPreferredBoundary =
             speech.samples.count >= preferredMaximumSampleCount
             && pause > 0
+            && pause >= preferredBoundarySilenceSampleCount
             && !rawSpeech
             && !smoothedSpeech
         if reachedPreferredBoundary {

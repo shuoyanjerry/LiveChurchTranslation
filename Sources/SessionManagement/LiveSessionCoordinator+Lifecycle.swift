@@ -1,41 +1,76 @@
 import Foundation
+import RecordingAPI
 import SessionManagementAPI
 
-struct SessionCompletion: Sendable {
-    let outcome: LiveSessionFinalizationOutcome
-    let message: String
-    let errorMessage: String?
-}
-
 extension LiveSessionCoordinator {
-    func finishAfterCaptureEnded(sessionID: UUID, failure: String?) async {
-        guard state.sessionID == sessionID else { return }
-        if let failure {
-            terminalFailureMessage = failure
-            recordIssue(stage: .audioProcessing, message: failure, isRecoverable: true)
-        }
-        await stop()
-    }
-
     func acceptsFrames(for sessionID: UUID) -> Bool {
         state.sessionID == sessionID
     }
 
     func performStop(sessionID: UUID) async {
+        let captureStartup = captureStartupTask
         let preparation = preparationTask
         await sessionPreparer.cancel()
         await dependencies.capture.stopCapture()
+        _ = await captureStartup?.result
+        captureStartupTask = nil
         _ = await preparation?.result
         preparationTask = nil
 
         let capture = captureTask
         await capture?.value
         captureTask = nil
+        await finalizeRecording(sessionID: sessionID)
         for event in await dependencies.vad.flush() {
             await handle(event, sessionID: sessionID)
         }
+        if !inferenceIsReady {
+            deferQueuedRecordsUntilNextSession()
+        }
         await workerTask?.value
         await finishSession(sessionID: sessionID)
+    }
+
+    private func finalizeRecording(sessionID: UUID) async {
+        guard didStartCapture else {
+            try? await dependencies.recordingStore.discard(sessionID: sessionID)
+            return
+        }
+        do {
+            _ = try await dependencies.recordingStore.finish(sessionID: sessionID)
+        } catch RecordingStoreError.noAudio {
+            try? await dependencies.recordingStore.discard(sessionID: sessionID)
+        } catch {
+            await preserveInterruptedRecording(sessionID: sessionID, after: error)
+        }
+    }
+
+    private func preserveInterruptedRecording(sessionID: UUID, after error: any Error) async {
+        let originalMessage = error.localizedDescription
+        do {
+            if try await dependencies.recordingStore.repairInterruptedRecording(
+                sessionID: sessionID
+            ) != nil {
+                recordIssue(
+                    stage: .finalization,
+                    message: "The meeting recording was recovered after an interrupted save. "
+                        + originalMessage,
+                    isRecoverable: true
+                )
+                return
+            }
+            let message =
+                "The meeting recording could not be finalized automatically. "
+                + "Any partial recording was retained for recovery. " + originalMessage
+            terminalFailureMessage = terminalFailureMessage ?? message
+            recordIssue(stage: .finalization, message: message, isRecoverable: true)
+        } catch {
+            let message =
+                "The meeting recording remains in recoverable partial form. "
+                + originalMessage + " Recovery also reported: " + error.localizedDescription
+            terminalFailureMessage = terminalFailureMessage ?? message
+            recordIssue(stage: .finalization, message: message, isRecoverable: true)
+        }
     }
 
     func finishSession(sessionID: UUID) async {
@@ -47,7 +82,7 @@ extension LiveSessionCoordinator {
                 await sessionFinalizer.finish(sessionID: sessionID)
             }
         let completion = completion(from: result, sessionID: sessionID)
-        segmentQueue.removeAll(keepingCapacity: false)
+        segmentQueue.removeAll()
         if let failure {
             state.fail(failure, outcome: completion.outcome)
         } else {
@@ -55,6 +90,8 @@ extension LiveSessionCoordinator {
         }
         modelTask?.cancel()
         modelTask = nil
+        inferenceIsReady = false
+        captureEndedBeforeInference = false
         if let error = completion.errorMessage {
             publish(.recoverableError(error))
         }
@@ -88,7 +125,7 @@ extension LiveSessionCoordinator {
         from result: SessionPersistenceResult,
         sessionID: UUID
     ) -> SessionCompletion {
-        let unresolved = pendingUtterances.count
+        let unresolved = unresolvedUtteranceCount
         switch result {
         case .failed(let transcript, let message):
             unsavedTranscripts[sessionID] = transcript

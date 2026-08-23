@@ -51,7 +51,7 @@ struct RecoveryRootAccumulator {
         artifactCount = newCount
     }
 
-    private static func recordsAreOrdered(
+    static func recordsAreOrdered(
         _ lhs: PendingUtteranceRecord,
         _ rhs: PendingUtteranceRecord
     ) -> Bool {
@@ -65,7 +65,7 @@ struct RecoveryRootAccumulator {
         return lhs.id.segmentID.uuidString < rhs.id.segmentID.uuidString
     }
 
-    private static func quarantineIsOrdered(
+    static func quarantineIsOrdered(
         _ lhs: QuarantinedUtterance,
         _ rhs: QuarantinedUtterance
     ) -> Bool {

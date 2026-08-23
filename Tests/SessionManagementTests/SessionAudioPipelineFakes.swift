@@ -64,6 +64,7 @@ actor FakeAudioCaptureProvider: AudioCaptureProvider {
         continuation?.finish()
         continuation = nil
     }
+    func emit(_ frame: AudioFrame) { continuation?.yield(frame) }
     func capturedRequests() -> [AudioCaptureRequest] { requests }
     func permissionRequestIsPending() -> Bool { permissionContinuation != nil }
     func completePermissionRequest() {

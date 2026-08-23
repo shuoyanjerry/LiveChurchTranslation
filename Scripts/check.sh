@@ -7,6 +7,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 "$SCRIPT_DIR/check_architecture.sh"
+"$SCRIPT_DIR/check_app_store_packaging.sh"
+"$SCRIPT_DIR/check_xcode_project.sh"
 
 swift format lint --recursive --strict --configuration .swift-format \
     Sources Tests Package.swift Scripts/ArchitectureCheck.swift Scripts/DeadCodeCheck.swift
@@ -22,6 +24,9 @@ if [[ "$(xcode-select --print-path)" == "/Library/Developer/CommandLineTools" ]]
 else
     "$SWIFTLINT_EXECUTABLE" lint --strict --config .swiftlint.yml
 fi
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+    -s Tests/EndpointHumanLabelPacketTests -p 'test_*.py' -v
 
 swift build -Xswiftc -warnings-as-errors
 swift test -Xswiftc -warnings-as-errors

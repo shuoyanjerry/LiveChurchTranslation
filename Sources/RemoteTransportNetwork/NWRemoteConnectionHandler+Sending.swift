@@ -8,8 +8,8 @@ extension NWRemoteConnectionHandler {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(75))
                 guard !Task.isCancelled else { return }
-                let envelopes = await session.outgoing(limit: 64)
                 do {
+                    let envelopes = try await session.outgoing(limit: 64)
                     for envelope in envelopes { try await self?.sendEnvelope(envelope) }
                 } catch {
                     await self?.close()

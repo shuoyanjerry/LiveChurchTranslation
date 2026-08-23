@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 90;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2D58945CF1FFDAD203130C38 /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = 881DDA4B4A3C113474E9A336 /* THIRD_PARTY_NOTICES.md */; };
+		3A1A460F0E180EA9453A8B28 /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24CAF09D6258FB4F39B4BBE7 /* AppIcon.xcassets */; };
+		7FDA5BE3516756150BAA8206 /* QuietLiturgyReaderMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D07141B4C899A80BA0330BC /* QuietLiturgyReaderMain.swift */; };
+		8CEED09E027E90EFDFFD0163 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = BB207223A31AA8406F956833 /* PRIVACY.md */; };
+		CE2D332E98CF03416A670A85 /* ChurchTranslatorApp in Frameworks */ = {isa = PBXBuildFile; productRef = 8F4AEF114F8544E0E48E4F77 /* ChurchTranslatorApp */; };
+		E46722C57E2CD8BC519161B9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		24CAF09D6258FB4F39B4BBE7 /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
+		3B80A7ECC62EB42841D9CF7C /* Helper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Helper.entitlements; sourceTree = "<group>"; };
+		5C806A99E717C83867F5F671 /* LlamaRuntime.sha256 */ = {isa = PBXFileReference; path = LlamaRuntime.sha256; sourceTree = "<group>"; };
+		6BF7A35BE430916BCA61C8B3 /* LiveChurchTranslation.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LiveChurchTranslation.entitlements; sourceTree = "<group>"; };
+		82FEBF407C24527AD14AFDAC /* embed_app_store_runtime.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = embed_app_store_runtime.sh; sourceTree = "<group>"; };
+		86F9FB5AED16B9559A1C540D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		881DDA4B4A3C113474E9A336 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
+		8D07141B4C899A80BA0330BC /* QuietLiturgyReaderMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietLiturgyReaderMain.swift; sourceTree = "<group>"; };
+		8F49B3C9FC91E4A80FF3A763 /* QuietLiturgyReader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuietLiturgyReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9060663BA86B9E12C7C24B46 /* Live_Church_Translation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Live_Church_Translation; path = .; sourceTree = SOURCE_ROOT; };
+		A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB207223A31AA8406F956833 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
+		BD0BAC2266D1784A697D98DD /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
+		DFE1FFFE992D378D30CB04AA /* AppStoreSubmission.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AppStoreSubmission.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EFCD7DF6C1F9C685670F520F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE2D332E98CF03416A670A85 /* ChurchTranslatorApp in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0CC9F0B451C0CD796E649AE3 /* AppHost */ = {
+			isa = PBXGroup;
+			children = (
+				8D07141B4C899A80BA0330BC /* QuietLiturgyReaderMain.swift */,
+			);
+			path = AppHost;
+			sourceTree = "<group>";
+		};
+		0FD08E5D7C6A09D138F0FB39 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8F49B3C9FC91E4A80FF3A763 /* QuietLiturgyReader.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		10AF40A00A2DF5620466C627 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				82FEBF407C24527AD14AFDAC /* embed_app_store_runtime.sh */,
+			);
+			path = Scripts;
+			sourceTree = "<group>";
+		};
+		1655D1D38F08498E673C6F5E /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				DFE1FFFE992D378D30CB04AA /* AppStoreSubmission.md */,
+			);
+			path = Docs;
+			sourceTree = "<group>";
+		};
+		5661F0B9867817BFFF192994 /* XcodeGen */ = {
+			isa = PBXGroup;
+			children = (
+				BD0BAC2266D1784A697D98DD /* project.yml */,
+			);
+			path = XcodeGen;
+			sourceTree = "<group>";
+		};
+		5CF525A5C1BDA26D8FAD2381 /* Packaging */ = {
+			isa = PBXGroup;
+			children = (
+				3B80A7ECC62EB42841D9CF7C /* Helper.entitlements */,
+				86F9FB5AED16B9559A1C540D /* Info.plist */,
+				6BF7A35BE430916BCA61C8B3 /* LiveChurchTranslation.entitlements */,
+				5C806A99E717C83867F5F671 /* LlamaRuntime.sha256 */,
+				A61E2E0405815F2B5E49A9A2 /* PrivacyInfo.xcprivacy */,
+				0CC9F0B451C0CD796E649AE3 /* AppHost */,
+				5661F0B9867817BFFF192994 /* XcodeGen */,
+			);
+			path = Packaging;
+			sourceTree = "<group>";
+		};
+		607103C3A1B882CBB25750D8 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				24CAF09D6258FB4F39B4BBE7 /* AppIcon.xcassets */,
+			);
+			path = Assets;
+			sourceTree = "<group>";
+		};
+		EA17A3490088C972DC4BEAB2 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				9060663BA86B9E12C7C24B46 /* Live_Church_Translation */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F93A2DA098111F5934F10769 = {
+			isa = PBXGroup;
+			children = (
+				BB207223A31AA8406F956833 /* PRIVACY.md */,
+				881DDA4B4A3C113474E9A336 /* THIRD_PARTY_NOTICES.md */,
+				607103C3A1B882CBB25750D8 /* Assets */,
+				1655D1D38F08498E673C6F5E /* Docs */,
+				EA17A3490088C972DC4BEAB2 /* Packages */,
+				5CF525A5C1BDA26D8FAD2381 /* Packaging */,
+				10AF40A00A2DF5620466C627 /* Scripts */,
+				0FD08E5D7C6A09D138F0FB39 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5C195D363A782BE15146EDF3 /* QuietLiturgyReader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ADC24C1484006693A796505D /* Build configuration list for PBXNativeTarget "QuietLiturgyReader" */;
+			buildPhases = (
+				DDBCDA6BAF97BD30FCAAD258 /* Sources */,
+				363AD36060F81E32C6F1293D /* Resources */,
+				EFCD7DF6C1F9C685670F520F /* Frameworks */,
+				EA441BB317CB8E6535F81CBC /* Embed and Sign Pinned llama.cpp Runtime */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QuietLiturgyReader;
+			packageProductDependencies = (
+				8F4AEF114F8544E0E48E4F77 /* ChurchTranslatorApp */,
+			);
+			productName = QuietLiturgyReader;
+			productReference = 8F49B3C9FC91E4A80FF3A763 /* QuietLiturgyReader.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6A5A207DCA47FA6BAEFC5F69 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1640;
+				ORGANIZATIONNAME = shuoyanjerry;
+				TargetAttributes = {
+					5C195D363A782BE15146EDF3 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 012A3BFFE38780F7F92AB189 /* Build configuration list for PBXProject "QuietLiturgyReader" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F93A2DA098111F5934F10769;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				14D47EFDE63DCE265D3EFC18 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 90;
+			productRefGroup = 0FD08E5D7C6A09D138F0FB39 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C195D363A782BE15146EDF3 /* QuietLiturgyReader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		363AD36060F81E32C6F1293D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3A1A460F0E180EA9453A8B28 /* AppIcon.xcassets in Resources */,
+				8CEED09E027E90EFDFFD0163 /* PRIVACY.md in Resources */,
+				E46722C57E2CD8BC519161B9 /* PrivacyInfo.xcprivacy in Resources */,
+				2D58945CF1FFDAD203130C38 /* THIRD_PARTY_NOTICES.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		EA441BB317CB8E6535F81CBC /* Embed and Sign Pinned llama.cpp Runtime */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Package.swift",
+				"$(SRCROOT)/Scripts/embed_app_store_runtime.sh",
+				"$(SRCROOT)/Packaging/Helper.entitlements",
+				"$(SRCROOT)/Packaging/LlamaRuntime.sha256",
+				"$(SRCROOT)/.artifacts/llama-b10549/llama-server",
+				"$(SRCROOT)/.artifacts/llama-b10549/libllama-server-impl.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libllama-common.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libmtmd.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libllama.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml-cpu.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml-blas.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml-metal.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml-rpc.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/libggml-base.0.dylib",
+				"$(SRCROOT)/.artifacts/llama-b10549/LICENSE",
+			);
+			name = "Embed and Sign Pinned llama.cpp Runtime";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/llama-server",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama-server-impl.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama-common.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libmtmd.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libllama.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-cpu.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-blas.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-metal.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-rpc.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/MacOS/libggml-base.0.dylib",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/llama.cpp-LICENSE",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "#!/bin/bash\nset -euo pipefail\n\nfail() {\n  echo \"Pinned runtime embedding failed: $*\" >&2\n  exit 1\n}\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\nif [[ -n \"${SRCROOT:-}\" ]]; then\n  REPOSITORY_ROOT=\"$(cd \"$SRCROOT\" && pwd)\"\nelse\n  REPOSITORY_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"\nfi\n[[ -f \"$REPOSITORY_ROOT/Package.swift\" ]] \\\n  || fail \"SRCROOT does not identify the application repository\"\nRUNTIME=\"$REPOSITORY_ROOT/.artifacts/llama-b10549\"\nMANIFEST=\"$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256\"\nHELPER_ENTITLEMENTS=\"$REPOSITORY_ROOT/Packaging/Helper.entitlements\"\n: \"${TARGET_BUILD_DIR:?Xcode TARGET_BUILD_DIR is required}\"\n: \"${CONTENTS_FOLDER_PATH:?Xcode CONTENTS_FOLDER_PATH is required}\"\nCONTENTS=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nEXECUTABLES=\"$CONTENTS/MacOS\"\nRESOURCES=\"$CONTENTS/Resources\"\n\n[[ -d \"$RUNTIME\" && ! -L \"$RUNTIME\" ]] \\\n  || fail \"run Scripts/fetch_llama_runtime.sh before building the app target\"\n[[ -f \"$MANIFEST\" && -f \"$HELPER_ENTITLEMENTS\" ]] \\\n  || fail \"runtime verification metadata is missing\"\nif ! (cd \"$RUNTIME\" && shasum -a 256 -c \"$MANIFEST\" >/dev/null); then\n  fail \"runtime file verification failed\"\nfi\n\nFILES=(\n  llama-server\n  libllama-server-impl.dylib\n  libllama-common.0.dylib\n  libmtmd.0.dylib\n  libllama.0.dylib\n  libggml.0.dylib\n  libggml-cpu.0.dylib\n  libggml-blas.0.dylib\n  libggml-metal.0.dylib\n  libggml-rpc.0.dylib\n  libggml-base.0.dylib\n)\nfor name in \"${FILES[@]}\"; do\n  [[ -f \"$RUNTIME/$name\" && ! -L \"$RUNTIME/$name\" ]] \\\n    || fail \"runtime member is missing or unsafe: $name\"\ndone\nfile \"$RUNTIME/llama-server\" | grep -q 'arm64' \\\n  || fail \"llama-server is not an arm64 executable\"\notool -L \"$RUNTIME/llama-server\" | grep -q '@rpath/libllama-server-impl.dylib' \\\n  || fail \"llama-server dependency layout is unexpected\"\n\nmkdir -p \"$EXECUTABLES\" \"$RESOURCES\"\nfor name in \"${FILES[@]}\"; do\n  ditto \"$RUNTIME/$name\" \"$EXECUTABLES/$name\"\ndone\nditto \"$RUNTIME/LICENSE\" \"$RESOURCES/llama.cpp-LICENSE\"\nchmod 0755 \"$EXECUTABLES/llama-server\" \"$EXECUTABLES\"/*.dylib\nchmod 0644 \"$RESOURCES/llama.cpp-LICENSE\"\n\nif [[ \"${CODE_SIGNING_ALLOWED:-YES}\" != \"YES\" ]]; then\n  [[ \"${ACTION:-build}\" != \"install\" ]] \\\n    || fail \"archive action cannot disable nested-code signing\"\n  echo \"Nested runtime copied without signing for a non-archive engineering build.\"\n  exit 0\nfi\n\nIDENTITY=\"${EXPANDED_CODE_SIGN_IDENTITY:--}\"\nif [[ \"${ACTION:-build}\" == \"install\" && \"$IDENTITY\" == \"-\" ]]; then\n  fail \"archive action requires a resolved Apple signing identity\"\nfi\nSIGN_ARGS=(--force --sign \"$IDENTITY\" --generate-entitlement-der)\nif [[ \"${ENABLE_HARDENED_RUNTIME:-NO}\" == \"YES\" && \"$IDENTITY\" != \"-\" ]]; then\n  SIGN_ARGS+=(--options runtime)\nfi\nfor library in \"$EXECUTABLES\"/*.dylib; do\n  codesign \"${SIGN_ARGS[@]}\" \"$library\"\ndone\ncodesign \"${SIGN_ARGS[@]}\" --entitlements \"$HELPER_ENTITLEMENTS\" \\\n  \"$EXECUTABLES/llama-server\"\nfor code in \"$EXECUTABLES\"/*.dylib \"$EXECUTABLES/llama-server\"; do\n  codesign --verify --strict --verbose=2 \"$code\"\ndone\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DDBCDA6BAF97BD30FCAAD258 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7FDA5BE3516756150BAA8206 /* QuietLiturgyReaderMain.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		513B31F74820AB3206C8652C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = Packaging/LiveChurchTranslation.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXECUTABLE_NAME = LiveChurchTranslation;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Packaging/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shuoyan.LiveChurchTranslation;
+				PRODUCT_MODULE_NAME = QuietLiturgyReaderHost;
+				PRODUCT_NAME = QuietLiturgyReader;
+				SDKROOT = macosx;
+				SUPPORTS_MACCATALYST = NO;
+			};
+			name = Release;
+		};
+		C11D0ABAE947440CF9A7CB18 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		D5C0FC3EDE3C14D39B5FD7E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		DDA1393241DE739385BFCE7E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = Packaging/LiveChurchTranslation.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXECUTABLE_NAME = LiveChurchTranslation;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Packaging/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.shuoyan.LiveChurchTranslation;
+				PRODUCT_MODULE_NAME = QuietLiturgyReaderHost;
+				PRODUCT_NAME = QuietLiturgyReader;
+				SDKROOT = macosx;
+				SUPPORTS_MACCATALYST = NO;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		012A3BFFE38780F7F92AB189 /* Build configuration list for PBXProject "QuietLiturgyReader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C11D0ABAE947440CF9A7CB18 /* Debug */,
+				D5C0FC3EDE3C14D39B5FD7E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ADC24C1484006693A796505D /* Build configuration list for PBXNativeTarget "QuietLiturgyReader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDA1393241DE739385BFCE7E /* Debug */,
+				513B31F74820AB3206C8652C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		14D47EFDE63DCE265D3EFC18 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8F4AEF114F8544E0E48E4F77 /* ChurchTranslatorApp */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ChurchTranslatorApp;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 6A5A207DCA47FA6BAEFC5F69 /* Project object */;
+}

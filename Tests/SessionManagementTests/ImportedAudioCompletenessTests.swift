@@ -1,0 +1,104 @@
+import AudioCaptureAPI
+import Foundation
+@testable import SessionManagement
+import SessionManagementAPI
+import Testing
+import TranscriptAPI
+
+@Suite struct ImportedAudioCompletenessTests {
+    @Test func fastFileCaptureWaitsForEverySegmentToFinish() async throws {
+        let frames = Self.frames(count: 40)
+        let harness = SessionTestHarness(
+            recognitionDelay: .milliseconds(20),
+            emitsEveryFrame: true,
+            audioFrames: frames,
+            sessionKind: .importedAudio
+        )
+
+        _ = try await harness.run()
+
+        #expect((await harness.asr.receivedRequests()).count == frames.count)
+        #expect((await harness.translator.receivedRequests()).count == frames.count)
+        #expect((await harness.store.persistedEntries()).count == frames.count)
+        #expect((await harness.recoveryStore.completedIDs()).count == frames.count)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        #expect((await harness.coordinator.currentSnapshot()).finalizationOutcome == .saved)
+        #expect(await harness.coordinator.diskRecoveryMode == nil)
+        #expect(await harness.coordinator.segmentQueue.isEmpty)
+    }
+
+    @Test func inferenceFailureMakesImportExplicitlyFailedAndRecoverable() async throws {
+        let frames = Self.frames(count: 40)
+        let harness = SessionTestHarness(
+            recognitionFails: true,
+            emitsEveryFrame: true,
+            audioFrames: frames,
+            sessionKind: .importedAudio
+        )
+
+        _ = try await harness.run()
+
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected an incomplete import to fail explicitly")
+            return
+        }
+        #expect(message.contains("incomplete"))
+        #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 40))
+        #expect((await harness.asr.receivedRequests()).count == 1)
+        #expect((await harness.recoveryStore.pendingRecords()).count == frames.count)
+        #expect((await harness.recordingStore.recordedFrames()) == frames)
+    }
+
+    @Test func recoveryStoreFailureRequiresOriginalFileRetry() async throws {
+        let frames = Self.frames(count: 40)
+        let harness = SessionTestHarness(
+            recoveryStageFails: true,
+            emitsEveryFrame: true,
+            audioFrames: frames,
+            sessionKind: .importedAudio
+        )
+
+        _ = try await harness.run()
+
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected an import without durable segments to fail explicitly")
+            return
+        }
+        #expect(message.contains("Retry the original file"))
+        #expect((await harness.asr.receivedRequests()).isEmpty)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        #expect((await harness.recordingStore.recordedFrames()) == frames)
+    }
+
+    @Test func stoppingBeforeEndNeverReportsACompleteImport() async throws {
+        let harness = SessionTestHarness(
+            holdsCaptureOpen: true,
+            emitsEveryFrame: true,
+            audioFrames: [],
+            sessionKind: .importedAudio
+        )
+
+        await harness.coordinator.start(inputDeviceID: nil)
+        await harness.coordinator.stop()
+
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected a stopped import to fail explicitly")
+            return
+        }
+        #expect(message.contains("before the complete file"))
+    }
+
+    private static func frames(count: Int) -> [AudioFrame] {
+        (0..<count).map { index in
+            AudioFrame(
+                samples: SessionTestHarness.audioFrame.samples,
+                sampleRate: 16_000,
+                channelCount: 1,
+                timestamp: .milliseconds(Int64(index * 20))
+            )
+        }
+    }
+}

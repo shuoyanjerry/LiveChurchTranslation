@@ -18,7 +18,8 @@ Protocols and values are `Sendable`; concrete providers own model and inference 
 
 ## Failure Modes
 
-Typed errors cover unavailable or unloaded models, invalid audio, inference failure, and cancellation.
+Typed errors cover unavailable or unloaded models, invalid audio, filtered nonspeech,
+prompt echo, pathological decoder repetition, inference failure, and cancellation.
 
 ## Tests
 

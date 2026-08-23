@@ -8,6 +8,7 @@ actor FakeModelHTTPTransport: ModelHTTPTransport {
     private let delay: Duration?
     private let reportedLengthOffset: Int64
     private var requests: [URL] = []
+    private var maximumByteCounts: [Int64] = []
 
     init(
         payloads: [URL: Data],
@@ -22,13 +23,18 @@ actor FakeModelHTTPTransport: ModelHTTPTransport {
     func download(
         from remoteURL: URL,
         to localURL: URL,
+        maximumBytes: Int64,
         progress: @escaping ModelHTTPProgress
     ) async throws -> ModelHTTPTransferResult {
         requests.append(remoteURL)
+        maximumByteCounts.append(maximumBytes)
         if let delay { try await Task.sleep(for: delay) }
         try Task.checkCancellation()
         guard let data = payloads[remoteURL] else {
             throw URLError(.fileDoesNotExist)
+        }
+        guard data.count <= maximumBytes else {
+            throw ModelHTTPTransportError.responseTooLarge(maximumBytes: maximumBytes)
         }
         let midpoint = data.count / 2
         progress(Int64(midpoint), Int64(data.count))
@@ -41,6 +47,7 @@ actor FakeModelHTTPTransport: ModelHTTPTransport {
     }
 
     func requestCount() -> Int { requests.count }
+    func requestedMaximumBytes() -> [Int64] { maximumByteCounts }
 }
 
 actor TestModelLocationStore: ModelLocationStore {

@@ -12,7 +12,8 @@ actor NWRemoteConnectionHandler {
     var mode = RemoteConnectionMode.http
     var buffer = Data()
     var pumpTask: Task<Void, Never>?
-    private var closed = false
+    var handshakeTimeoutTask: Task<Void, Never>?
+    var closed = false
 
     init(
         id: UUID,
@@ -40,6 +41,7 @@ actor NWRemoteConnectionHandler {
             Task { await self?.close() }
         }
         connection.start(queue: queue)
+        startHTTPHandshakeDeadline()
         receiveNext()
     }
 
@@ -48,6 +50,7 @@ actor NWRemoteConnectionHandler {
         closed = true
         pumpTask?.cancel()
         pumpTask = nil
+        cancelHTTPHandshakeDeadline()
         if case .webSocket(let session) = mode { await session.close() }
         connection.cancel()
         onClosed(id)

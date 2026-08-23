@@ -4,19 +4,25 @@ public struct RemoteTransportLimits: Equatable, Sendable {
     public let maximumHeaderCount: Int
     public let maximumBodyBytes: Int
     public let maximumWebSocketFrameBytes: Int
+    public let httpHandshakeTimeout: Duration
 
     public init(
         maximumRequestLineBytes: Int = 2_048,
         maximumHeaderBytes: Int = 16_384,
         maximumHeaderCount: Int = 64,
         maximumBodyBytes: Int = 65_536,
-        maximumWebSocketFrameBytes: Int = 4_194_304
+        maximumWebSocketFrameBytes: Int = 4_194_304,
+        httpHandshakeTimeout: Duration = .seconds(5)
     ) {
         self.maximumRequestLineBytes = min(max(maximumRequestLineBytes, 256), 8_192)
         self.maximumHeaderBytes = min(max(maximumHeaderBytes, 2_048), 65_536)
         self.maximumHeaderCount = min(max(maximumHeaderCount, 8), 128)
         self.maximumBodyBytes = min(max(maximumBodyBytes, 1_024), 1_048_576)
         self.maximumWebSocketFrameBytes = min(max(maximumWebSocketFrameBytes, 1_024), 8_388_608)
+        self.httpHandshakeTimeout = min(
+            max(httpHandshakeTimeout, .milliseconds(250)),
+            .seconds(30)
+        )
     }
 }
 

@@ -1,27 +1,18 @@
 import AudioCaptureAPI
+import Foundation
 import RemoteControlAPI
 import SessionManagementAPI
 import SettingsAPI
 
 public struct LiveSessionRemoteMutationTarget: RemoteSessionMutationTarget {
     private let controller: any LiveSessionController
-    private let settings: any SettingsStore
 
-    public init(controller: any LiveSessionController, settings: any SettingsStore) {
+    public init(controller: any LiveSessionController, settings _: any SettingsStore) {
         self.controller = controller
-        self.settings = settings
     }
 
     public func startRemoteSession() async throws {
-        guard await controller.currentSnapshot().sessionID == nil else {
-            throw LiveSessionRemoteMutationError.sessionAlreadyActive
-        }
-        let selectedID = try await settings.load().selectedAudioDeviceID
-        let inputID = selectedID.map(AudioInputID.init(rawValue:))
-        await controller.start(inputDeviceID: inputID)
-        guard await controller.currentSnapshot().sessionID != nil else {
-            throw LiveSessionRemoteMutationError.startRejected
-        }
+        throw LiveSessionRemoteMutationError.localRecordingAuthorizationRequired
     }
 
     public func stopRemoteSession() async throws {
@@ -32,8 +23,16 @@ public struct LiveSessionRemoteMutationTarget: RemoteSessionMutationTarget {
     }
 }
 
-public enum LiveSessionRemoteMutationError: Error, Equatable, Sendable {
-    case sessionAlreadyActive
-    case startRejected
+public enum LiveSessionRemoteMutationError: LocalizedError, Equatable, Sendable {
+    case localRecordingAuthorizationRequired
     case noActiveSession
+
+    public var errorDescription: String? {
+        switch self {
+        case .localRecordingAuthorizationRequired:
+            "Recording can only be started from the Mac after the local notice is accepted."
+        case .noActiveSession:
+            "There is no active session to stop."
+        }
+    }
 }

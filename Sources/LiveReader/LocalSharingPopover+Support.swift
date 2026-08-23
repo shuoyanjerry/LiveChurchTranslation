@@ -2,6 +2,19 @@ import RemoteSharingFeatureAPI
 import SwiftUI
 import UIDesignSystem
 
+enum LocalSharingPresentation {
+    static let subtitle = "Nearby devices can read the live transcript and translation."
+    static let transportWarning = "Trusted local network only · Traffic is not encrypted"
+    static let invitationRole = LocalSharingInvitationRole.viewer
+
+    static func visibleInvitation(
+        _ invitation: LocalSharingInvitation?
+    ) -> LocalSharingInvitation? {
+        guard invitation?.role == .viewer else { return nil }
+        return invitation
+    }
+}
+
 extension LocalSharingPopover {
     func actionButton(
         _ title: String,
@@ -39,7 +52,7 @@ extension LocalSharingPeerRole {
     var displayName: String {
         switch self {
         case .viewer: "Viewer"
-        case .operator: "Operator · Start/Stop"
+        case .operator: "Operator · Stop only"
         }
     }
 }

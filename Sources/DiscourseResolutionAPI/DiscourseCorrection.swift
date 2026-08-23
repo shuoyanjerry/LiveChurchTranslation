@@ -1,6 +1,7 @@
 /// The deliberately narrow class of edits supported by discourse resolution.
 public enum DiscourseCorrectionKind: String, Equatable, Hashable, Sendable {
     case singularGenderedPronoun
+    case deityPronoun
 }
 
 /// A range in the original text, measured in UTF-16 code units.
@@ -14,10 +15,11 @@ public struct DiscourseTextRange: Equatable, Hashable, Sendable {
     }
 }
 
-/// Why an otherwise ambiguous pronoun was safe enough to correct.
+/// Why an otherwise ambiguous pronoun was safe enough to guide or correct.
 public enum DiscourseCorrectionReason: String, Equatable, Hashable, Sendable {
     case uniqueCurrentTurnAnchor
-    case uniqueRecentVerifiedAnchor
+    case uniformCurrentTurnGenderAnchors
+    case uniqueRecentDeityAnchor
 }
 
 /// The exact turn used to justify a correction.

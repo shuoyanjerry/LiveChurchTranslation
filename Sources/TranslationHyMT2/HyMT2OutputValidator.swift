@@ -1,139 +1,87 @@
 import Foundation
 import TranslationAPI
 
-enum OutputValidationIssue: Equatable, Sendable {
-    case empty
-    case implausibleLength
-    case metaText
-    case missingTerm(String)
-    case missingNumber(String)
-    case missingNegation
-    case malformedScriptureReference
-    case unexpectedMasculinePronoun
-    case unexpectedFemininePronoun
-
-    var description: String {
-        switch self {
-        case .empty: "empty output"
-        case .implausibleLength: "implausible output length"
-        case .metaText: "model commentary or instruction text"
-        case .missingTerm(let term): "missing required term: \(term)"
-        case .missingNumber(let number): "missing number: \(number)"
-        case .missingNegation: "source negation was not preserved"
-        case .malformedScriptureReference: "Scripture reference was not preserved"
-        case .unexpectedMasculinePronoun: "female source referent changed to a masculine pronoun"
-        case .unexpectedFemininePronoun: "male source referent changed to a feminine pronoun"
-        }
-    }
-}
-
-struct OutputValidationFailure: Error, Equatable, Sendable {
-    let issues: [OutputValidationIssue]
+struct HyMT2ValidatedOutput: Equatable, Sendable {
+    let target: String
+    let pronounRealizations: [HyMT2PronounRealization]
 }
 
 enum HyMT2OutputValidator {
     static func validate(
         _ output: String,
         source: String,
-        requiredTerms: [TranslationTerm]
+        requiredTerms: [TranslationTerm],
+        sourceLanguage: String = "zh-Hans",
+        targetLanguage: String = "en",
+        pronounPlan: HyMT2PronounPlan? = nil
     ) throws -> String {
-        let target = output.trimmingCharacters(in: .whitespacesAndNewlines)
-        var issues: [OutputValidationIssue] = []
-        if target.isEmpty { issues.append(.empty) }
-        if !plausibleLength(target, source: source) { issues.append(.implausibleLength) }
-        if containsMetaText(target) { issues.append(.metaText) }
-        issues.append(contentsOf: missingTerms(in: target, required: requiredTerms))
-        issues.append(contentsOf: missingNumbers(in: target, source: source))
-        if containsNegation(source), !containsEnglishNegation(target) {
-            issues.append(.missingNegation)
-        }
-        if containsScriptureReference(source), !containsEnglishScriptureReference(target) {
-            issues.append(.malformedScriptureReference)
-        }
-        issues.append(contentsOf: HyMT2GenderValidator.issues(in: target, source: source))
+        try validated(
+            output,
+            source: source,
+            requiredTerms: requiredTerms,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage,
+            pronounPlan: pronounPlan
+        ).target
+    }
+
+    static func validated(
+        _ output: String,
+        source: String,
+        requiredTerms: [TranslationTerm],
+        sourceLanguage: String = "zh-Hans",
+        targetLanguage: String = "en",
+        pronounPlan: HyMT2PronounPlan?,
+        flatRetryCapability: HyMT2FlatPronounRetryCapability? = nil,
+        strictRetry: Bool = false
+    ) throws -> HyMT2ValidatedOutput {
+        let parsed = try parsePronouns(
+            output,
+            plan: pronounPlan,
+            flatRetryCapability: flatRetryCapability,
+            strictRetry: strictRetry
+        )
+        let target = HyMT2TargetOrthographyNormalizer.normalize(
+            parsed.cleanTarget,
+            language: targetLanguage
+        )
+        let issues = HyMT2FidelityValidator.issues(
+            target: target,
+            source: source,
+            requiredTerms: requiredTerms,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage
+        )
         guard issues.isEmpty else { throw OutputValidationFailure(issues: issues) }
-        return target
+        return HyMT2ValidatedOutput(
+            target: target,
+            pronounRealizations: parsed.realizations
+        )
     }
 
-    private static func plausibleLength(_ target: String, source: String) -> Bool {
-        guard !target.isEmpty else { return false }
-        let sourceCount = max(1, source.count)
-        return target.count >= max(1, sourceCount / 5)
-            && target.count <= sourceCount * 10 + 80
-    }
-
-    private static func containsMetaText(_ target: String) -> Bool {
-        let lower = target.lowercased()
-        let prefixes = [
-            "here is the translation", "the translation is", "translation:",
-            "translated result:", "as an ai", "i cannot translate", "source text:",
-            "reference the following translations",
-        ]
-        return prefixes.contains(where: lower.hasPrefix)
-    }
-
-    private static func missingTerms(
-        in target: String,
-        required: [TranslationTerm]
-    ) -> [OutputValidationIssue] {
-        required.compactMap { term in
-            guard term.requirement == .required else { return nil }
-            let accepted = [term.target] + term.acceptedTargets
-            let found = accepted.contains { candidate in
-                target.range(
-                    of: candidate,
-                    options: [.caseInsensitive, .diacriticInsensitive]
-                ) != nil
+    private static func parsePronouns(
+        _ output: String,
+        plan: HyMT2PronounPlan?,
+        flatRetryCapability: HyMT2FlatPronounRetryCapability?,
+        strictRetry: Bool
+    ) throws -> HyMT2ParsedPronounOutput {
+        guard let plan else {
+            guard flatRetryCapability == nil else {
+                throw OutputValidationFailure(issues: [.malformedPronounMarker])
             }
-            return found ? nil : .missingTerm(term.target)
+            return HyMT2ParsedPronounOutput(
+                cleanTarget: output.trimmingCharacters(in: .whitespacesAndNewlines),
+                realizations: []
+            )
         }
-    }
-
-    private static func missingNumbers(
-        in target: String,
-        source: String
-    ) -> [OutputValidationIssue] {
-        let sourceNumbers = digitRuns(in: source)
-        var remaining = digitRuns(in: target)
-        return sourceNumbers.compactMap { number in
-            guard let index = remaining.firstIndex(of: number) else {
-                return .missingNumber(number)
-            }
-            remaining.remove(at: index)
-            return nil
+        if strictRetry || flatRetryCapability != nil {
+            return try HyMT2StrictRetryPronounParser.parse(
+                output,
+                plan: plan,
+                flatCapability: flatRetryCapability
+            )
         }
+        return try HyMT2PronounMarkerParser.parse(output, plan: plan)
     }
 
-    private static func digitRuns(in text: String) -> [String] {
-        matches(pattern: #"\d+"#, in: text)
-    }
-
-    private static func containsNegation(_ source: String) -> Bool {
-        ["没有", "并非", "不是", "不可", "不能", "不要", "不得", "从未", "未曾", "不"]
-            .contains(where: source.contains)
-    }
-
-    private static func containsEnglishNegation(_ target: String) -> Bool {
-        let words = matches(pattern: #"[A-Za-z]+(?:'[A-Za-z]+)?"#, in: target.lowercased())
-        let direct = Set(["not", "no", "never", "without", "neither", "nor", "cannot"])
-        return words.contains(where: { direct.contains($0) || $0.hasSuffix("n't") })
-    }
-
-    private static func containsScriptureReference(_ source: String) -> Bool {
-        !matches(pattern: #"[0-9零〇一二两三四五六七八九十百千]+章[0-9零〇一二两三四五六七八九十百千]+节"#, in: source).isEmpty
-    }
-
-    private static func containsEnglishScriptureReference(_ target: String) -> Bool {
-        !matches(pattern: #"\d+\s*:\s*\d+"#, in: target).isEmpty
-            || (target.localizedCaseInsensitiveContains("chapter")
-                && target.localizedCaseInsensitiveContains("verse"))
-    }
-
-    private static func matches(pattern: String, in text: String) -> [String] {
-        guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(text.startIndex..., in: text)
-        return expression.matches(in: text, range: range).compactMap {
-            Range($0.range, in: text).map { String(text[$0]) }
-        }
-    }
 }

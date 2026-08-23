@@ -5,13 +5,18 @@ struct SpeechStartPublication {
     private(set) var nextSequenceNumber: UInt64 = 1
     private var hasPublishedStart = false
 
+    var hasPublishedSpeech: Bool {
+        hasPublishedStart
+    }
+
     init(minimumVoicedSampleCount: Int) {
         self.minimumVoicedSampleCount = minimumVoicedSampleCount
     }
 
     mutating func eventsIfConfirmed(for speech: ActiveSpeech) -> [VoiceActivityEvent] {
         guard !hasPublishedStart,
-            speech.voicedSampleCount >= minimumVoicedSampleCount
+            speech.isConfirmedContinuation
+                || speech.voicedSampleCount >= minimumVoicedSampleCount
         else { return [] }
         hasPublishedStart = true
         nextSequenceNumber += 1

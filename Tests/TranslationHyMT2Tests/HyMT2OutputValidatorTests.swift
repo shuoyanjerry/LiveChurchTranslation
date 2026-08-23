@@ -84,6 +84,15 @@ import TranslationAPI
         )
     }
 
+    @Test(arguments: ["They 后来继续分享。", "They continued sharing。"])
+    func rejectsChineseSourceScriptInEnglishOutput(_ output: String) {
+        assertIssue(
+            .unexpectedSourceScript,
+            output: output,
+            source: "他后来继续分享。"
+        )
+    }
+
     @Test func acceptsChineseNumeralScriptureReferenceRenderedConventionally() throws {
         let result = try HyMT2OutputValidator.validate(
             "John 3:16 proclaims God's love.",

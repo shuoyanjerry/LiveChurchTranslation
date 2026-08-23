@@ -19,10 +19,30 @@ struct NWRemoteTransportServerTests {
         #expect(await fixture.server.status() == .stopped)
     }
 
-    private func makeFixture() async throws -> ServerFixture {
+    @Test("The initial snapshot is blocked when authorization changes during upgrade")
+    func initialSnapshotIsReauthorized() async throws {
+        let pairing = ListenerPairingFake(maximumAuthorizationCalls: 1)
+        let fixture = try await makeFixture(pairing: pairing)
+        var request = URLRequest(url: fixture.endpoint.baseURL.appendingPathComponent("ws"))
+        request.setValue(fixture.endpoint.baseURL.absoluteString, forHTTPHeaderField: "Origin")
+        request.setValue("church_remote=\(pairing.credential)", forHTTPHeaderField: "Cookie")
+        let socket = fixture.session.webSocketTask(with: request)
+        socket.resume()
+
+        do {
+            _ = try await socket.receive()
+            Issue.record("An initial snapshot escaped after the grant was rejected")
+        } catch {}
+
+        socket.cancel(with: .goingAway, reason: nil)
+        await fixture.server.stop()
+    }
+
+    private func makeFixture(
+        pairing: ListenerPairingFake = ListenerPairingFake()
+    ) async throws -> ServerFixture {
         let sharing = RemoteSharingSwitch()
         await sharing.setEnabled(true)
-        let pairing = ListenerPairingFake()
         let projection = RemoteProjectionStore()
         let server = NWRemoteTransportServer(
             sharing: sharing,
@@ -30,7 +50,8 @@ struct NWRemoteTransportServerTests {
             pairingManager: pairing,
             projection: projection,
             commands: ListenerCommandFake(),
-            assets: BundledRemoteWebAssetProvider()
+            assets: BundledRemoteWebAssetProvider(),
+            limits: .init(httpHandshakeTimeout: .seconds(1))
         )
         let endpoint = try await server.start(
             configuration: .init(
@@ -58,19 +79,10 @@ struct NWRemoteTransportServerTests {
     }
 
     private func verifyWebSocket(_ fixture: ServerFixture) async throws {
-        var request = URLRequest(url: fixture.endpoint.baseURL.appendingPathComponent("ws"))
-        request.setValue(fixture.endpoint.baseURL.absoluteString, forHTTPHeaderField: "Origin")
-        request.setValue(
-            "church_remote=\(fixture.pairing.credential)",
-            forHTTPHeaderField: "Cookie"
-        )
-        let socket = fixture.session.webSocketTask(with: request)
+        let socket = webSocket(for: fixture)
         socket.resume()
-        let initial = try decode(try await socket.receive())
-        guard case .snapshot = initial.payload else {
-            socket.cancel(with: .protocolError, reason: nil)
-            throw ListenerTestError.missingSnapshot
-        }
+        try await verifyInitialSnapshot(socket)
+        try await Task.sleep(for: .milliseconds(1_250))
         await fixture.projection.beginSession(id: UUID(), message: "Listening")
         _ = try await fixture.projection.upsert(
             .init(
@@ -80,16 +92,40 @@ struct NWRemoteTransportServerTests {
                 targetText: "Grace",
                 createdAt: Date()
             ))
-        var receivedUpsert = false
+        #expect(try await receivesUpsert(socket))
+
+        await fixture.pairing.revoke(grantID: fixture.pairing.grantID, now: Date())
+        do {
+            _ = try await socket.receive()
+            Issue.record("A revoked WebSocket remained connected")
+        } catch {}
+        socket.cancel(with: .goingAway, reason: nil)
+    }
+
+    private func webSocket(for fixture: ServerFixture) -> URLSessionWebSocketTask {
+        var request = URLRequest(url: fixture.endpoint.baseURL.appendingPathComponent("ws"))
+        request.setValue(fixture.endpoint.baseURL.absoluteString, forHTTPHeaderField: "Origin")
+        request.setValue(
+            "church_remote=\(fixture.pairing.credential)",
+            forHTTPHeaderField: "Cookie"
+        )
+        return fixture.session.webSocketTask(with: request)
+    }
+
+    private func verifyInitialSnapshot(_ socket: URLSessionWebSocketTask) async throws {
+        let initial = try decode(try await socket.receive())
+        guard case .snapshot = initial.payload else {
+            socket.cancel(with: .protocolError, reason: nil)
+            throw ListenerTestError.missingSnapshot
+        }
+    }
+
+    private func receivesUpsert(_ socket: URLSessionWebSocketTask) async throws -> Bool {
         for _ in 0..<3 {
             let envelope = try decode(try await socket.receive())
-            if case .entryUpsert = envelope.payload {
-                receivedUpsert = true
-                break
-            }
+            if case .entryUpsert = envelope.payload { return true }
         }
-        #expect(receivedUpsert)
-        socket.cancel(with: .goingAway, reason: nil)
+        return false
     }
 
     private func decode(_ message: URLSessionWebSocketTask.Message) throws -> RemoteProjectionEnvelope {

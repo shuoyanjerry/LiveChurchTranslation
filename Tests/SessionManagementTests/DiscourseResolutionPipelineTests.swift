@@ -1,10 +1,12 @@
 import AudioCaptureAPI
 @testable import SessionManagement
+import SessionManagementAPI
 import Testing
 import TranscriptAPI
+import TranslationAPI
 
 @Suite struct DiscourseResolutionPipelineTests {
-    @Test func persistedFemaleAnchorCorrectsNextTurnAndKeepsAudit() async throws {
+    @Test func historicalFemaleAnchorDoesNotAuthorizeGenderCorrection() async throws {
         let harness = SessionTestHarness(
             recognizedTexts: [
                 "那位姐妹分享了她的见证。",
@@ -16,22 +18,70 @@ import TranscriptAPI
 
         let events = try await harness.run()
 
+        try await verifySafeFemaleAbstention(events: events, harness: harness)
+    }
+
+    private func verifySafeFemaleAbstention(
+        events: [LiveSessionEvent],
+        harness: SessionTestHarness
+    ) async throws {
         #expect(events.appendedEntries.count == 2)
-        let corrected = try #require(events.appendedEntries.last)
-        #expect(corrected.rawSourceText == "他后来继续讲述救恩。")
-        #expect(corrected.sourceText == "她后来继续讲述救恩。")
-        let audit = try #require(
-            corrected.sourceCorrections.first { $0.kind == .discoursePronoun }
+        let entry = try #require(events.appendedEntries.last)
+        #expect(entry.rawSourceText == "他后来继续讲述救恩。")
+        #expect(entry.sourceText == entry.rawSourceText)
+        #expect(entry.sourceCorrections.allSatisfy { $0.kind != .discoursePronoun })
+        let decision = try #require(entry.sourcePronounDecisions.first)
+        #expect(decision.resolution == .unresolvedSpokenMandarin)
+        #expect(decision.evidenceSequence == nil)
+        #expect(decision.evidenceText == nil)
+        #expect(await harness.translator.receivedRequests().last?.sourceText == entry.sourceText)
+        #expect(
+            await harness.translator.receivedRequests().last?.pronounGuidance.first?.resolution
+                == .unresolvedSpokenMandarin
         )
-        #expect(audit.observedText == "他")
-        #expect(audit.replacementText == "她")
-        #expect(audit.reason == "uniqueRecentVerifiedAnchor")
-        #expect(audit.evidenceSequence == 1)
-        #expect(audit.evidenceText == "那位姐妹分享了她的见证。")
-        #expect(audit.utf16Location == 0)
-        #expect(audit.utf16Length == 1)
-        #expect(await harness.translator.receivedRequests().last?.sourceText == corrected.sourceText)
-        #expect(await harness.store.persistedEntries().last == corrected)
+        let asrRequests = await harness.asr.receivedRequests()
+        #expect(asrRequests.count == 2)
+        #expect(asrRequests[0].contextPrompt == asrRequests[1].contextPrompt)
+        #expect(!asrRequests[1].contextPrompt.contains("那位姐妹"))
+        #expect(!asrRequests[1].contextPrompt.contains("她后来"))
+        #expect(await harness.store.persistedEntries().last == entry)
+    }
+
+    @Test func unresolvedSpokenTaReachesTranslatorWithoutTrustingGlyph() async throws {
+        let harness = SessionTestHarness(recognizedText: "他继续分享。")
+
+        _ = try await harness.run()
+
+        let request = await harness.translator.receivedRequests().last
+        #expect(request?.pronounGuidance.count == 1)
+        #expect(request?.pronounGuidance.first?.resolution == .unresolvedSpokenMandarin)
+        let persisted = await harness.store.persistedEntries().last
+        #expect(persisted?.rawSourceText == "他继续分享。")
+        #expect(persisted?.sourceText == "他继续分享。")
+        #expect(
+            persisted?.sourcePronounDecisions.first?.resolution
+                == .unresolvedSpokenMandarin
+        )
+    }
+
+    @Test func historicalDeityAnchorDoesNotAuthorizeHumanGlyph() async throws {
+        let harness = SessionTestHarness(
+            recognizedTexts: ["神爱世人。", "他赐下独生子。"],
+            emitsEveryFrame: true,
+            audioFrames: Self.frames
+        )
+
+        let events = try await harness.run()
+
+        let entry = try #require(events.appendedEntries.last)
+        #expect(entry.rawSourceText == "他赐下独生子。")
+        #expect(entry.sourceText == entry.rawSourceText)
+        #expect(entry.sourcePronounDecisions.first?.resolution == .unresolvedSpokenMandarin)
+        #expect(
+            await harness.translator.receivedRequests().last?.pronounGuidance.first?.resolution
+                == .unresolvedSpokenMandarin
+        )
+        #expect(await harness.store.persistedEntries().last == entry)
     }
 
     private static let frames = [

@@ -27,11 +27,22 @@ extension NWRemoteConnectionHandler {
 
     func upgrade(_ request: RemoteHTTPRequest) async throws {
         let opened = try await components.webSocketGateway.open(request: request, peer: peer)
-        try await send(HTTPResponseSerializer.serialize(opened.handshakeResponse))
-        mode = .webSocket(opened.session)
-        try await sendEnvelope(opened.initialEnvelope)
-        startOutgoingPump(opened.session)
-        receiveNext()
+        do {
+            try await send(HTTPResponseSerializer.serialize(opened.handshakeResponse))
+            guard !closed else {
+                await opened.session.close()
+                return
+            }
+            mode = .webSocket(opened.session)
+            cancelHTTPHandshakeDeadline()
+            try await opened.session.validateAuthorization()
+            try await sendEnvelope(opened.initialEnvelope)
+            startOutgoingPump(opened.session)
+            receiveNext()
+        } catch {
+            await opened.session.close()
+            await close()
+        }
     }
 
     func processWebSocket(_ session: RemoteSocketSession) async {
@@ -54,6 +65,8 @@ extension NWRemoteConnectionHandler {
             receiveNext()
         } catch RemoteTransportError.incompleteRequest {
             receiveNext()
+        } catch RemoteTransportError.unauthorized {
+            await close()
         } catch {
             await closeWebSocket(code: 1002)
         }

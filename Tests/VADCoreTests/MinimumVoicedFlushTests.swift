@@ -61,7 +61,9 @@ import VADAPI
         #expect(VADTestSupport.startedEvents(in: accepted).map(\.sequenceNumber) == [1])
         #expect(VADTestSupport.endedSegments(in: accepted).map(\.sequenceNumber) == [1])
     }
+}
 
+extension MinimumVoicedFlushTests {
     @Test func confirmationAndHardBoundaryEmitOrderedLifecyclePair() async throws {
         let detector = try AdaptiveEnergyVoiceActivityDetector(
             configuration: VoiceActivityConfiguration(
@@ -97,7 +99,38 @@ import VADAPI
         #expect(segment.endReason == .maximumDuration)
     }
 
-    @Test func flushPadsOnePartialAnalysisWindow() async throws {
+    @Test func flushClassifiesPaddedWindowButRetainsOnlyValidSamples() async throws {
+        let configuration = VoiceActivityConfiguration(
+            analysisWindow: .milliseconds(20),
+            preRoll: .milliseconds(20),
+            speechStart: .milliseconds(10),
+            trailingSilence: .milliseconds(20),
+            shortUtterance: .milliseconds(20),
+            shortTrailingSilence: .milliseconds(20),
+            softSplitSilence: .milliseconds(20),
+            softSplitAfter: .seconds(1),
+            preferredMaximumSegment: .seconds(2),
+            maximumBoundaryGrace: .zero,
+            postRoll: .zero,
+            minimumVoiced: .milliseconds(10),
+            decisionWindowCount: 1,
+            decisionSpeechVotes: 1
+        )
+        let detector = try CalibratedVoiceActivityDetector(
+            classifier: ExactWindowClassifier(),
+            configuration: configuration
+        )
+        _ = try await detector.process(
+            VADTestSupport.frame(amplitude: 0.1, milliseconds: 10, timestamp: .zero)
+        )
+
+        let events = await detector.flush()
+        let segment = try #require(VADTestSupport.endedSegments(in: events).first)
+        #expect(segment.samples.count == 160)
+        #expect(segment.samples.allSatisfy { $0 == 0.1 })
+    }
+
+    @Test func syntheticPaddingCannotSatisfyMinimumVoicedDuration() async throws {
         let configuration = VoiceActivityConfiguration(
             analysisWindow: .milliseconds(20),
             preRoll: .milliseconds(20),
@@ -123,9 +156,8 @@ import VADAPI
         )
 
         let events = await detector.flush()
-        let segment = try #require(VADTestSupport.endedSegments(in: events).first)
-        #expect(segment.samples.count == 320)
-        #expect(segment.samples.suffix(160).allSatisfy { $0 == 0 })
+        #expect(VADTestSupport.startedEvents(in: events).isEmpty)
+        #expect(VADTestSupport.endedSegments(in: events).isEmpty)
     }
 }
 

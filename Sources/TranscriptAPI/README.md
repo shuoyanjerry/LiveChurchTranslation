@@ -8,8 +8,16 @@ buffer events, and the replaceable live transcript-buffer boundary.
 ## Public API
 
 `TranscriptEntry`, `TranscriptSession`, `TranscriptSourceCorrection`,
-`TranscriptSourceCorrectionKind`, `TranscriptSourceAudit`, `TranscriptEvent`, `TranscriptBuffer`, and
-`TranscriptBufferError`.
+`TranscriptSourceCorrectionKind`, `TranscriptSourcePronounDecision`,
+`TranscriptSourceAudit`, `TranscriptEvent`, `TranscriptBuffer`, and
+`TranscriptBufferError`. Pronoun decisions preserve the UTF-16 occurrence range
+and unresolved, verified-human, or verified-deity evidence state without rewriting
+ambiguous raw Chinese.
+
+`TranscriptEntry.sequence` is the dense presentation order. The optional
+`sourceSegmentSequence` is the stable VAD order within the containing session and
+is the only transcript sequence permitted for discourse evidence. Old JSON without
+that field remains decodable with an unknown source identity.
 
 ## Dependencies
 
@@ -31,4 +39,5 @@ nonthrowing append and finish calls when no session exists.
 
 `TranscriptCoreTests` exercises the concrete buffer through this API.
 Persistence and session tests consume the immutable transcript values.
-Legacy correction JSON remains decodable when structured audit fields are absent.
+Legacy entry and correction JSON remains decodable when newer identity or structured
+audit fields are absent.

@@ -8,18 +8,21 @@ actor FakeMandarinASRProvider: ASRProvider {
     private let loadFails: Bool
     private let recognitionFails: Bool
     private let recognitionError: ASRError?
+    private let recognitionDelay: Duration?
     private var requests: [ASRRequest] = []
 
     init(
         text: String,
         loadFails: Bool = false,
         recognitionFails: Bool = false,
-        recognitionError: ASRError? = nil
+        recognitionError: ASRError? = nil,
+        recognitionDelay: Duration? = nil
     ) {
         texts = [text]
         self.loadFails = loadFails
         self.recognitionFails = recognitionFails
         self.recognitionError = recognitionError
+        self.recognitionDelay = recognitionDelay
     }
 
     init(texts: [String]) {
@@ -28,17 +31,20 @@ actor FakeMandarinASRProvider: ASRProvider {
         loadFails = false
         recognitionFails = false
         recognitionError = nil
+        recognitionDelay = nil
     }
 
     func loadModel(at _: URL) throws {
         if loadFails { throw SessionPipelineFakeError.modelLoading }
     }
 
-    func transcribe(_ request: ASRRequest) throws -> RecognizedUtterance {
+    func transcribe(_ request: ASRRequest) async throws -> RecognizedUtterance {
+        let requestIndex = requests.count
+        requests.append(request)
+        if let recognitionDelay { try await Task.sleep(for: recognitionDelay) }
         if recognitionFails { throw SessionPipelineFakeError.recognition }
         if let recognitionError { throw recognitionError }
-        let text = texts[min(requests.count, max(texts.count - 1, 0))]
-        requests.append(request)
+        let text = texts[min(requestIndex, max(texts.count - 1, 0))]
         return RecognizedUtterance(
             sourceSegmentID: request.segment.id,
             text: text,

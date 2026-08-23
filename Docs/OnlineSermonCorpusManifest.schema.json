@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:live-church-translation:online-sermon-corpus-manifest:v1",
+  "title": "Online Mandarin Sermon QA Corpus Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "generated_at",
+    "visibility",
+    "research",
+    "policy",
+    "summary",
+    "items",
+    "link_only_candidates"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "manifest_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "visibility": {"const": "gitignored-private-local-qa-only"},
+    "research": {
+      "type": "object",
+      "required": ["sources_reviewed", "unique_urls_after_cross_workflow_deduplication"],
+      "properties": {
+        "sources_reviewed": {"type": "integer", "minimum": 1},
+        "unique_urls_after_cross_workflow_deduplication": {"type": "integer", "minimum": 1}
+      }
+    },
+    "policy": {"type": "object"},
+    "summary": {
+      "type": "object",
+      "required": ["downloaded_items", "downloaded_duration_seconds"],
+      "properties": {
+        "downloaded_items": {"type": "integer", "minimum": 0},
+        "downloaded_duration_seconds": {"type": "number", "minimum": 0}
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/downloadedItem"}
+    },
+    "link_only_candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/linkOnlyItem"}
+    }
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "speaker": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "gender", "gender_confidence", "locale", "locale_confidence"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nullableString"},
+        "gender": {"enum": ["female", "male", "unknown", "multi"]},
+        "gender_confidence": {"enum": ["high", "medium", "low", "unknown"]},
+        "locale": {"type": "string"},
+        "locale_confidence": {"enum": ["high", "medium", "low", "unknown"]}
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["duration_seconds", "format", "byte_size", "sha256", "local_path"],
+      "properties": {
+        "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "format": {"type": "string", "minLength": 1},
+        "sample_rate_hz": {"type": ["integer", "null"], "minimum": 1},
+        "channels": {"type": ["integer", "null"], "minimum": 1},
+        "byte_size": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "local_path": {"type": "string", "pattern": "^\\.artifacts/sermon-corpus/"}
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["kind", "human_translation", "alignment", "local_path", "sha256"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "bilingual_full_manuscript",
+            "bilingual_sermon_notes",
+            "spoken_human_english",
+            "english_source_guide",
+            "chinese_sermon_notes",
+            "none"
+          ]
+        },
+        "human_translation": {"type": "boolean"},
+        "alignment": {"type": "string"},
+        "url": {"$ref": "#/$defs/nullableString"},
+        "urls": {
+          "type": "array",
+          "items": {"type": "string", "format": "uri"}
+        },
+        "local_path": {"$ref": "#/$defs/nullableString"},
+        "sha256": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          ]
+        }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["classification", "evidence_url", "local_qa", "training", "redistribution", "requirements"],
+      "properties": {
+        "classification": {"type": "string", "minLength": 1},
+        "evidence_url": {"type": "string", "format": "uri"},
+        "local_qa": {"const": true},
+        "training": {"type": "boolean"},
+        "redistribution": {"type": "boolean"},
+        "requirements": {"type": "string"}
+      }
+    },
+    "downloadedItem": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "availability",
+        "provider",
+        "source_page_url",
+        "direct_media_url",
+        "speaker",
+        "scene",
+        "audio",
+        "reference",
+        "rights",
+        "testing_tags"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "availability": {"const": "downloaded"},
+        "provider": {"type": "string", "minLength": 1},
+        "source_page_url": {"type": "string", "format": "uri"},
+        "direct_media_url": {"type": "string", "format": "uri"},
+        "speaker": {"$ref": "#/$defs/speaker"},
+        "scene": {"type": "string"},
+        "audio": {"$ref": "#/$defs/audio"},
+        "reference": {"$ref": "#/$defs/reference"},
+        "rights": {"$ref": "#/$defs/rights"},
+        "testing_tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "linkOnlyItem": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "gender", "duration_seconds", "url", "reference", "restriction"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "gender": {"enum": ["female", "male", "unknown", "multi"]},
+        "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "url": {"type": "string", "format": "uri"},
+        "reference": {"type": "string"},
+        "restriction": {"type": "string"}
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
     public let softSplitSilence: Duration
     public let softSplitAfter: Duration
     public let preferredMaximumSegment: Duration
+    public let preferredBoundarySilence: Duration
     public let maximumBoundaryGrace: Duration
     public let postRoll: Duration
     public let minimumVoiced: Duration
@@ -31,6 +32,7 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
         softSplitSilence: Duration = .milliseconds(500),
         softSplitAfter: Duration = .seconds(9),
         preferredMaximumSegment: Duration = .seconds(15),
+        preferredBoundarySilence: Duration = .zero,
         maximumBoundaryGrace: Duration = .milliseconds(1_500),
         postRoll: Duration = .milliseconds(280),
         minimumVoiced: Duration = .milliseconds(240),
@@ -51,6 +53,7 @@ public struct VoiceActivityConfiguration: Sendable, Equatable {
         self.softSplitSilence = softSplitSilence
         self.softSplitAfter = softSplitAfter
         self.preferredMaximumSegment = preferredMaximumSegment
+        self.preferredBoundarySilence = preferredBoundarySilence
         self.maximumBoundaryGrace = maximumBoundaryGrace
         self.postRoll = postRoll
         self.minimumVoiced = minimumVoiced

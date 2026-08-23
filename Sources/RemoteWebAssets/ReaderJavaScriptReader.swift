@@ -49,9 +49,11 @@ enum ReaderJavaScriptReader {
             const target = document.createElement("p");
             target.className = "target";
             target.textContent = entry.targetText;
+            if (entry.targetLanguage) target.lang = entry.targetLanguage;
             const source = document.createElement("p");
             source.className = "source";
             source.textContent = entry.sourceText;
+            if (entry.sourceLanguage) source.lang = entry.sourceLanguage;
             article.append(target, source);
             return article;
           };

@@ -37,7 +37,7 @@ struct RecoveryTestFixture {
         )
     }
 
-    func pendingRecordDirectory() throws -> URL {
+    func pendingRecordDirectory(sequence: UInt64? = nil) throws -> URL {
         let pending =
             root
             .appending(path: sessionID.uuidString.lowercased(), directoryHint: .isDirectory)
@@ -46,7 +46,13 @@ struct RecoveryTestFixture {
             at: pending,
             includingPropertiesForKeys: nil
         )
-        guard let record = contents.first(where: { $0.pathExtension == "utterance" }) else {
+        let prefix = sequence.map { String(format: "%020llu-", $0) }
+        guard
+            let record = contents.first(where: { entry in
+                entry.pathExtension == "utterance"
+                    && (prefix.map { entry.lastPathComponent.hasPrefix($0) } ?? true)
+            })
+        else {
             throw RecoveryFixtureError.recordMissing
         }
         return record

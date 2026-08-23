@@ -12,21 +12,25 @@ import TranslationAPI
         )
 
         #expect(prompt.contains("without summarizing, adding, or omitting"))
+        #expect(prompt.contains("English Standard Version (ESV), Text Edition: 2025"))
         #expect(prompt.contains("John 3:16"))
         #expect(prompt.contains("ONLY output the translated result"))
     }
 
-    @Test func promptTreatsSpokenTaConservativelyWithoutGenderGuessing() {
+    @Test func initialEnglishToChinesePromptPinsShenEditionWithoutInventingText() {
         let prompt = HyMT2PromptBuilder.prompt(
-            source: "他后来继续分享。",
-            targetLanguage: "en",
+            source: "John 3:16 says that God loved the world.",
+            targetLanguage: "zh-Hans",
+            sourceLanguage: "en",
             terms: [],
             strict: false
         )
 
-        #expect(prompt.contains("Spoken Mandarin tā"))
-        #expect(prompt.contains("never infer gender from a name, occupation, or stereotype"))
-        #expect(prompt.contains("natural singular they"))
+        #expect(prompt.contains("CUNPSS-神"))
+        #expect(prompt.contains("新标点和合本，神版"))
+        #expect(prompt.contains("use 神 rather than 上帝"))
+        #expect(prompt.contains("allow 他 or 祂 according to context"))
+        #expect(prompt.contains("never reconstruct or invent verse text"))
     }
 
     @Test func sanitizesNewlinesInsideTerminology() {

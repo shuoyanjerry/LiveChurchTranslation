@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Maps the intentionally tiny remote mutation boundary to the existing live-session API. It reads the current
-Mac-selected audio input at Start time; remote clients cannot choose or change that input.
+Applies the local recording-consent boundary to remote commands. Start always fails closed because a remote
+device cannot accept the Mac recording notice. A locally authorized operator may stop an active session.
 
 ## Public API
 
@@ -15,13 +15,13 @@ Mac-selected audio input at Start time; remote clients cannot choose or change t
 
 ## Threading Model
 
-The immutable adapter forwards asynchronous calls to injected `Sendable` protocols.
+The immutable adapter forwards stop asynchronously to an injected `Sendable` session controller.
 
 ## Failure Modes
 
-A settings-load error rejects Start as unavailable. Session runtime failures remain authoritative session
-state and flow back through the projection.
+Start returns a stable local-authorization error. Stop rejects when no session is active. Session runtime
+state remains authoritative and flows back through the projection.
 
 ## Tests
 
-Focused tests verify current-input selection, Start, Stop, and settings failure without concrete services.
+Focused tests verify remote Start rejection, authorized Stop forwarding, and inactive-session rejection.

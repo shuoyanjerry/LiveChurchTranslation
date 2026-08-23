@@ -23,9 +23,12 @@ struct LocalSharingPopover: View {
                 Text("Local Reader")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(ChurchTheme.ink)
-                Text("Nearby devices can read the English transcript.")
+                Text(LocalSharingPresentation.subtitle)
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
+                Label(LocalSharingPresentation.transportWarning, systemImage: "lock.slash")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(ChurchTheme.warning)
             }
             Spacer()
             Circle()
@@ -74,18 +77,13 @@ struct LocalSharingPopover: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(ChurchTheme.muted)
                 .textSelection(.enabled)
-            if let invitation {
+            if let invitation = LocalSharingPresentation.visibleInvitation(invitation) {
                 invitationView(invitation)
             }
             actionButton(
                 "Invite a Viewer",
                 icon: "person.badge.plus",
-                intent: .createInvitation(role: .viewer)
-            )
-            actionButton(
-                "Invite an Operator (Start/Stop)",
-                icon: "person.badge.key",
-                intent: .createInvitation(role: .operator)
+                intent: .createInvitation(role: LocalSharingPresentation.invitationRole)
             )
             ForEach(peers) { peer in
                 Divider()

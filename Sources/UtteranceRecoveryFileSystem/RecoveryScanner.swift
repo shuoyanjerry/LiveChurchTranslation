@@ -1,6 +1,16 @@
 import Foundation
 import UtteranceRecoveryAPI
 
+struct RecoverySessionIndex: Sendable {
+    let records: [PendingRecordDescriptor]
+    let quarantined: [QuarantinedUtterance]
+}
+
+enum RecoveryRecordLoad: Sendable {
+    case pending(PendingUtteranceRecord)
+    case quarantined(QuarantinedUtterance)
+}
+
 struct RecoveryScanner {
     let layout: RecoveryLayout
     let reader: PendingRecordReader
@@ -10,6 +20,19 @@ struct RecoveryScanner {
     let now: @Sendable () -> Date
 
     func scan(sessionID: UUID) throws -> UtteranceRecoveryBatch {
+        let index = try index(sessionID: sessionID)
+        var records: [PendingUtteranceRecord] = []
+        var quarantined = index.quarantined
+        for descriptor in index.records {
+            switch try load(descriptor, sessionID: sessionID) {
+            case .pending(let record): records.append(record)
+            case .quarantined(let artifact): quarantined.append(artifact)
+            }
+        }
+        return UtteranceRecoveryBatch(pending: records, quarantined: quarantined)
+    }
+
+    func index(sessionID: UUID) throws -> RecoverySessionIndex {
         let pendingDirectory = layout.pendingDirectory(sessionID)
         try writer.createPrivateDirectory(pendingDirectory)
         let urls = try BoundedDirectoryReader(fileManager: fileManager).sessionEntries(
@@ -17,7 +40,7 @@ struct RecoveryScanner {
             sessionID: sessionID,
             maximum: limits.maximumEntriesPerSession
         )
-        var records: [PendingUtteranceRecord] = []
+        var records: [PendingRecordDescriptor] = []
         var quarantined: [QuarantinedUtterance] = []
         for url in urls.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             try process(
@@ -28,19 +51,39 @@ struct RecoveryScanner {
             )
         }
         try writer.synchronizeDirectory(pendingDirectory)
-        records.sort { lhs, rhs in
-            if lhs.id.sequenceNumber == rhs.id.sequenceNumber {
-                return lhs.id.segmentID.uuidString < rhs.id.segmentID.uuidString
-            }
-            return lhs.id.sequenceNumber < rhs.id.sequenceNumber
+        records.sort(by: Self.descriptorsAreOrdered)
+        return RecoverySessionIndex(records: records, quarantined: quarantined)
+    }
+
+    func load(
+        _ descriptor: PendingRecordDescriptor,
+        sessionID: UUID
+    ) throws -> RecoveryRecordLoad {
+        do {
+            return .pending(try reader.read(descriptor))
+        } catch let failure as RecordReadFailure {
+            return .quarantined(
+                try quarantine(
+                    descriptor.directory,
+                    reason: failure.reason,
+                    sessionID: sessionID
+                )
+            )
+        } catch {
+            return .quarantined(
+                try quarantine(
+                    descriptor.directory,
+                    reason: .orphanedArtifact,
+                    sessionID: sessionID
+                )
+            )
         }
-        return UtteranceRecoveryBatch(pending: records, quarantined: quarantined)
     }
 
     private func process(
         _ url: URL,
         sessionID: UUID,
-        records: inout [PendingUtteranceRecord],
+        records: inout [PendingRecordDescriptor],
         quarantined: inout [QuarantinedUtterance]
     ) throws {
         if url.lastPathComponent.hasPrefix(".completed-") {
@@ -59,7 +102,7 @@ struct RecoveryScanner {
                     ? .incompleteWrite : .orphanedArtifact
                 throw RecordReadFailure(reason: reason)
             }
-            records.append(try reader.read(url, for: sessionID))
+            records.append(try reader.inspect(url, for: sessionID))
         } catch let failure as RecordReadFailure {
             quarantined.append(try quarantine(url, reason: failure.reason, sessionID: sessionID))
         } catch {
@@ -77,11 +120,22 @@ struct RecoveryScanner {
         let destination = directory.appending(path: UUID().uuidString.lowercased())
         try fileManager.moveItem(at: url, to: destination)
         try writer.synchronizeDirectory(directory)
+        try writer.synchronizeDirectory(layout.pendingDirectory(sessionID))
         return QuarantinedUtterance(
             sessionID: sessionID,
             originalName: url.lastPathComponent,
             reason: reason,
             quarantinedAt: now()
         )
+    }
+
+    private static func descriptorsAreOrdered(
+        _ lhs: PendingRecordDescriptor,
+        _ rhs: PendingRecordDescriptor
+    ) -> Bool {
+        if lhs.id.sequenceNumber != rhs.id.sequenceNumber {
+            return lhs.id.sequenceNumber < rhs.id.sequenceNumber
+        }
+        return lhs.id.segmentID.uuidString < rhs.id.segmentID.uuidString
     }
 }

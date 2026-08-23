@@ -3,6 +3,12 @@ import TranslationAPI
 
 enum TranslationGuard {
     static func validate(_ target: String, for request: TranslationRequest) throws -> String {
+        // Apple's system Translation API does not expose occurrence-level alignment.
+        // Accepting its output here would silently discard the API contract for
+        // unresolved/verified Mandarin pronouns.
+        guard request.pronounGuidance.isEmpty else {
+            throw TranslationProviderError.invalidOutput
+        }
         let trimmed = target.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw TranslationProviderError.invalidOutput }
 

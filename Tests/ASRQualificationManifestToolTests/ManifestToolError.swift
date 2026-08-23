@@ -1,0 +1,21 @@
+enum ManifestToolError: Error, Equatable {
+    case incompleteEnvironment(missing: [String])
+    case unreadableInput(String)
+    case malformedInput(String)
+    case duplicateJSONField(source: String, path: String, field: String)
+    case unexpectedField(path: String, field: String)
+    case missingField(path: String, field: String)
+    case unsupportedSchema(source: String, version: Int)
+    case invalidValue(path: String)
+    case strategyCount(Int)
+    case duplicateID(source: String, id: String)
+    case corpusIDMismatch
+    case clipSetMismatch(source: String)
+    case referenceTextMismatch(String)
+    case referenceMetadataMismatch(String)
+    case invalidVADFile(String)
+    case invalidBoundary(clipID: String, sequence: Int)
+    case segmentCount(expected: Int, actual: Int)
+    case outputParentMissing(String)
+    case outputWriteFailed(String)
+}

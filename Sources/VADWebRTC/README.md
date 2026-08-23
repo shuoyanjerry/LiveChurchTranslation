@@ -26,8 +26,9 @@ ownership in production.
 ## Failure Modes
 
 Initialization reports invalid settings, native allocation failure, or rejected
-native configuration. Production is deliberately fixed to 16 kHz mono and 20
-ms (320-sample) frames. `classify` throws typed invalid-frame, non-finite-sample,
+native configuration. The injected classifier rejects detector configurations
+other than 16 kHz and 20 ms (320-sample) windows during construction. `classify`
+throws typed invalid-frame, non-finite-sample,
 and native-processing failures. The protocol witness fails loudly if `VADCore`
 ever violates that invariant; `VADCore` pads its one final partial window.
 
@@ -45,7 +46,11 @@ the four-sermon corpus; both classified 642,571 frames as voiced. The upstream
 codeload archive SHA-256 is
 `bf639e4a5bc37b1c90e047c42524e80a1d0cecadeb6e0a61a33580fca22a00ab`.
 
-With the calibrated endpoint policy, the native production composition emitted
-1,063 segments from 14,514 seconds of Mandarin sermon audio; 29 were under two
-seconds and 366 reached the hard cap. The rejected 500 ms preferred-boundary
-variant emitted 1,042/28 but forced 612 hard cuts.
+With short hard-cap tails retained, the native production composition emitted
+1,064 segments from 14,514 seconds of private Mandarin sermon audio; 30 were
+under two seconds and 366 reached the hard cap. A 500 ms preferred-boundary
+variant emitted 1,043/29 and reached 610 hard caps. These are structural proxies,
+not manual semantic-boundary labels. Mode 3 with the same FSM emitted 1,531
+segments, 150 under two seconds, and 63 hard-cap proxies; its fragmentation kept
+it challenger-only. The expanded 7.6456-hour mode 2 replay emitted 2,321 segments,
+156 under two seconds, and 584 hard-cap proxies. Mode 2 stable remains selected.

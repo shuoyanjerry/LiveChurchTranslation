@@ -6,112 +6,60 @@ import TranscriptAPI
 import UtteranceRecoveryAPI
 import VADAPI
 
+enum SessionProcessingPolicy: Sendable {
+    case boundedLive
+    case completeImport
+
+    init(sessionKind: TranscriptSessionKind) {
+        self = sessionKind == .importedAudio ? .completeImport : .boundedLive
+    }
+
+    var requiresCompleteCapture: Bool { self == .completeImport }
+}
+
 public actor LiveSessionCoordinator: LiveSessionController {
     let dependencies: LiveSessionDependencies
     let utteranceProcessor: UtteranceProcessor
     let sessionPreparer: SessionPreparer
     let sessionFinalizer: SessionFinalizer
+    let processingPolicy: SessionProcessingPolicy
     var state = LiveSessionStateMachine()
     var captureTask: Task<Void, Never>?
     var workerTask: Task<Void, Never>?
     var modelTask: Task<Void, Never>?
-    var preparationTask: Task<PreparedSession, any Error>?
+    var captureStartupTask: Task<StartedSessionCapture, any Error>?
+    var preparationTask: Task<PreparedSessionInference, any Error>?
     var stopTask: Task<Void, Never>?
-    var segmentQueue: [PendingUtteranceRecord] = []
+    var segmentQueue = PendingUtteranceQueue()
     var pendingUtterances: [PendingUtterance] = []
+    var unresolvedUtteranceCount = 0
+    var diskRecoveryMode: DiskRecoveryMode?
     var eventHub = SessionEventHub()
     var isActive = false
     var didStartCapture = false
+    var inferenceIsReady = false
+    var captureEndedBeforeInference = false
     var terminalFailureMessage: String?
     var unsavedTranscripts: [UUID: TranscriptSession] = [:]
 
     public init(
         dependencies: LiveSessionDependencies,
-        models: SessionModelDescriptors
+        models: SessionModelDescriptors,
+        sessionKind: TranscriptSessionKind = .live,
+        sessionTitle: String? = nil
     ) {
         self.dependencies = dependencies
+        processingPolicy = SessionProcessingPolicy(sessionKind: sessionKind)
         let processor = UtteranceProcessor(dependencies: dependencies)
         utteranceProcessor = processor
         sessionPreparer = SessionPreparer(
             dependencies: dependencies,
             models: models,
-            utteranceProcessor: processor
+            utteranceProcessor: processor,
+            sessionKind: sessionKind,
+            sessionTitle: sessionTitle
         )
         sessionFinalizer = SessionFinalizer(dependencies: dependencies)
-    }
-}
-
-extension LiveSessionCoordinator {
-    public func start(inputDeviceID: AudioInputID?) async {
-        guard !isActive, stopTask == nil, state.sessionID == nil else { return }
-        let sessionID = UUID()
-        isActive = true
-        didStartCapture = false
-        terminalFailureMessage = nil
-        pendingUtterances.removeAll(keepingCapacity: false)
-        await utteranceProcessor.resetContext()
-        beginSession(id: sessionID)
-        let permission = await dependencies.capture.requestPermission()
-        guard isActive, state.sessionID == sessionID else { return }
-        guard permission == .authorized else {
-            await requestFailure(
-                AudioCaptureError.permissionDenied.localizedDescription,
-                stage: .preparation
-            )
-            return
-        }
-        state.transition(to: .preparingModel, message: "Preparing the Mandarin model…")
-        publishState()
-        let preparation = makePreparationTask(
-            sessionID: sessionID,
-            inputDeviceID: inputDeviceID
-        )
-        preparationTask = preparation
-        do {
-            let prepared = try await preparation.value
-            guard await activate(prepared, sessionID: sessionID) else { return }
-        } catch is CancellationError {
-            guard isActive, state.sessionID == sessionID else { return }
-            await requestFailure("Session preparation was cancelled.", stage: .preparation)
-        } catch {
-            guard isActive, state.sessionID == sessionID else { return }
-            await requestFailure(error.localizedDescription, stage: .preparation)
-        }
-    }
-
-    private func activate(_ prepared: PreparedSession, sessionID: UUID) async -> Bool {
-        guard isActive, state.sessionID == sessionID else {
-            await dependencies.capture.stopCapture()
-            return false
-        }
-        preparationTask = nil
-        didStartCapture = true
-        prepared.recoveryIssues.forEach { state.record($0) }
-        state.setModelStatus(prepared.modelStatus)
-        state.transition(to: .listening, message: "Listening")
-        publishState()
-        captureTask = Task { [weak self] in
-            await self?.consume(prepared.audioStream, sessionID: sessionID)
-        }
-        return true
-    }
-
-    private func beginSession(id: UUID) {
-        state.begin(sessionID: id)
-        publishState()
-        observeModelStatus()
-    }
-
-    private func makePreparationTask(
-        sessionID: UUID,
-        inputDeviceID: AudioInputID?
-    ) -> Task<PreparedSession, any Error> {
-        Task { [sessionPreparer] in
-            try await sessionPreparer.prepare(
-                sessionID: sessionID,
-                inputDeviceID: inputDeviceID
-            )
-        }
     }
 }
 
@@ -125,6 +73,7 @@ extension LiveSessionCoordinator {
         isActive = false
         state.transition(to: .stopping, message: "Finishing the current sentence…")
         publishState()
+        captureStartupTask?.cancel()
         preparationTask?.cancel()
         let task = Task<Void, Never> { [weak self] in
             guard let self else { return }
@@ -153,7 +102,7 @@ extension LiveSessionCoordinator {
     func publish(_ event: LiveSessionEvent) { eventHub.publish(event) }
     private func removeContinuation(_ id: UUID) { eventHub.remove(id) }
 
-    private func observeModelStatus() {
+    func observeModelStatus() {
         modelTask = Task { [weak self, reporter = dependencies.modelReporter] in
             for await status in await reporter.events() {
                 await self?.receiveModelStatus(status)

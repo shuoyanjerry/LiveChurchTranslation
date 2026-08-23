@@ -1,49 +1,82 @@
 import Foundation
 import SessionManagementAPI
+import SettingsAPI
 import TranscriptAPI
 import UtteranceRecoveryAPI
 
+struct RecoverySessionCursor {
+    let id: UUID
+    let stored: TranscriptSession?
+    var entries: [TranscriptEntry]
+    let unavailableMessage: String?
+    var issues: [LiveSessionIssue] = []
+}
+
 extension UtteranceRecoveryReplayer {
-    func replaySession(
-        id: UUID,
-        records: [PendingUtteranceRecord]
-    ) async -> [LiveSessionIssue] {
-        switch await loadSession(id: id, records: records) {
-        case .failed(let issues):
-            return issues
-        case .loaded(let stored):
-            var entries = stored.entries
-            var issues: [LiveSessionIssue] = []
-            for record in records.sorted(by: sequenceOrder) {
-                if let issue = await replay(record, entries: &entries) {
-                    issues.append(issue)
-                }
+    func makeCursor(sessionID: UUID) async -> RecoverySessionCursor {
+        do {
+            guard let stored = try await dependencies.transcriptStore.load(sessionID: sessionID)
+            else {
+                return unavailableCursor(id: sessionID, message: "Transcript missing")
             }
-            if issues.isEmpty {
-                await finish(stored: stored, entries: entries, issues: &issues)
+            guard
+                let mode = TranslationMode(
+                    sourceLanguageTag: stored.sourceLanguage,
+                    targetLanguageTag: stored.targetLanguage
+                )
+            else {
+                return RecoverySessionCursor(
+                    id: sessionID,
+                    stored: stored,
+                    entries: stored.entries,
+                    unavailableMessage: "The saved translation language pair is not supported."
+                )
             }
-            return issues
+            await processor.configure(mode: mode)
+            return RecoverySessionCursor(
+                id: sessionID,
+                stored: stored,
+                entries: stored.entries,
+                unavailableMessage: nil
+            )
+        } catch {
+            return unavailableCursor(id: sessionID, message: error.localizedDescription)
         }
     }
 
-    private func loadSession(
-        id: UUID,
-        records: [PendingUtteranceRecord]
-    ) async -> RecoverySessionLoad {
-        do {
-            guard let stored = try await dependencies.transcriptStore.load(sessionID: id) else {
-                let issues = records.map {
-                    issue(sequence: $0.id.sequenceNumber, message: "Transcript missing")
-                }
-                return .failed(issues)
-            }
-            return .loaded(stored)
-        } catch {
-            let issues = records.map {
-                issue(sequence: $0.id.sequenceNumber, message: error.localizedDescription)
-            }
-            return .failed(issues)
+    func replay(
+        _ record: PendingUtteranceRecord,
+        cursor: inout RecoverySessionCursor
+    ) async {
+        if let message = cursor.unavailableMessage {
+            cursor.issues.append(
+                issue(sequence: record.id.sequenceNumber, message: message)
+            )
+            return
         }
+        if let replayIssue = await replay(record, entries: &cursor.entries) {
+            cursor.issues.append(replayIssue)
+        }
+    }
+
+    func finalize(_ cursor: RecoverySessionCursor) async -> [LiveSessionIssue] {
+        var issues = cursor.issues
+        if issues.isEmpty, let stored = cursor.stored {
+            await finish(stored: stored, entries: cursor.entries, issues: &issues)
+        }
+        return issues
+    }
+
+    private func unavailableCursor(
+        id: UUID,
+        message: String
+    ) -> RecoverySessionCursor {
+        RecoverySessionCursor(
+            id: id,
+            stored: nil,
+            entries: [],
+            unavailableMessage: message
+        )
     }
 
     private func replay(
@@ -53,7 +86,7 @@ extension UtteranceRecoveryReplayer {
         do {
             let context = contextEntries(
                 from: entries,
-                before: Int(clamping: record.id.sequenceNumber)
+                before: record.id.sequenceNumber
             )
             let entry = try await processor.recoverEntry(record, context: context)
             if !entries.contains(where: { $0.id == entry.id }) { entries.append(entry) }
@@ -89,9 +122,4 @@ extension UtteranceRecoveryReplayer {
             )
         }
     }
-}
-
-private enum RecoverySessionLoad {
-    case loaded(TranscriptSession)
-    case failed([LiveSessionIssue])
 }

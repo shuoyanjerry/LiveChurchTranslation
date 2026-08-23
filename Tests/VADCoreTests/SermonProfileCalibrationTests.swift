@@ -16,6 +16,7 @@ import VADAPI
         #expect(configuration.softSplitSilence == .milliseconds(500))
         #expect(configuration.softSplitAfter == .seconds(9))
         #expect(configuration.preferredMaximumSegment == .seconds(15))
+        #expect(configuration.preferredBoundarySilence == .zero)
         #expect(configuration.maximumBoundaryGrace == .milliseconds(1_500))
         #expect(configuration.maximumSegment == .seconds(15))
         #expect(configuration.postRoll == .milliseconds(280))

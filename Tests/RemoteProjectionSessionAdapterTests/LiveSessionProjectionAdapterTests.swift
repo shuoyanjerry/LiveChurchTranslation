@@ -17,6 +17,8 @@ struct LiveSessionProjectionAdapterTests {
                 sessionID: sessionID,
                 phase: .listening,
                 transcript: [entry],
+                sourceLanguage: "zh-Hans",
+                targetLanguage: "en",
                 modelStatus: nil,
                 statusMessage: "Listening"
             )
@@ -34,6 +36,8 @@ struct LiveSessionProjectionAdapterTests {
 
         #expect(await projection.sessions() == [sessionID])
         #expect(await projection.entries().first?.targetText == "Salvation is by grace.")
+        #expect(await projection.entries().first?.sourceLanguage == "zh-Hans")
+        #expect(await projection.entries().first?.targetLanguage == "en")
         #expect(!(await projection.messages()).contains { $0.contains("/Users/") })
     }
 

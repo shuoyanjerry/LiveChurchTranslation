@@ -20,7 +20,7 @@ enum RemoteSessionPresentation {
         case .requestingPermission: "Waiting for microphone permission on the Mac"
         case .preparingModel: "Preparing local models"
         case .listening: "Listening"
-        case .recognizing: "Recognizing Mandarin"
+        case .recognizing: "Recognizing speech"
         case .translating: "Translating"
         case .stopping: "Finishing the current sentence"
         case .failed: "Needs attention on the Mac"

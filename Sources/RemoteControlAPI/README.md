@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Defines the complete and deliberately tiny remote mutation surface. Remote devices can only request
-Start or Stop. Model, microphone, glossary, shutdown, history, and export operations are unrepresentable.
+Defines a deliberately tiny remote command vocabulary. Product policy rejects every remote Start
+because the Mac must present the recording notice; a locally authorized operator may request Stop.
+Model, microphone, glossary, shutdown, history, and export operations are unrepresentable.
 
 ## Public API
 
@@ -25,4 +26,5 @@ unavailability. Callers must render the authoritative state received after a com
 
 ## Tests
 
-Viewer denial and the intentionally closed command vocabulary are covered by pairing/control tests.
+Viewer denial and the intentionally closed command vocabulary are covered by pairing/control tests;
+the session adapter separately proves that Start fails closed.

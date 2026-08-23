@@ -12,11 +12,12 @@ import Testing
         #expect(result.ambiguities == [.competingGenderAnchors])
     }
 
-    @Test func abstainsForTwoSameGenderEntities() {
+    @Test func resolvesGenderWhenEveryExplicitHumanAnchorIsFemale() {
         let result = resolve("姐妹和母亲都到了，所以他开始分享。")
 
-        #expect(result.resolvedText == result.originalText)
-        #expect(result.ambiguities == [.multipleSameGenderAnchors])
+        #expect(result.resolvedText == "姐妹和母亲都到了，所以她开始分享。")
+        #expect(result.corrections.first?.reason == .uniformCurrentTurnGenderAnchors)
+        #expect(result.ambiguities.isEmpty)
     }
 
     @Test func abstainsWhenEligibleCandidatesUseMixedSpellings() {
@@ -53,16 +54,6 @@ import Testing
             #expect(result.resolvedText == text)
             #expect(result.constraints.contains(.lexicalOccurrenceProtected))
         }
-    }
-
-    @Test func protectsDeityReferences() {
-        let current = resolve("祂赐下平安。", turns: [turn(9, "姐妹到了。")])
-        let context = resolve("她赐下平安。", turns: [turn(9, "神爱世人。")])
-
-        #expect(current.constraints.contains(.deityReferenceProtected))
-        #expect(context.constraints.contains(.deityReferenceProtected))
-        #expect(current.corrections.isEmpty)
-        #expect(context.corrections.isEmpty)
     }
 
     @Test func doesNotRewriteObjectOrUseLaterProposalObjectAsAnchor() {
@@ -116,6 +107,15 @@ import Testing
 
         #expect(result.resolvedText == "他会继续。")
         #expect(result.ambiguities == [.noExplicitGenderAnchor])
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
+    }
+
+    @Test func objectPronounIsExplicitlyUnresolvedInsteadOfTrustingGlyph() {
+        let result = resolve("弟兄向她求婚。")
+
+        #expect(result.pronounGuidance.count == 1)
+        #expect(result.pronounGuidance.first?.resolution == .unresolved)
+        #expect(result.pronounGuidance.first?.range == DiscourseTextRange(location: 3, length: 1))
     }
 
     private func resolve(

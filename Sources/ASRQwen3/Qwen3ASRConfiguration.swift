@@ -8,7 +8,7 @@ public struct Qwen3ASRConfiguration: Sendable {
     public let maximumNewTokens: Int
 
     public init(
-        inferenceThreads: Int = 2,
+        inferenceThreads: Int = 4,
         maximumHotwords: Int = 48,
         minimumRMS: Float = 0.003,
         maximumNewTokens: Int = 192

@@ -19,6 +19,10 @@ entries, plus Foundation.
 The actor serializes session mutation and event-continuation ownership. Events
 are yielded to independent `AsyncStream` consumers.
 
+Presentation sequence remains dense even when VAD segments are filtered or fail.
+Callers that know the VAD sequence use the identity-bearing entry constructor so
+presentation gaps cannot change discourse ordering.
+
 ## Failure Modes
 
 Entry construction throws when no session is active. Append is a no-op and

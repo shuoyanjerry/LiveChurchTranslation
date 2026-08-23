@@ -1,3 +1,4 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -46,7 +47,9 @@ struct LiveTranscriptReader: View {
     private var transcriptContent: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             readerToolbar
-            if viewModel.snapshot.transcript.isEmpty { LiveReaderEmptyState() }
+            if viewModel.snapshot.transcript.isEmpty {
+                LiveReaderEmptyState(mode: viewModel.settings.translationMode)
+            }
             ForEach(viewModel.snapshot.transcript) { entry in
                 TranscriptPassage(
                     entry: entry,
@@ -76,14 +79,31 @@ struct LiveTranscriptReader: View {
         .transition(.opacity.combined(with: .move(edge: .bottom)))
         .accessibilityHint("Returns to the newest translated passage")
     }
+}
 
+extension LiveTranscriptReader {
     private var readerToolbar: some View {
-        HStack {
-            Text("CHINESE SERMON · ENGLISH TRANSLATION")
+        HStack(spacing: 18) {
+            Text(modeCaption)
                 .font(.system(size: 13, weight: .semibold))
                 .tracking(0.5)
                 .foregroundStyle(ChurchTheme.olive)
             Spacer()
+            Picker(
+                "Translation mode",
+                selection: Binding(
+                    get: { viewModel.settings.translationMode },
+                    set: { mode in Task { await viewModel.selectTranslationMode(mode) } }
+                )
+            ) {
+                ForEach(TranslationMode.allCases) { mode in
+                    Text(mode.compactDisplayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 220)
+            .disabled(viewModel.sessionControlsLocked)
             Button {
                 let previousSettings = viewModel.settings
                 viewModel.settings.showSourceText.toggle()
@@ -94,7 +114,7 @@ struct LiveTranscriptReader: View {
                 }
             } label: {
                 HStack(spacing: 7) {
-                    Text("Chinese source")
+                    Text("Source")
                     Image(
                         systemName: viewModel.settings.showSourceText
                             ? "checkmark.circle.fill" : "circle"
@@ -105,6 +125,13 @@ struct LiveTranscriptReader: View {
             .buttonStyle(.plain)
             .foregroundStyle(ChurchTheme.olive)
             .accessibilityValue(viewModel.settings.showSourceText ? "Shown" : "Hidden")
+        }
+    }
+
+    private var modeCaption: String {
+        switch viewModel.settings.translationMode {
+        case .mandarinToEnglish: "中文信息 · ENGLISH TRANSLATION"
+        case .englishToSimplifiedChinese: "ENGLISH MESSAGE · 中文翻译"
         }
     }
 
@@ -134,26 +161,4 @@ struct LiveTranscriptReader: View {
 private struct ReaderViewport: Equatable {
     let offsetY: CGFloat
     let isAtLiveEdge: Bool
-}
-
-private struct LiveReaderEmptyState: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: "waveform.and.mic")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(ChurchTheme.olive)
-            Text("A quiet place for the English transcript.")
-                .font(.system(size: 28, weight: .regular, design: .serif))
-                .foregroundStyle(ChurchTheme.ink)
-            Text(
-                "Choose an audio input and start translation. "
-                    + "The complete transcript remains available here and is saved automatically."
-            )
-            .font(.callout)
-            .foregroundStyle(ChurchTheme.muted)
-            .frame(maxWidth: 560, alignment: .leading)
-        }
-        .padding(.leading, 110)
-        .frame(maxWidth: .infinity, minHeight: 390, alignment: .leading)
-    }
 }

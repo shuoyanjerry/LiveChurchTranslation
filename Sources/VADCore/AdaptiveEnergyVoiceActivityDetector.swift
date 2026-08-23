@@ -20,6 +20,14 @@ public actor CalibratedVoiceActivityDetector: VoiceActivityDetector {
         configuration: VoiceActivityConfiguration = .sermon
     ) throws {
         try VoiceActivityConfigurationValidator.validate(configuration)
+        let windowSampleCount = AudioTiming.sampleCount(
+            for: configuration.analysisWindow,
+            sampleRate: configuration.requiredSampleRate
+        )
+        try classifier.validateAnalysisWindow(
+            sampleRate: configuration.requiredSampleRate,
+            sampleCount: windowSampleCount
+        )
         requiredSampleRate = configuration.requiredSampleRate
         stateMachine = VoiceActivityStateMachine(
             configuration: configuration,
@@ -30,15 +38,32 @@ public actor CalibratedVoiceActivityDetector: VoiceActivityDetector {
     public func process(
         _ frame: ProcessedAudioFrame
     ) async throws -> [VoiceActivityEvent] {
+        try validatedBatch(for: frame).voiceEvents
+    }
+
+    package func processWithShadowEvidence(
+        _ frame: ProcessedAudioFrame
+    ) throws -> ObservedVoiceActivityBatch {
+        try validatedBatch(for: frame)
+    }
+
+    private func validatedBatch(
+        for frame: ProcessedAudioFrame
+    ) throws -> ObservedVoiceActivityBatch {
         try ProcessedAudioFrameValidator.validate(
             frame,
             requiredSampleRate: requiredSampleRate,
-            previousTimestamp: stateMachine.lastFrameTimestamp
+            previousTimestamp: stateMachine.lastFrameTimestamp,
+            expectedTimestamp: stateMachine.expectedNextFrameTimestamp
         )
         return stateMachine.process(frame)
     }
 
     public func flush() async -> [VoiceActivityEvent] {
+        stateMachine.flush().voiceEvents
+    }
+
+    package func flushWithShadowEvidence() -> ObservedVoiceActivityBatch {
         stateMachine.flush()
     }
 

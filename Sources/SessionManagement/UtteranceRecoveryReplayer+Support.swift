@@ -17,7 +17,11 @@ extension UtteranceRecoveryReplayer {
                     id: stored.id,
                     startedAt: stored.startedAt,
                     endedAt: Date(),
-                    entries: entries.sorted { $0.sequence < $1.sequence }
+                    entries: presentationEntries(from: entries),
+                    title: stored.title,
+                    kind: stored.kind,
+                    sourceLanguage: stored.sourceLanguage,
+                    targetLanguage: stored.targetLanguage
                 )
             )
         } catch {
@@ -27,19 +31,43 @@ extension UtteranceRecoveryReplayer {
 
     func contextEntries(
         from entries: [TranscriptEntry],
-        before sequence: Int
+        before sourceSequence: UInt64
     ) -> RecoveryProcessingContext {
-        let recent = entries.filter { $0.sequence < sequence }
-            .sorted { $0.sequence < $1.sequence }
-            .suffix(2)
+        let recent = entries.compactMap { entry -> SequencedRecoveryEntry? in
+            guard let sequence = entry.sourceSegmentSequence,
+                sequence < sourceSequence
+            else { return nil }
+            return SequencedRecoveryEntry(sourceSequence: sequence, entry: entry)
+        }
+        .sorted(by: recoverySourceOrder)
+        .suffix(2)
         return RecoveryProcessingContext(
+            presentationSequence: recoveredPresentationSequence(
+                in: entries,
+                sourceSequence: sourceSequence
+            ),
             translation: recent.map {
-                TranslationContextEntry(sourceText: $0.sourceText, targetText: $0.targetText)
+                TranslationContextEntry(
+                    sourceText: $0.entry.sourceText,
+                    targetText: $0.entry.targetText
+                )
             },
             discourse: recent.map {
-                VerifiedDiscourseTurn(sequence: $0.sequence, text: $0.sourceText)
+                VerifiedDiscourseTurn(
+                    sequence: Int(clamping: $0.sourceSequence),
+                    text: $0.entry.sourceText
+                )
             }
         )
+    }
+
+    func presentationEntries(from entries: [TranscriptEntry]) -> [TranscriptEntry] {
+        guard entries.allSatisfy({ $0.sourceSegmentSequence != nil }) else {
+            return entries.sorted(by: presentationOrder)
+        }
+        return entries.sorted(by: sourceOrder).enumerated().map { index, entry in
+            entry.recordingPresentationSequence(index + 1)
+        }
     }
 
     func sequenceOrder(
@@ -48,4 +76,42 @@ extension UtteranceRecoveryReplayer {
     ) -> Bool {
         left.id.sequenceNumber < right.id.sequenceNumber
     }
+
+    private func recoveredPresentationSequence(
+        in entries: [TranscriptEntry],
+        sourceSequence: UInt64
+    ) -> Int {
+        guard entries.allSatisfy({ $0.sourceSegmentSequence != nil }) else {
+            return (entries.map(\.sequence).max() ?? 0) + 1
+        }
+        return entries.compactMap(\.sourceSegmentSequence)
+            .filter { $0 < sourceSequence }.count + 1
+    }
+
+    private func recoverySourceOrder(
+        _ left: SequencedRecoveryEntry,
+        _ right: SequencedRecoveryEntry
+    ) -> Bool {
+        if left.sourceSequence != right.sourceSequence {
+            return left.sourceSequence < right.sourceSequence
+        }
+        return presentationOrder(left.entry, right.entry)
+    }
+
+    private func sourceOrder(_ left: TranscriptEntry, _ right: TranscriptEntry) -> Bool {
+        guard left.sourceSegmentSequence == right.sourceSegmentSequence else {
+            return (left.sourceSegmentSequence ?? 0) < (right.sourceSegmentSequence ?? 0)
+        }
+        return presentationOrder(left, right)
+    }
+
+    private func presentationOrder(_ left: TranscriptEntry, _ right: TranscriptEntry) -> Bool {
+        if left.sequence != right.sequence { return left.sequence < right.sequence }
+        return left.id.uuidString < right.id.uuidString
+    }
+}
+
+private struct SequencedRecoveryEntry {
+    let sourceSequence: UInt64
+    let entry: TranscriptEntry
 }

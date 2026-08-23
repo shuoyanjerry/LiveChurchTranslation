@@ -18,6 +18,7 @@ enum VoiceActivityConfigurationValidator {
             value.preferredMaximumSegment > value.preRoll,
             "preferredMaximumSegment"
         )
+        try require(value.preferredBoundarySilence >= .zero, "preferredBoundarySilence")
         try require(value.maximumBoundaryGrace >= .zero, "maximumBoundaryGrace")
         try require(value.postRoll >= .zero, "postRoll")
         try require(value.minimumVoiced > .zero, "minimumVoiced")

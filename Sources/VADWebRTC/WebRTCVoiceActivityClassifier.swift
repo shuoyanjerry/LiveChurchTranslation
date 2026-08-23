@@ -44,6 +44,24 @@ public final class WebRTCVoiceActivityClassifier: @unchecked Sendable, VoiceActi
         }
     }
 
+    public func validateAnalysisWindow(
+        sampleRate: Double,
+        sampleCount: Int
+    ) throws {
+        guard abs(sampleRate - Double(Self.sampleRate)) <= 0.5 else {
+            throw WebRTCVoiceActivityClassifierError.unsupportedSampleRate(
+                expected: Self.sampleRate,
+                actual: sampleRate
+            )
+        }
+        guard sampleCount == Self.frameSampleCount else {
+            throw WebRTCVoiceActivityClassifierError.invalidFrameLength(
+                expected: Self.frameSampleCount,
+                actual: sampleCount
+            )
+        }
+    }
+
     /// Checks a 20 ms, 16 kHz mono frame and reports native failures.
     public func classify(
         _ samples: [Float],

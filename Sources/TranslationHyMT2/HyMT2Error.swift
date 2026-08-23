@@ -9,6 +9,7 @@ public enum HyMT2Error: LocalizedError, Equatable, Sendable {
     case modelNotLoaded
     case transportFailure(String)
     case malformedResponse
+    case invalidInput
     case invalidOutput([String])
 
     public var errorDescription: String? {
@@ -29,6 +30,8 @@ public enum HyMT2Error: LocalizedError, Equatable, Sendable {
             "The local translation request failed: \(message)"
         case .malformedResponse:
             "The local translation runtime returned a malformed response."
+        case .invalidInput:
+            "The translation input contains reserved prompt-control text."
         case .invalidOutput(let reasons):
             "The translation was rejected: \(reasons.joined(separator: "; "))."
         }

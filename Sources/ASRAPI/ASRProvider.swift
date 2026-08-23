@@ -60,6 +60,7 @@ public enum ASRError: LocalizedError, Sendable {
     case emptyAudio
     case filteredNonspeech
     case promptOnlyHallucination
+    case repetitiveHallucination
     case noSpeechRecognized
     case inferenceFailed(String)
 
@@ -69,7 +70,8 @@ public enum ASRError: LocalizedError, Sendable {
         case .emptyAudio: "The speech segment contains no audio."
         case .filteredNonspeech: "The segment was filtered as nonspeech."
         case .promptOnlyHallucination: "The recognizer output only its prompt terms."
-        case .noSpeechRecognized: "No Chinese speech was recognized."
+        case .repetitiveHallucination: "The recognizer produced pathological repetition."
+        case .noSpeechRecognized: "No speech was recognized."
         case .inferenceFailed(let message): "Speech recognition failed: \(message)"
         }
     }

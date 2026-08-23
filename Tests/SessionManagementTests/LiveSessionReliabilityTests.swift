@@ -7,18 +7,28 @@ import TranscriptAPI
 import VADAPI
 
 @Suite struct LiveSessionReliabilityTests {
-    @Test func stopDuringPreparationCannotReenterListening() async throws {
+    @Test func stopDuringPreparationPreservesEarlyRecordingAndCannotReenterListening() async throws {
         let harness = SessionTestHarness(modelPreparationDelay: .seconds(30))
         let startTask = Task { await harness.coordinator.start(inputDeviceID: nil) }
         try await waitUntil { !(await harness.downloader.requestedDescriptors()).isEmpty }
+
+        let preparing = await harness.coordinator.currentSnapshot()
+        #expect(preparing.phase == .preparingModel)
+        #expect(preparing.captureStartedAt != nil)
+        #expect(preparing.statusMessage.contains("Recording"))
+        #expect((await harness.recordingStore.recordedFrames()).count == 1)
 
         await harness.coordinator.stop()
         await startTask.value
 
         let stopped = await harness.coordinator.currentSnapshot()
         #expect(stopped.phase == .idle)
-        #expect(stopped.finalizationOutcome == .cancelledBeforeCapture)
-        #expect((await harness.capture.capturedRequests()).isEmpty)
+        #expect(stopped.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
+        #expect((await harness.capture.capturedRequests()).count == 1)
+        #expect(await harness.recordingStore.completedSessionCount() == 1)
+        #expect(await harness.recordingStore.discardedSessionCount() == 0)
+        #expect((await harness.recoveryStore.pendingRecords()).count == 1)
+        #expect((await harness.recoveryStore.completedIDs()).isEmpty)
         #expect((await harness.downloader.cancelledDescriptors()).count == 2)
         try await Task.sleep(for: .milliseconds(20))
         #expect((await harness.coordinator.currentSnapshot()).phase == .idle)
@@ -48,7 +58,7 @@ import VADAPI
         #expect((await harness.coordinator.currentSnapshot()).finalizationOutcome == .saved)
     }
 
-    @Test func modelLoadFailureIsTypedAndNeverStartsCapture() async throws {
+    @Test func modelLoadFailureStopsButPreservesRecordingAndDurablePendingAudio() async throws {
         let harness = SessionTestHarness(modelLoadFails: true)
 
         _ = try await harness.run()
@@ -61,10 +71,32 @@ import VADAPI
         #expect(message.contains("failed to load"))
         #expect(snapshot.issues.first?.stage == .preparation)
         #expect(snapshot.issues.first?.isRecoverable == true)
-        #expect(snapshot.finalizationOutcome == .failedBeforeCapture)
-        #expect((await harness.capture.capturedRequests()).isEmpty)
+        #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
+        #expect((await harness.capture.capturedRequests()).count == 1)
+        #expect(await harness.recordingStore.completedSessionCount() == 1)
+        #expect(await harness.recordingStore.discardedSessionCount() == 0)
+        #expect((await harness.recoveryStore.pendingRecords()).count == 1)
+        #expect((await harness.recoveryStore.completedIDs()).isEmpty)
     }
 
+    @Test func currentSessionStagedDuringModelPreparationIsProcessedExactlyOnce() async throws {
+        let harness = SessionTestHarness(
+            modelPreparationDelay: .milliseconds(50),
+            holdsCaptureOpen: true
+        )
+
+        await harness.coordinator.start(inputDeviceID: nil)
+        try await waitUntil { (await harness.asr.receivedRequests()).count == 1 }
+
+        #expect((await harness.asr.receivedRequests()).count == 1)
+        #expect((await harness.translator.receivedRequests()).count == 1)
+        #expect((await harness.recoveryStore.completedIDs()).count == 1)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        await harness.coordinator.stop()
+    }
+}
+
+extension LiveSessionReliabilityTests {
     @Test func recognitionFailureRetainsAudioAndReportsTypedIssue() async throws {
         let harness = SessionTestHarness(recognitionFails: true)
 
@@ -75,7 +107,8 @@ import VADAPI
         #expect(snapshot.issues.first?.utteranceSequence == 1)
         #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
         let pending = await harness.coordinator.pendingUtterances
-        #expect(pending.first?.segment.samples == SessionTestHarness.audioFrame.samples)
+        #expect(pending.first?.sampleCount == SessionTestHarness.audioFrame.samples.count)
+        #expect(pending.first?.sequenceNumber == 1)
         #expect(pending.first?.translatedEntry == nil)
     }
 
@@ -96,84 +129,51 @@ import VADAPI
         #expect((await harness.coordinator.unsavedTranscripts).count == 1)
         #expect((await harness.store.finishedSessions()).isEmpty)
     }
-}
 
-@Suite struct LiveSessionRecoveryReliabilityTests {
-    @Test func nextStartReplaysCrashStagedAudioBeforeListening() async throws {
-        let harness = SessionTestHarness()
-        let priorSessionID = UUID()
-        await harness.store.begin(
-            TranscriptSession(
-                id: priorSessionID,
-                startedAt: Date(timeIntervalSince1970: 1),
-                endedAt: nil,
-                entries: []
-            )
-        )
-        let segment = SpeechSegment(
-            sequenceNumber: 7,
-            samples: SessionTestHarness.audioFrame.samples,
-            sampleRate: 16_000,
-            startedAt: .zero,
-            endedAt: .milliseconds(20),
-            endReason: .endOfStream
-        )
-        _ = await harness.recoveryStore.stage(segment, for: priorSessionID)
+    @Test func recordingFinishFailureRepairsInsteadOfDiscardingAudio() async throws {
+        let harness = SessionTestHarness(recordingFinishFails: true)
 
         _ = try await harness.run()
 
-        #expect((await harness.translator.receivedRequests()).count == 2)
-        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
-        #expect((await harness.recoveryStore.completedIDs()).count == 2)
-        #expect((await harness.store.finishedSessions()).contains { $0.id == priorSessionID })
+        #expect(await harness.recordingStore.repairedSessionCount() == 1)
+        #expect(await harness.recordingStore.discardedSessionCount() == 0)
+        let snapshot = await harness.coordinator.currentSnapshot()
+        #expect(snapshot.phase == .idle)
+        #expect(snapshot.finalizationOutcome == .saved)
+        #expect(snapshot.issues.contains { $0.message.contains("recording was recovered") })
     }
 
-    @Test func recoveryNeverUsesFutureTranscriptAsContext() async throws {
-        let harness = SessionTestHarness()
-        let priorSessionID = UUID()
-        await harness.store.begin(
-            TranscriptSession(
-                id: priorSessionID,
-                startedAt: Date(timeIntervalSince1970: 1),
-                endedAt: nil,
-                entries: []
-            )
-        )
-        await harness.store.seed(
-            TranscriptEntry(
-                sequence: 10,
-                sourceText: "未来的姐妹会分享。",
-                targetText: "A sister will share later.",
-                startedMilliseconds: 1_000,
-                endedMilliseconds: 2_000,
-                translationMilliseconds: 10
-            )
-        )
-        let segment = SpeechSegment(
-            sequenceNumber: 7,
-            samples: SessionTestHarness.audioFrame.samples,
-            sampleRate: 16_000,
-            startedAt: .zero,
-            endedAt: .milliseconds(20),
-            endReason: .endOfStream
-        )
-        _ = await harness.recoveryStore.stage(segment, for: priorSessionID)
+    @Test func recordingAppendFailureRepairsPartialAndNeverDiscardsIt() async throws {
+        let harness = SessionTestHarness(recordingAppendFails: true)
 
         _ = try await harness.run()
 
-        let recoveryRequest = try #require(await harness.translator.receivedRequests().first)
-        #expect(recoveryRequest.context.isEmpty)
-    }
-}
-
-extension LiveSessionReliabilityTests {
-    private func waitUntil(
-        _ condition: @escaping @Sendable () async -> Bool
-    ) async throws {
-        for _ in 0..<100 {
-            if await condition() { return }
-            try await Task.sleep(for: .milliseconds(10))
+        #expect(await harness.recordingStore.repairedSessionCount() == 1)
+        #expect(await harness.recordingStore.discardedSessionCount() == 0)
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected the interrupted live capture to be reported as failed")
+            return
         }
-        throw SessionEventWaitError.timedOut
+        #expect(message.contains("Injected write interruption"))
+        #expect(snapshot.finalizationOutcome == .saved)
+    }
+
+    @Test func unrepairedRecordingFailureStillRetainsPartialArtifact() async throws {
+        let harness = SessionTestHarness(
+            recordingFinishFails: true,
+            recordingRepairFails: true
+        )
+
+        _ = try await harness.run()
+
+        #expect(await harness.recordingStore.repairedSessionCount() == 0)
+        #expect(await harness.recordingStore.discardedSessionCount() == 0)
+        let snapshot = await harness.coordinator.currentSnapshot()
+        guard case .failed(let message) = snapshot.phase else {
+            Issue.record("Expected an unrepaired recording to fail explicitly")
+            return
+        }
+        #expect(message.contains("recoverable partial form"))
     }
 }
