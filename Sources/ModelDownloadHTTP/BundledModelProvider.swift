@@ -26,7 +26,7 @@ public actor BundledModelProvider: ModelDownloadProvider {
     public func ensureAvailable(_ descriptor: ModelDescriptor) async throws -> URL {
         if let verified = verifiedLocations[descriptor.id] { return verified }
         guard let manifest = manifests[descriptor.id], manifest.descriptor == descriptor else {
-            return try await fail(descriptor, with: .manifestMismatch)
+            try await fail(descriptor, with: .manifestMismatch)
         }
         do {
             let location = try await verify(manifest)
@@ -36,9 +36,9 @@ public actor BundledModelProvider: ModelDownloadProvider {
         } catch is CancellationError {
             throw ModelDownloadError.cancelled
         } catch let error as BundledModelError {
-            return try await fail(descriptor, with: error)
+            try await fail(descriptor, with: error)
         } catch {
-            return try await fail(descriptor, with: .unreadableBundle)
+            try await fail(descriptor, with: .unreadableBundle)
         }
     }
 
