@@ -1,3 +1,4 @@
+import ScriptureAPI
 import Testing
 import TranslationAPI
 @testable import TranslationHyMT2
@@ -12,7 +13,10 @@ import TranslationAPI
         )
 
         #expect(prompt.contains("without summarizing, adding, or omitting"))
-        #expect(prompt.contains("English Standard Version (ESV), Text Edition: 2025"))
+        let edition = ScriptureEditionPair.production.english
+        #expect(prompt.contains(edition.fullName))
+        #expect(prompt.contains(edition.editionLabel))
+        #expect(prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
         #expect(prompt.contains("John 3:16"))
         #expect(prompt.contains("ONLY output the translated result"))
     }
@@ -26,8 +30,11 @@ import TranslationAPI
             strict: false
         )
 
-        #expect(prompt.contains("CUNPSS-神"))
-        #expect(prompt.contains("新标点和合本，神版"))
+        let edition = ScriptureEditionPair.production.simplifiedChinese
+        #expect(prompt.contains(edition.abbreviation))
+        #expect(prompt.contains(edition.fullName))
+        #expect(prompt.contains(edition.officialEditionReference))
+        #expect(prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
         #expect(prompt.contains("use 神 rather than 上帝"))
         #expect(prompt.contains("allow 他 or 祂 according to context"))
         #expect(prompt.contains("never reconstruct or invent verse text"))
