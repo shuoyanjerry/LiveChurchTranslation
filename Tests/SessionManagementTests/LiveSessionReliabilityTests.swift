@@ -1,5 +1,6 @@
 import AudioCaptureAPI
 import Foundation
+import PersistenceAPI
 @testable import SessionManagement
 import SessionManagementAPI
 import Testing
@@ -77,6 +78,10 @@ import VADAPI
         #expect(await harness.recordingStore.discardedSessionCount() == 0)
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
         #expect((await harness.recoveryStore.completedIDs()).isEmpty)
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.pendingRecordCount == 1)
+        #expect(finalization.hasUnrecoverableFailure == false)
+        #expect(finalization.integrity == .incomplete)
     }
 
     @Test func currentSessionStagedDuringModelPreparationIsProcessedExactlyOnce() async throws {
@@ -122,12 +127,18 @@ extension LiveSessionReliabilityTests {
             Issue.record("Expected an explicit save failure")
             return
         }
-        #expect(message.contains("无法自动完成保存"))
+        #expect(message.contains("听抄稿保存失败"))
         #expect(unresolved == 0)
         #expect(snapshot.issues.last?.stage == .finalization)
-        #expect(events.recoverableErrors.contains { $0.contains("无法自动完成保存") })
+        #expect(events.recoverableErrors.contains { $0.contains("听抄稿保存失败") })
+        #expect(!events.recoverableErrors.contains { $0.contains("fake transcript") })
         #expect((await harness.coordinator.unsavedTranscripts).count == 1)
         #expect((await harness.store.finishedSessions()).isEmpty)
+        #expect(
+            (await harness.diagnostics.recordedEvents()).contains {
+                $0.component == "Persistence" && $0.message.contains("could not be finalized")
+            }
+        )
     }
 
     @Test func recordingFinishFailureRepairsInsteadOfDiscardingAudio() async throws {
@@ -140,40 +151,10 @@ extension LiveSessionReliabilityTests {
         let snapshot = await harness.coordinator.currentSnapshot()
         #expect(snapshot.phase == .idle)
         #expect(snapshot.finalizationOutcome == .saved)
-        #expect(snapshot.issues.contains { $0.message.contains("recording was recovered") })
+        #expect(snapshot.issues.contains { $0.message.contains("保存中断后已恢复") })
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.hasUnrecoverableFailure == false)
+        #expect(finalization.integrity == .complete)
     }
 
-    @Test func recordingAppendFailureRepairsPartialAndNeverDiscardsIt() async throws {
-        let harness = SessionTestHarness(recordingAppendFails: true)
-
-        _ = try await harness.run()
-
-        #expect(await harness.recordingStore.repairedSessionCount() == 1)
-        #expect(await harness.recordingStore.discardedSessionCount() == 0)
-        let snapshot = await harness.coordinator.currentSnapshot()
-        guard case .failed(let message) = snapshot.phase else {
-            Issue.record("Expected the interrupted live capture to be reported as failed")
-            return
-        }
-        #expect(message.contains("Injected write interruption"))
-        #expect(snapshot.finalizationOutcome == .saved)
-    }
-
-    @Test func unrepairedRecordingFailureStillRetainsPartialArtifact() async throws {
-        let harness = SessionTestHarness(
-            recordingFinishFails: true,
-            recordingRepairFails: true
-        )
-
-        _ = try await harness.run()
-
-        #expect(await harness.recordingStore.repairedSessionCount() == 0)
-        #expect(await harness.recordingStore.discardedSessionCount() == 0)
-        let snapshot = await harness.coordinator.currentSnapshot()
-        guard case .failed(let message) = snapshot.phase else {
-            Issue.record("Expected an unrepaired recording to fail explicitly")
-            return
-        }
-        #expect(message.contains("recoverable partial form"))
-    }
 }

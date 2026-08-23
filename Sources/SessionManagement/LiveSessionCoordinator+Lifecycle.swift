@@ -106,9 +106,6 @@ extension LiveSessionCoordinator {
     }
 
     func requestFailure(_ message: String, stage: LiveSessionIssueStage) async {
-        if didStartCapture {
-            hasUnrecoverableSessionFailure = true
-        }
         terminalFailureMessage = message
         recordIssue(stage: stage, message: message, isRecoverable: true)
         await stop()

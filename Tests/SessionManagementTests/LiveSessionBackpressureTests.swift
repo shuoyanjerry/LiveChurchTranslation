@@ -1,5 +1,6 @@
 import AudioCaptureAPI
 import Foundation
+import PersistenceAPI
 @testable import SessionManagement
 import SessionManagementAPI
 import Testing
@@ -32,7 +33,7 @@ import Testing
         #expect((await harness.asr.receivedRequests()).count <= 1)
         #expect(events.recoverableErrors.contains { $0.contains("保存到磁盘") })
         #expect(snapshot.issues.contains { $0.message.contains("会议完整录音") })
-        #expect(snapshot.statusMessage.contains("句等待恢复"))
+        #expect(snapshot.statusMessage.contains("句待恢复"))
         #expect(
             snapshot.finalizationOutcome
                 == .savedWithUnresolvedUtterances(count: pending.count)
@@ -51,10 +52,18 @@ import Testing
         #expect((await harness.recordingStore.recordedFrames()) == [SessionTestHarness.audioFrame])
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect(await harness.coordinator.unresolvedUtteranceCount == 1)
+        let snapshot = await harness.coordinator.currentSnapshot()
         #expect(
-            (await harness.coordinator.currentSnapshot()).finalizationOutcome
-                == .savedWithUnresolvedUtterances(count: 1)
+            snapshot.finalizationOutcome
+                == .savedWithIncompleteTranscript(
+                    rejectedUtteranceCount: 0,
+                    recoverableUtteranceCount: 1
+                )
         )
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.pendingRecordCount == 0)
+        #expect(finalization.hasUnrecoverableFailure)
+        #expect(finalization.integrity == .incomplete)
         let statuses = events.compactMap { event -> String? in
             guard case .stateChanged(let snapshot) = event else { return nil }
             return snapshot.statusMessage
