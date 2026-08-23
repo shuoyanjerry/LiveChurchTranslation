@@ -1,5 +1,6 @@
 import Foundation
 import PersistenceAPI
+import TranscriptAPI
 
 extension FileTranscriptStore {
     func enforcePrivatePermissions(sessionID: UUID) throws {
