@@ -1,5 +1,6 @@
 import AudioCaptureAPI
 import ModelRuntimeAPI
+@testable import SessionManagement
 import SessionManagementAPI
 
 extension SessionTestHarness {
