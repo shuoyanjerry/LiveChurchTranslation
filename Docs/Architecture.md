@@ -126,7 +126,7 @@ inserted into transcript text or presented as an unsolicited alert.
 Passage time offsets are durable transcript data. Native and browser readers may hide their
 timestamp rail independently; that presentation preference never removes or rewrites stored timing.
 
-The sentence path is ordered deliberately:
+The speech-segment path is ordered deliberately:
 
 1. Capture copies audio; processing emits normalized mono frames to the injected VAD. The
    production composition injects pinned libfvad mode 2 plus the measured strong-energy
@@ -145,7 +145,8 @@ The sentence path is ordered deliberately:
    correction. Stable VAD source-segment identity, rather than dense UI ordinals, orders the bounded
    context. Every path carries raw source text plus any accepted changes and their evidence into
    `TranscriptEntry`; ambiguity causes abstention, not a guess.
-4. Hy-MT2 receives matched glossary terms and at most the latest two prior finalized,
+4. Hy-MT2 receives the complete recognized text for the current VAD segment in one
+   request, matched glossary terms, and at most the latest two prior finalized,
    validator-approved, durably appended pairs. Context is marked as non-output background;
    only the separately delimited current source may be translated. Occurrence-level,
    request-nonce-bound proof blocks carry verified pronoun decisions through initial and
@@ -159,7 +160,8 @@ The sentence path is ordered deliberately:
    Scripture-reference, and pronoun findings trigger one strict retry; a safe non-empty candidate
    is still returned in full with backend-only review codes. These checks are defect detectors,
    not substitutes for bilingual review.
-6. Every safe entry is appended and synchronized before publication. Only entries without review
+6. The complete safe translation is appended as one entry and synchronized before publication.
+   Only entries without review
    findings enter the rolling translation context; review metadata is never rendered to readers.
 7. The recovery record is marked complete. A crash before this step causes idempotent
    replay on the next preparation; unreadable artifacts move to quarantine and surface as
@@ -172,7 +174,7 @@ callers. The remaining labelled-corpus release gate is recorded in
 
 Stop first prevents new capture, waits for capture callbacks, flushes VAD, drains staged
 segments, and then finalizes the transcript. Typed finalization outcomes distinguish a
-saved session, unresolved sentences, cancellation before capture, and save failure.
+saved session, unresolved speech segments, cancellation before capture, and save failure.
 
 ## LAN event flow and trust boundary
 

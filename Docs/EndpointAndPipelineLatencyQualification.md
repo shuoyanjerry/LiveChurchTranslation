@@ -4,7 +4,7 @@
 
 This document defines how endpoint and source-to-target display latency must be measured for both
 supported directions: Mandarin-to-English and English-to-Simplified-Chinese. It does not claim that the
-current build meets the one-to-three second sentence-end target.
+current build meets the one-to-three second speech-end target.
 
 ## One Correlation ID, One Monotonic Timeline
 
@@ -50,7 +50,7 @@ memory-pressure state belong on the trace or its session metadata.
 ## Endpoint Metrics
 
 The replay harness reports `emissionLagAfterRetainedAudio`. This is useful for
-detecting policy regressions, but it is not sentence-end latency: post-roll and
+detecting policy regressions, but it is not utterance-end latency: post-roll and
 trimming change the retained endpoint.
 
 True endpoint latency requires a locked evaluation set with a human timestamp

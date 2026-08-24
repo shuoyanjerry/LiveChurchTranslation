@@ -31,17 +31,12 @@ struct LiveSessionProjectionAdapterTests {
 
         await adapter.start()
         try await waitUntil { await projection.entries().count == 1 }
+        await controller.emit(.transcriptAppended(entry))
         await controller.emit(.stateChanged(makeFailedSnapshot(entry: entry)))
         try await waitUntil { await projection.messages().last == "已暂停" }
 
         #expect(await projection.sessions() == [sessionID])
-        let languagePair = try #require(await projection.languagePairs().first)
-        #expect(languagePair.0 == "zh-Hans")
-        #expect(languagePair.1 == "en")
-        #expect(await projection.entries().first?.targetText == "Salvation is by grace.")
-        #expect(await projection.entries().first?.sourceLanguage == "zh-Hans")
-        #expect(await projection.entries().first?.targetLanguage == "en")
-        #expect(await projection.entries().first?.startedMilliseconds == 0)
+        try await assertProjectedEntry(projection)
         #expect((await projection.messages()).contains("直播中"))
         #expect(!(await projection.messages()).contains { $0.contains("/Users/") })
     }
@@ -75,6 +70,21 @@ struct LiveSessionProjectionAdapterTests {
 }
 
 extension LiveSessionProjectionAdapterTests {
+    private func assertProjectedEntry(_ projection: ProjectionUpdateFake) async throws {
+        let entries = await projection.entries()
+        let entry = try #require(entries.first)
+        let languagePair = try #require(await projection.languagePairs().first)
+
+        #expect(entries.count == 1)
+        #expect(languagePair.0 == "zh-Hans")
+        #expect(languagePair.1 == "en")
+        #expect(entry.sourceText == "救恩本乎恩典。基督是主。我们一同祷告。")
+        #expect(entry.targetText == "Salvation is by grace. Christ is Lord. Let us pray together.")
+        #expect(entry.sourceLanguage == "zh-Hans")
+        #expect(entry.targetLanguage == "en")
+        #expect(entry.startedMilliseconds == 0)
+    }
+
     private func emitRecognitionFailures(
         _ controller: ProjectionSessionControllerFake,
         sessionID: UUID
@@ -122,8 +132,8 @@ extension LiveSessionProjectionAdapterTests {
     private func makeEntry() -> TranscriptEntry {
         TranscriptEntry(
             sequence: 1,
-            sourceText: "救恩本乎恩典",
-            targetText: "Salvation is by grace.",
+            sourceText: "救恩本乎恩典。基督是主。我们一同祷告。",
+            targetText: "Salvation is by grace. Christ is Lord. Let us pray together.",
             startedMilliseconds: 0,
             endedMilliseconds: 1_000,
             translationMilliseconds: 50

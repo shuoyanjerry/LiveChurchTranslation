@@ -90,11 +90,11 @@ extension LiveSessionCoordinator {
         guard diskRecoveryMode != nil else {
             let recovery =
                 unresolvedUtteranceCount > 0
-                ? "\(unresolvedUtteranceCount) 句等待恢复"
+                ? "\(unresolvedUtteranceCount) 段等待恢复"
                 : nil
             let rejected =
                 terminalRejectedSentenceCount > 0
-                ? "\(terminalRejectedSentenceCount) 句未通过质量校验"
+                ? "\(terminalRejectedSentenceCount) 段未通过质量校验"
                 : nil
             let details = [recovery, rejected].compactMap { $0 }
             return details.isEmpty ? normal : "\(normal) · \(details.joined(separator: " · "))"
@@ -111,7 +111,7 @@ extension LiveSessionCoordinator {
 
     private var backlogRecoveryMessage: String {
         "实时翻译因待处理内容达到安全上限而暂停。"
-            + "未完成的语句已保存到磁盘，稍后会自动恢复；会议完整录音仍在继续。"
+            + "未完成的片段已保存到磁盘，稍后会自动恢复；会议完整录音仍在继续。"
     }
 
     private var recoveryCaptureStatusMessage: String {
@@ -119,7 +119,7 @@ extension LiveSessionCoordinator {
         case .recoveryStoreFailure:
             "录音继续进行。请稍后使用已保存的会议录音重试未完成的听抄。"
         case .backlog, .processingFailure:
-            "录音继续进行。未完成的语句将在下次启动时自动恢复。"
+            "录音继续进行。未完成的片段将在下次启动时自动恢复。"
         case nil:
             "正在聆听"
         }

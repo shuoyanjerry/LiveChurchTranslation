@@ -89,7 +89,7 @@ extension LiveSessionCoordinator {
         }
         return SessionCompletion(
             outcome: .savedWithUnresolvedUtterances(count: unresolved),
-            message: "听抄稿已保存，仍有 \(unresolved) 句待恢复",
+            message: "听抄稿已保存，仍有 \(unresolved) 段待恢复",
             errorMessage: nil
         )
     }
@@ -99,7 +99,7 @@ extension LiveSessionCoordinator {
         hasOtherIncompleteData: Bool
     ) -> String {
         if rejected > 0 {
-            return "听抄稿已保存，其中 \(rejected) 句未通过质量校验"
+            return "听抄稿已保存，其中 \(rejected) 段未通过质量校验"
         }
         if hasOtherIncompleteData {
             return "听抄稿已保存，但存在无法自动恢复的未完整内容"

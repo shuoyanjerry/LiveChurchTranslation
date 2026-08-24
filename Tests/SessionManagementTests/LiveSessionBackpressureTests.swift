@@ -33,7 +33,7 @@ import Testing
         #expect((await harness.asr.receivedRequests()).count <= 1)
         #expect(events.recoverableErrors.contains { $0.contains("保存到磁盘") })
         #expect(snapshot.issues.contains { $0.message.contains("会议完整录音") })
-        #expect(snapshot.statusMessage.contains("句待恢复"))
+        #expect(snapshot.statusMessage.contains("段待恢复"))
         #expect(
             snapshot.finalizationOutcome
                 == .savedWithUnresolvedUtterances(count: pending.count)

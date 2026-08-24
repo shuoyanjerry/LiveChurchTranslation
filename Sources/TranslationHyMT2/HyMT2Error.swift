@@ -32,7 +32,7 @@ public enum HyMT2Error: LocalizedError, Equatable, TranslationFailureImpactProvi
         case .malformedResponse:
             "本地翻译服务返回了格式错误的响应。"
         case .invalidInput:
-            "翻译原文含有保留的提示控制文本，已拒绝该句。"
+            "翻译原文含有保留的提示控制文本，已拒绝该片段。"
         case .invalidOutput(let reasons):
             "翻译模型没有返回可安全显示的译文：\(reasons.joined(separator: "；"))。原文已保留等待重译。"
         }

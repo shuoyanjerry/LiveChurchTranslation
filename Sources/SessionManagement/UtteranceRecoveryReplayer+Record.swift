@@ -12,23 +12,7 @@ extension UtteranceRecoveryReplayer {
     ) async -> RecoveryRecordReplayResult {
         do {
             let rejections = try await replaySentences(record, entries: &entries)
-            let resolution: UtteranceRecoveryResolution =
-                rejections.isEmpty
-                ? .completed
-                : .terminallyRejected(rejections.map(\.receipt))
-            try await dependencies.recoveryStore.resolve(record.id, as: resolution)
-            return RecoveryRecordReplayResult(
-                issues: rejections.map {
-                    issue(
-                        stage: $0.failure.stage,
-                        sequence: record.id.sequenceNumber,
-                        message: $0.failure.message,
-                        isRecoverable: false
-                    )
-                },
-                isBlocked: false,
-                terminalRejectionCount: rejections.count
-            )
+            return try await resolvedReplayResult(for: record, rejections: rejections)
         } catch is CancellationError {
             return .blockedWithoutIssue
         } catch let failure as UtteranceProcessingFailure {
@@ -48,13 +32,16 @@ extension UtteranceRecoveryReplayer {
         entries: inout [TranscriptEntry]
     ) async throws -> [TerminalSentenceRejection] {
         let context = contextEntries(from: entries, before: record.id.sequenceNumber)
-        let inputs = try await processor.recognize(
+        let recognizedInputs = try await processor.recognize(
             record.segment,
             discourseContext: context.discourse
         )
-        guard !inputs.isEmpty else {
-            throw terminalRecognitionFailure(.noProcessableSentences)
-        }
+        let inputs = try await processor.recoveryInputs(
+            for: recognizedInputs,
+            record: record,
+            persistedEntries: entries
+        )
+        try requireProcessableInputs(inputs)
         var translationContext = context.translation
         var rejections: [TerminalSentenceRejection] = []
         for (ordinal, input) in inputs.enumerated() {
@@ -78,6 +65,37 @@ extension UtteranceRecoveryReplayer {
             }
         }
         return rejections
+    }
+
+    private func requireProcessableInputs(
+        _ inputs: [UtteranceProcessor.RecognizedInput]
+    ) throws {
+        guard !inputs.isEmpty else {
+            throw terminalRecognitionFailure(.noProcessableSentences)
+        }
+    }
+
+    private func resolvedReplayResult(
+        for record: PendingUtteranceRecord,
+        rejections: [TerminalSentenceRejection]
+    ) async throws -> RecoveryRecordReplayResult {
+        let resolution: UtteranceRecoveryResolution =
+            rejections.isEmpty
+            ? .completed
+            : .terminallyRejected(rejections.map(\.receipt))
+        try await dependencies.recoveryStore.resolve(record.id, as: resolution)
+        return RecoveryRecordReplayResult(
+            issues: rejections.map {
+                issue(
+                    stage: $0.failure.stage,
+                    sequence: record.id.sequenceNumber,
+                    message: $0.failure.message,
+                    isRecoverable: false
+                )
+            },
+            isBlocked: false,
+            terminalRejectionCount: rejections.count
+        )
     }
 
     private func terminalRecognitionFailure(_ error: ASRError) -> UtteranceProcessingFailure {

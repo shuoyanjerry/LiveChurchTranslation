@@ -113,7 +113,7 @@ extension LiveSessionCoordinator {
             return
         }
         isActive = false
-        state.transition(to: .stopping, message: "正在完成当前语句…")
+        state.transition(to: .stopping, message: "正在完成当前片段…")
         publishState()
         captureStartupTask?.cancel()
         preparationTask?.cancel()

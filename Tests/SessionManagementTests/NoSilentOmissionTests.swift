@@ -42,7 +42,7 @@ struct NoSilentOmissionTests {
         )
     }
 
-    @Test("Recognition that splits into no sentence receives a stable terminal code")
+    @Test("Whitespace-only recognition receives a stable terminal code")
     func nonprocessableRecognitionRetainsTerminalEvidence() async throws {
         let harness = SessionTestHarness(recognizedText: " \n\t ")
 

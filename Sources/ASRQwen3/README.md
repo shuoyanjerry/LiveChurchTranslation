@@ -3,8 +3,8 @@
 ## Purpose
 
 Adapts the replaceable `ASRProvider` boundary to Qwen3-ASR INT8 through the
-official sherpa-onnx Swift package. It performs sentence-level offline decoding
-after VAD closes a segment; no network access occurs during inference.
+official sherpa-onnx Swift package. It performs offline decoding of each closed
+VAD segment; no network access occurs during inference.
 
 ## Public API
 

@@ -36,7 +36,8 @@ struct PendingRecordReader {
         return PendingUtteranceRecord(
             id: descriptor.id,
             segment: segment,
-            stagedAt: descriptor.stagedAt
+            stagedAt: descriptor.stagedAt,
+            processingTopology: descriptor.metadata.processingTopology
         )
     }
 
@@ -45,7 +46,10 @@ struct PendingRecordReader {
         directory: URL,
         sessionID: UUID
     ) throws {
-        guard metadata.schemaVersion == PendingMetadata.currentSchemaVersion else {
+        guard
+            metadata.schemaVersion == PendingMetadata.unversionedSchemaVersion
+                || metadata.schemaVersion == PendingMetadata.currentSchemaVersion
+        else {
             throw RecordReadFailure(reason: .unsupportedSchema)
         }
         guard

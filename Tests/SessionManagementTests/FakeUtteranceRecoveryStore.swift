@@ -18,6 +18,21 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
         _ segment: SpeechSegment,
         for sessionID: UUID
     ) throws -> PendingUtteranceRecord {
+        try stage(segment, for: sessionID, processingTopology: .segmentEntry)
+    }
+
+    func stageLegacySentenceEntries(
+        _ segment: SpeechSegment,
+        for sessionID: UUID
+    ) throws -> PendingUtteranceRecord {
+        try stage(segment, for: sessionID, processingTopology: .unversionedV1)
+    }
+
+    private func stage(
+        _ segment: SpeechSegment,
+        for sessionID: UUID,
+        processingTopology: UtteranceProcessingTopology
+    ) throws -> PendingUtteranceRecord {
         stageAttempts += 1
         if stageFails { throw FakeUtteranceRecoveryError.stageFailed }
         let id = PendingUtteranceID(
@@ -25,7 +40,12 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
             segmentID: segment.id,
             sequenceNumber: segment.sequenceNumber
         )
-        let record = PendingUtteranceRecord(id: id, segment: segment, stagedAt: Date())
+        let record = PendingUtteranceRecord(
+            id: id,
+            segment: segment,
+            stagedAt: Date(),
+            processingTopology: processingTopology
+        )
         records[id] = record
         return record
     }
@@ -90,7 +110,9 @@ actor FakeUtteranceRecoveryStore: UtteranceRecoveryStore {
         resolutions.removeAll { $0.0.sessionID == sessionID }
         completed.removeAll { $0.sessionID == sessionID }
     }
+}
 
+extension FakeUtteranceRecoveryStore {
     func pendingRecords() -> [PendingUtteranceRecord] { Array(records.values) }
     func completedIDs() -> [PendingUtteranceID] { completed }
     func terminalRejections() -> [(PendingUtteranceID, [UtteranceRejectionReceipt])] {
@@ -150,6 +172,6 @@ private enum FakeUtteranceRecoveryError: LocalizedError {
     case stageFailed
 
     var errorDescription: String? {
-        "The fake recovery store could not stage the sentence."
+        "The fake recovery store could not stage the segment."
     }
 }

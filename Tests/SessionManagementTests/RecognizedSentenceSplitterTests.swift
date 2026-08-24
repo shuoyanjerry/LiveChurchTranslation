@@ -4,7 +4,8 @@ import Foundation
 import Testing
 import TranscriptAPI
 
-@Suite struct RecognizedSentenceSplitterTests {
+@Suite("Legacy sentence-split recovery compatibility")
+struct RecognizedSentenceSplitterTests {
     @Test func unpunctuatedLongRecognitionStillBecomesOneBoundedSentence() {
         let text = String(repeating: "grace and truth ", count: 2_000)
         let slices = split(text, duration: .seconds(16.5), languageCode: "en")

@@ -131,11 +131,11 @@ extension LiveSessionCoordinatorIntegrationTests {
         #expect((await harness.store.persistedEntries()).isEmpty)
         let snapshot = await harness.coordinator.currentSnapshot()
         #expect(snapshot.phase == .idle)
-        #expect(snapshot.statusMessage == "听抄稿已保存，其中 1 句未通过质量校验")
+        #expect(snapshot.statusMessage == "听抄稿已保存，其中 1 段未通过质量校验")
         #expect(snapshot.issues.count == 1)
         #expect(snapshot.issues.first?.stage == .recognition)
         #expect(snapshot.issues.first?.utteranceSequence == 1)
-        #expect(snapshot.issues.first?.message == "识别结果仅包含提示词，已拒绝该句。")
+        #expect(snapshot.issues.first?.message == "识别结果仅包含提示词，已拒绝该片段。")
         #expect(snapshot.issues.first?.isRecoverable == false)
         #expect(
             snapshot.finalizationOutcome

@@ -19,15 +19,15 @@ turns and pronoun/gender decisions never enter this channel. Finalized source/ta
 pairs are bounded translation background instead, while occurrence-level pronoun
 evidence travels as immutable typed guidance.
 
-One acoustic segment is recognized once, then Apple's sentence tokenizer divides
-multi-sentence output without waiting for a later segment. Each sentence is
-translated, persisted, and published in FIFO order before the next sentence starts.
-Unpunctuated output remains one sentence and proceeds immediately. Split entries use
-deterministic identities derived from the durable segment so crash recovery skips
-already persisted sentences exactly once. This guarantee assumes the same staged
-audio produces the same recognition and sentence topology; a model or normalizer
-upgrade that changes that topology requires a versioned durable recognition-plan
-migration before replay.
+One finalized VAD segment is one translation and presentation unit. Its complete
+recognized text is sent in one translation request, persisted as one entry, and
+published without punctuation-based splitting. FIFO processing preserves segment
+order. A legacy splitter remains isolated to recovery of records partially persisted
+by releases that created multiple sentence entries for one segment. Durable recovery
+schema v1 predates a topology marker, so replay resolves it from already persisted
+entry identities and timing; ambiguous records remain pending instead of being guessed.
+Schema v2 marks the atomic segment topology. New live and imported-audio work never
+enters the legacy split path.
 
 ## Dependencies
 
@@ -49,11 +49,11 @@ VAD segments are staged durably but inference workers remain closed until both
 models are ready. Recovery replay excludes the current session so newly staged
 speech is processed exactly once. Imported files retain model-first capture.
 The live inference backlog is a constant-time ring buffer bounded to 32 staged
-sentences and five minutes of 16 kHz PCM. If either limit is reached, or a
-downstream sentence fails, the session switches to disk-recovery mode. Existing
-and subsequent sentence artifacts remain durable for ordered replay on the next
+speech segments and five minutes of 16 kHz PCM. If either limit is reached, or a
+downstream segment fails, the session switches to disk-recovery mode. Existing
+and subsequent segment artifacts remain durable for ordered replay on the next
 start, while capture and the complete meeting recording continue independently.
-If sentence staging itself fails, the bounded issue ledger points users to the
+If segment staging itself fails, the bounded issue ledger points users to the
 complete recording as the retry source instead of promising automatic replay.
 Restart recovery requests four records at a time and releases each page before
 loading the next, so a large disk backlog never reconstructs every PCM segment
@@ -79,9 +79,9 @@ the dense transcript presentation sequence is never evidence. Recovery excludes
 future source segments even after filtered or failed gaps. Legacy entries without
 a stable source identity remain readable but are conservatively omitted from
 recovery translation and pronoun context.
-Every live publication records a content-free sentence-tail-to-visible measurement.
+Every live publication records a content-free segment-tail-to-visible measurement.
 The first completed capture frame anchors the audio timeline to a monotonic clock.
-The realtime target is three seconds from each sentence's audio-tail estimate to
+The realtime target is three seconds from each segment's audio tail to
 publication, including endpoint wait and inference; misses and invalid clock mappings
 remain visible as warning diagnostics without changing transcript order.
 Here, visibility ends at coordinator publication into the local UI and projection
@@ -99,8 +99,8 @@ model failure, current-session replay exclusion, and partial-recording preservat
 Queue tests cover FIFO wraparound, both admission limits, and an overload run
 that proves every captured frame is recorded while a contiguous transcript tail
 remains recoverable on disk.
-Sentence tests cover bilingual semantic splitting, deterministic timing and identity,
-ordered publication, the visibility SLA, unpunctuated long input, and partial
-recovery without duplicate translation.
+Segment tests prove that punctuation-rich recognition is translated and published as
+one complete entry. Compatibility tests cover deterministic legacy identities and
+partial recovery without duplicate translation.
 Import tests cover fast sources, inference and recovery-store failures, complete
 recording retention, and early cancellation without false success.

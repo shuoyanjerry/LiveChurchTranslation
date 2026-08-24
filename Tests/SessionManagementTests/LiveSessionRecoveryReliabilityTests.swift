@@ -73,7 +73,7 @@ import VADAPI
 }
 
 extension LiveSessionRecoveryReliabilityTests {
-    @Test func splitSentenceRecoverySkipsAlreadyPersistedDeterministicEntry() async throws {
+    @Test func legacySplitRecoverySkipsAlreadyPersistedDeterministicEntry() async throws {
         let harness = SessionTestHarness(
             recognizedTexts: [
                 "Grace saves us. Christ is Lord.",
@@ -107,24 +107,8 @@ extension LiveSessionRecoveryReliabilityTests {
         _ harness: SessionTestHarness
     ) async throws -> (sessionID: UUID, segment: SpeechSegment) {
         let sessionID = UUID()
-        await harness.store.begin(
-            TranscriptSession(
-                id: sessionID,
-                startedAt: Date(timeIntervalSince1970: 1),
-                endedAt: nil,
-                entries: [],
-                sourceLanguage: "en",
-                targetLanguage: "zh-Hans"
-            )
-        )
-        let segment = SpeechSegment(
-            sequenceNumber: 7,
-            samples: SessionTestHarness.audioFrame.samples,
-            sampleRate: 16_000,
-            startedAt: .zero,
-            endedAt: .milliseconds(20),
-            endReason: .endOfStream
-        )
+        await harness.store.begin(splitRecoverySession(id: sessionID))
+        let segment = splitRecoverySegment()
         await harness.store.seed(
             TranscriptEntry(
                 id: segment.id,
@@ -137,7 +121,32 @@ extension LiveSessionRecoveryReliabilityTests {
                 translationMilliseconds: 10
             )
         )
-        _ = try await harness.recoveryStore.stage(segment, for: sessionID)
+        _ = try await harness.recoveryStore.stageLegacySentenceEntries(
+            segment,
+            for: sessionID
+        )
         return (sessionID, segment)
+    }
+
+    private func splitRecoverySession(id: UUID) -> TranscriptSession {
+        TranscriptSession(
+            id: id,
+            startedAt: Date(timeIntervalSince1970: 1),
+            endedAt: nil,
+            entries: [],
+            sourceLanguage: "en",
+            targetLanguage: "zh-Hans"
+        )
+    }
+
+    private func splitRecoverySegment() -> SpeechSegment {
+        SpeechSegment(
+            sequenceNumber: 7,
+            samples: SessionTestHarness.audioFrame.samples,
+            sampleRate: 16_000,
+            startedAt: .zero,
+            endedAt: .milliseconds(20),
+            endReason: .endOfStream
+        )
     }
 }

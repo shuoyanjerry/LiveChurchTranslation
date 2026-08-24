@@ -41,27 +41,23 @@ import Testing
         #expect(snapshot.issues.first?.stage == .translation)
         #expect(snapshot.issues.first?.isRecoverable == true)
         #expect(snapshot.phase == .idle)
-        #expect(snapshot.statusMessage == "听抄稿已保存，仍有 1 句待恢复")
+        #expect(snapshot.statusMessage == "听抄稿已保存，仍有 1 段待恢复")
         #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
     }
 
-    @Test func retryableMiddleSentenceDoesNotBlockLaterSentenceOrPolluteContext() async throws {
+    @Test func multiSentenceSegmentRetriesAsOneAtomicTranslation() async throws {
+        let source = "第一句。第二句。第三句。"
         let harness = SessionTestHarness(
-            recognizedText: "第一句。第二句。第三句。",
-            translationRejectedRequestIndices: [1]
+            recognizedText: source,
+            translationRejectedRequestIndices: [0]
         )
 
         _ = try await harness.run()
 
         let translations = await harness.translator.receivedRequests()
-        #expect(translations.map(\.sourceText) == ["第一句。", "第二句。", "第三句。"])
+        #expect(translations.map(\.sourceText) == [source])
         #expect(translations[0].context.isEmpty)
-        #expect(translations[1].context.map(\.sourceText) == ["第一句。"])
-        #expect(translations[2].context.map(\.sourceText) == ["第一句。"])
-        #expect(
-            (await harness.store.persistedEntries()).map(\.sourceText)
-                == ["第一句。", "第三句。"]
-        )
+        #expect((await harness.store.persistedEntries()).isEmpty)
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
         let rejected = await harness.recoveryStore.terminalRejections()
         #expect(rejected.isEmpty)

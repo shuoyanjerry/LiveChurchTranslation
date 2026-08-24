@@ -343,7 +343,7 @@ helper binary, macOS build, and Apple Silicon hardware class. Record:
   redemption race, revocation, transient listener retry with the same URL, interface changes, slow
   clients, reconnect/resync, and unauthorized
   Host/Origin/query/frame/request cases on actual iPhone/iPad/Mac Safari devices.
-- Eight-hour operation with latency percentiles measured from sentence end, peak and
+- Eight-hour operation with latency percentiles measured from each human-labelled final syllable, peak and
   steady-state resident memory, thermal state, dropped frames, recovery-directory growth,
   and transcript integrity.
 - Memory-pressure termination and relaunch on the minimum supported RAM configuration.
@@ -370,7 +370,7 @@ Score separately:
 - Required/preferred terminology accuracy and accepted grammatical variants.
 - Translation omissions, additions, altered negation/numbers/references, and hallucination.
 - Blinded bilingual human review for fidelity, naturalness, and theological terminology.
-- End-of-sentence ASR, translation, persistence, and total reader latency percentiles.
+- Human-labelled final-syllable-to-ASR, translation, persistence, and reader latency percentiles.
 - Pronoun-correction precision, abstention/coverage, evidence age, and forbidden
   gender/deity rewrite count; any wrong automatic gender/deity rewrite fails the gate.
 - Non-speech publish rate with and without hotwords across silence, music, singing,

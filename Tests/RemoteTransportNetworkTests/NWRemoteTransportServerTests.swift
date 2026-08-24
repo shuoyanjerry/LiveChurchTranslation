@@ -37,7 +37,9 @@ struct NWRemoteTransportServerTests {
         socket.cancel(with: .goingAway, reason: nil)
         await fixture.server.stop()
     }
+}
 
+extension NWRemoteTransportServerTests {
     private func makeFixture(
         pairing: ListenerPairingFake = ListenerPairingFake()
     ) async throws -> ServerFixture {
@@ -78,21 +80,37 @@ struct NWRemoteTransportServerTests {
         #expect(assetText.contains(#"<html lang="zh-CN">"#), "Chinese locale marker is missing")
         #expect(assetText.contains("<title>Live Church Translation</title>"))
     }
+}
 
+extension NWRemoteTransportServerTests {
     private func verifyWebSocket(_ fixture: ServerFixture) async throws {
         let socket = webSocket(for: fixture)
         socket.resume()
         try await verifyInitialSnapshot(socket)
-        await fixture.projection.beginSession(id: UUID(), message: "Listening")
+        let sessionID = UUID()
+        let entryID = UUID()
+        let source = "恩典拯救我们。\n基督是主；我们一同祷告。"
+        let target = "Grace saves us.\nChrist is Lord; let us pray together."
+        await fixture.projection.beginSession(id: sessionID, message: "Listening")
         _ = try await fixture.projection.upsert(
             .init(
-                id: UUID(),
+                id: entryID,
                 sequence: 1,
-                sourceText: "恩典",
-                targetText: "Grace",
-                createdAt: Date()
+                sourceText: source,
+                targetText: target,
+                createdAt: Date(),
+                startedMilliseconds: 1_250,
+                sourceLanguage: "zh-Hans",
+                targetLanguage: "en"
             ))
-        #expect(try await receivesUpsert(socket))
+        let received = try #require(try await receiveUpsert(socket))
+        #expect(received.id == entryID)
+        #expect(received.sequence == 1)
+        #expect(received.sourceText == source)
+        #expect(received.targetText == target)
+        #expect(received.startedMilliseconds == 1_250)
+        #expect(received.sourceLanguage == "zh-Hans")
+        #expect(received.targetLanguage == "en")
 
         await fixture.pairing.revoke(grantID: fixture.pairing.grantID, now: Date())
         do {
@@ -120,12 +138,14 @@ struct NWRemoteTransportServerTests {
         }
     }
 
-    private func receivesUpsert(_ socket: URLSessionWebSocketTask) async throws -> Bool {
+    private func receiveUpsert(
+        _ socket: URLSessionWebSocketTask
+    ) async throws -> RemoteTranscriptEntry? {
         for _ in 0..<3 {
             let envelope = try decode(try await socket.receive())
-            if case .entryUpsert = envelope.payload { return true }
+            if case .entryUpsert(_, let entry, _) = envelope.payload { return entry }
         }
-        return false
+        return nil
     }
 
     private func decode(_ message: URLSessionWebSocketTask.Message) throws -> RemoteProjectionEnvelope {

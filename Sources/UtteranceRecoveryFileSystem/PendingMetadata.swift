@@ -3,7 +3,8 @@ import UtteranceRecoveryAPI
 import VADAPI
 
 struct PendingMetadata: Codable, Sendable {
-    static let currentSchemaVersion = 1
+    static let unversionedSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     let schemaVersion: Int
     let sessionID: UUID
@@ -37,6 +38,12 @@ struct PendingMetadata: Codable, Sendable {
             segmentID: segmentID,
             sequenceNumber: sequenceNumber
         )
+    }
+
+    var processingTopology: UtteranceProcessingTopology {
+        schemaVersion == Self.unversionedSchemaVersion
+            ? .unversionedV1
+            : .segmentEntry
     }
 
     func makeSegment(samples: [Float]) -> SpeechSegment {

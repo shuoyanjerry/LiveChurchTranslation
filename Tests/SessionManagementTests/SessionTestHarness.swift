@@ -34,6 +34,7 @@ struct SessionTestHarness {
         translationRejectsFirstOutput: Bool = false,
         translationRejectedRequestIndices: Set<Int> = [],
         translationReviewedRequestIndices: Set<Int> = [],
+        translationOutputs: [String]? = nil,
         storageFails: Bool = false,
         finishFails: Bool = false,
         modelLoadFails: Bool = false,
@@ -58,46 +59,46 @@ struct SessionTestHarness {
         sentenceVisibilityClock: (any SentenceVisibilityClock)? = nil
     ) {
         self.init(
-            components: SessionTestComponents(
-                configuration: SessionTestConfiguration(
-                    permission: permission,
-                    recognizedText: recognizedText,
-                    recognizedTexts: recognizedTexts,
-                    translationFails: translationFails,
-                    translationRejectsFirstOutput: translationRejectsFirstOutput,
-                    translationRejectedRequestIndices: translationRejectedRequestIndices,
-                    translationReviewedRequestIndices: translationReviewedRequestIndices,
-                    storageFails: storageFails,
-                    finishFails: finishFails,
-                    modelLoadFails: modelLoadFails,
-                    recognitionFails: recognitionFails,
-                    recognitionError: recognitionError,
-                    recognitionErrorsByIndex: recognitionErrorsByIndex,
-                    recognitionDelay: recognitionDelay,
-                    recoveryStageFails: recoveryStageFails,
-                    recordingAppendFails: recordingAppendFails,
-                    recordingFinishFails: recordingFinishFails,
-                    recordingRepairFails: recordingRepairFails,
-                    recordingAppendDelay: recordingAppendDelay,
-                    audioProcessingDelay: audioProcessingDelay,
-                    modelPreparationDelay: modelPreparationDelay,
-                    audioFrames: audioFrames ?? [Self.audioFrame],
-                    holdsPermissionRequest: holdsPermissionRequest,
-                    holdsCaptureOpen: holdsCaptureOpen,
-                    emitsOnlyOnFlush: emitsOnlyOnFlush,
-                    emitsEveryFrame: emitsEveryFrame,
-                    translationMode: translationMode,
-                    sentenceVisibilityClock: sentenceVisibilityClock ?? Self.defaultClock
-                )
+            configuration: SessionTestConfiguration(
+                permission: permission,
+                recognizedText: recognizedText,
+                recognizedTexts: recognizedTexts,
+                translationFails: translationFails,
+                translationRejectsFirstOutput: translationRejectsFirstOutput,
+                translationRejectedRequestIndices: translationRejectedRequestIndices,
+                translationReviewedRequestIndices: translationReviewedRequestIndices,
+                translationOutputs: translationOutputs,
+                storageFails: storageFails,
+                finishFails: finishFails,
+                modelLoadFails: modelLoadFails,
+                recognitionFails: recognitionFails,
+                recognitionError: recognitionError,
+                recognitionErrorsByIndex: recognitionErrorsByIndex,
+                recognitionDelay: recognitionDelay,
+                recoveryStageFails: recoveryStageFails,
+                recordingAppendFails: recordingAppendFails,
+                recordingFinishFails: recordingFinishFails,
+                recordingRepairFails: recordingRepairFails,
+                recordingAppendDelay: recordingAppendDelay,
+                audioProcessingDelay: audioProcessingDelay,
+                modelPreparationDelay: modelPreparationDelay,
+                audioFrames: audioFrames ?? [Self.audioFrame],
+                holdsPermissionRequest: holdsPermissionRequest,
+                holdsCaptureOpen: holdsCaptureOpen,
+                emitsOnlyOnFlush: emitsOnlyOnFlush,
+                emitsEveryFrame: emitsEveryFrame,
+                translationMode: translationMode,
+                sentenceVisibilityClock: sentenceVisibilityClock ?? Self.defaultClock
             ),
             sessionKind: sessionKind
         )
     }
 
     private init(
-        components: SessionTestComponents,
+        configuration: SessionTestConfiguration,
         sessionKind: TranscriptSessionKind
     ) {
+        let components = SessionTestComponents(configuration: configuration)
         let dependencies = SessionDependencyFactory.make(components)
 
         capture = components.capture

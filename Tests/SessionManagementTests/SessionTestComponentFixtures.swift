@@ -12,6 +12,7 @@ struct SessionTestConfiguration {
     let translationRejectsFirstOutput: Bool
     let translationRejectedRequestIndices: Set<Int>
     let translationReviewedRequestIndices: Set<Int>
+    let translationOutputs: [String]?
     let storageFails: Bool
     let finishFails: Bool
     let modelLoadFails: Bool
@@ -75,7 +76,8 @@ struct SessionInferenceComponents {
             shouldFail: configuration.translationFails,
             rejectsFirstOutput: configuration.translationRejectsFirstOutput,
             rejectedRequestIndices: configuration.translationRejectedRequestIndices,
-            reviewedRequestIndices: configuration.translationReviewedRequestIndices
+            reviewedRequestIndices: configuration.translationReviewedRequestIndices,
+            outputs: configuration.translationOutputs
         )
         downloader = FakeModelDownloader(delay: configuration.modelPreparationDelay)
         reporter = FakeModelRuntimeReporter()

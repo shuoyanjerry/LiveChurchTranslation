@@ -5,7 +5,8 @@ public enum UtteranceRejectionStage: String, Codable, Hashable, Sendable {
     case translation
 }
 
-/// Stable, non-sensitive evidence that one sentence reached a terminal quality rejection.
+/// Stable, non-sensitive evidence that one translation unit reached a terminal rejection.
+/// Sentence-named fields are retained for durable format compatibility.
 public struct UtteranceRejectionReceipt: Codable, Hashable, Sendable {
     public let sentenceID: UUID
     public let sentenceOrdinal: Int
@@ -53,7 +54,7 @@ public struct UtteranceRecoverySessionSummary: Equatable, Sendable {
     )
 }
 
-/// Durable terminal record retained after rejected sentence audio leaves the retry queue.
+/// Durable terminal record retained after rejected segment audio leaves the retry queue.
 public struct TerminalUtteranceRejectionRecord: Codable, Equatable, Sendable {
     public let id: PendingUtteranceID
     public let resolvedAt: Date

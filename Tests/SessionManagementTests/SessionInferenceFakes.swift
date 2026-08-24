@@ -75,6 +75,7 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
     private let shouldFail: Bool
     private let rejectedRequestIndices: Set<Int>
     private let reviewedRequestIndices: Set<Int>
+    private let outputs: [String]?
     private var requests: [TranslationRequest] = []
     private var loads = 0
     private var runtimeIsReady = false
@@ -83,12 +84,14 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
         shouldFail: Bool,
         rejectsFirstOutput: Bool = false,
         rejectedRequestIndices: Set<Int> = [],
-        reviewedRequestIndices: Set<Int> = []
+        reviewedRequestIndices: Set<Int> = [],
+        outputs: [String]? = nil
     ) {
         self.shouldFail = shouldFail
         self.rejectedRequestIndices =
             rejectedRequestIndices.union(rejectsFirstOutput ? [0] : [])
         self.reviewedRequestIndices = reviewedRequestIndices
+        self.outputs = outputs
     }
     func loadModel(at _: URL) {
         loads += 1
@@ -102,10 +105,16 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
         if rejectedRequestIndices.contains(requestIndex) {
             throw TranslationProviderError.invalidOutput
         }
+        let targetText: String
+        if let outputs, !outputs.isEmpty {
+            targetText = outputs[min(requestIndex, outputs.count - 1)]
+        } else {
+            targetText = "We are justified by faith; this is grace."
+        }
         return TranslationResult(
             requestID: request.id,
             sourceText: request.sourceText,
-            targetText: "We are justified by faith; this is grace.",
+            targetText: targetText,
             duration: .milliseconds(35),
             review: reviewedRequestIndices.contains(requestIndex)
                 ? TranslationReview(issueCodes: ["quality.pronoun_alignment"])

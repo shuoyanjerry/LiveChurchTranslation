@@ -33,8 +33,11 @@ only canonical UUID-named, non-symbolic-link directories. Audio and metadata are
 written to private temporary files, synchronized, renamed inside a staging
 directory, and committed by an atomic same-directory rename. Completion first
 renames to a tombstone, preventing a completed record from being replayed after
-a crash. Terminal rejection writes a stable receipt before moving the record
-out of `pending`; its redundant sentence WAV is then removed because the complete
+a crash. Schema v1 predates an explicit processing topology and is resolved from
+durable transcript evidence during replay; new schema v2 records declare one atomic
+transcript entry per VAD segment. Terminal
+rejection writes a stable receipt before moving the record
+out of `pending`; its redundant segment WAV is then removed because the complete
 meeting recording remains authoritative. Corrupt, partial, orphaned, and oversized artifacts move to a private
 quarantine directory without exposing sample contents.
 Paged recovery first indexes only bounded metadata and paths. WAV payloads are

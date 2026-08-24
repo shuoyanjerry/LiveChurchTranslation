@@ -4,7 +4,9 @@ import PersistenceFileSystem
 import Testing
 import TranscriptAPI
 
-@Suite struct PersistenceFileSystemTests {
+@Suite struct PersistenceFileSystemTests {}
+
+extension PersistenceFileSystemTests {
     @Test func sessionWritesMarkdownAndJSONLines() async throws {
         let fixture = PersistenceFixture()
         defer { fixture.remove() }
@@ -58,6 +60,42 @@ import TranscriptAPI
         #expect(!FileManager.default.fileExists(atPath: fixture.sessionDirectory.path))
     }
 
+    @Test func multiSentenceUnicodeSegmentRoundTripsWithoutSplitting() async throws {
+        let fixture = PersistenceFixture()
+        defer { fixture.remove() }
+        let source = "恩典拯救我们。\n基督说：“你们要祷告。”"
+        let target = "Grace saves us.\nChrist said, “You should pray.”"
+        let entry = TranscriptEntry(
+            sequence: 1,
+            sourceSegmentSequence: 9,
+            sourceText: source,
+            targetText: target,
+            startedMilliseconds: 1_250,
+            endedMilliseconds: 8_750,
+            translationMilliseconds: 640
+        )
+        try await fixture.store.begin(fixture.session)
+        try await fixture.store.append(entry, to: fixture.session.id)
+        try await fixture.store.finish(
+            TranscriptSession(
+                id: fixture.session.id,
+                startedAt: fixture.session.startedAt,
+                endedAt: Date(),
+                entries: [entry]
+            )
+        )
+
+        let reloaded = try await FileTranscriptStore(root: fixture.root)
+            .load(sessionID: fixture.session.id)
+
+        #expect(reloaded?.entries.count == 1)
+        #expect(reloaded?.entries.first?.sourceText == source)
+        #expect(reloaded?.entries.first?.targetText == target)
+        #expect(reloaded?.entries.first?.id == entry.id)
+    }
+}
+
+extension PersistenceFileSystemTests {
     @Test func recordingMarkerAndPartialBlockDeletionAcrossStoreInstances() async throws {
         let fixture = PersistenceFixture()
         defer { fixture.remove() }
@@ -124,29 +162,4 @@ import TranscriptAPI
             targetLanguage: session.targetLanguage
         )
     }
-}
-
-struct PersistenceFixture {
-    let root = FileManager.default.temporaryDirectory
-        .appending(path: UUID().uuidString, directoryHint: .isDirectory)
-    let session = TranscriptSession(id: UUID(), startedAt: Date(), endedAt: nil, entries: [])
-    let entry = TranscriptEntry(
-        sequence: 1,
-        sourceSegmentSequence: 3,
-        rawSourceText: "嗯典",
-        sourceText: "恩典",
-        sourceCorrections: [
-            TranscriptSourceCorrection(observedText: "嗯典", replacementText: "恩典")
-        ],
-        targetText: "grace",
-        startedMilliseconds: 0,
-        endedMilliseconds: 1_000,
-        translationMilliseconds: 20
-    )
-
-    var store: FileTranscriptStore { FileTranscriptStore(root: root) }
-    var sessionDirectory: URL { root.appending(path: session.id.uuidString) }
-    var jsonLinesURL: URL { sessionDirectory.appending(path: "transcript.jsonl") }
-    var markdownURL: URL { sessionDirectory.appending(path: "transcript.md") }
-    func remove() { try? FileManager.default.removeItem(at: root) }
 }

@@ -87,7 +87,7 @@ struct UtteranceRecoveryReplayer: Sendable {
     private func quarantineIssues(
         _ artifacts: [QuarantinedUtterance]
     ) -> [LiveSessionIssue] {
-        artifacts.map { _ in issue(message: "一条待处理语句损坏，已安全隔离。") }
+        artifacts.map { _ in issue(message: "一条待处理片段损坏，已安全隔离。") }
     }
 
     func issue(

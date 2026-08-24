@@ -18,6 +18,38 @@ import UtteranceRecoveryFileSystem
         #expect(recovered.pending.count == 1)
         #expect(recovered.pending.first == staged)
         #expect(recovered.pending.first?.segment == original)
+        #expect(recovered.pending.first?.processingTopology == .segmentEntry)
+    }
+
+    @Test func schemaOneRecordReloadsAsUnversionedTopology() async throws {
+        let fixture = try RecoveryTestFixture()
+        defer { fixture.removeRoot() }
+        let store = try fixture.store()
+        _ = try await store.stage(fixture.segment(), for: fixture.sessionID)
+        let metadataURL = try fixture.pendingRecordDirectory()
+            .appending(path: "metadata.json")
+        try rewriteSchema(at: metadataURL, version: 1)
+
+        let recovered = try await fixture.store().recoverPending(for: fixture.sessionID)
+
+        #expect(recovered.quarantined.isEmpty)
+        #expect(recovered.pending.count == 1)
+        #expect(recovered.pending.first?.processingTopology == .unversionedV1)
+    }
+
+    @Test func unknownFutureSchemaIsQuarantined() async throws {
+        let fixture = try RecoveryTestFixture()
+        defer { fixture.removeRoot() }
+        let store = try fixture.store()
+        _ = try await store.stage(fixture.segment(), for: fixture.sessionID)
+        let metadataURL = try fixture.pendingRecordDirectory()
+            .appending(path: "metadata.json")
+        try rewriteSchema(at: metadataURL, version: 3)
+
+        let recovered = try await fixture.store().recoverPending(for: fixture.sessionID)
+
+        #expect(recovered.pending.isEmpty)
+        #expect(recovered.quarantined.map(\.reason) == [.unsupportedSchema])
     }
 
     @Test func recoveryIsSortedBySequenceRegardlessOfStageOrder() async throws {
@@ -49,4 +81,13 @@ import UtteranceRecoveryFileSystem
         #expect(!FileManager.default.fileExists(atPath: session.path))
     }
 
+    private func rewriteSchema(at url: URL, version: Int) throws {
+        let data = try Data(contentsOf: url)
+        var object = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        object["schemaVersion"] = version
+        try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+            .write(to: url, options: .atomic)
+    }
 }

@@ -81,10 +81,10 @@ public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
         case .modelNotLoaded: "尚未加载语音识别模型。"
         case .emptyAudio: "语音片段不含音频。"
         case .filteredNonspeech: "该片段已判定为非语音。"
-        case .promptOnlyHallucination: "识别结果仅包含提示词，已拒绝该句。"
-        case .repetitiveHallucination: "识别结果出现异常重复，已拒绝该句。"
+        case .promptOnlyHallucination: "识别结果仅包含提示词，已拒绝该片段。"
+        case .repetitiveHallucination: "识别结果出现异常重复，已拒绝该片段。"
         case .noSpeechRecognized: "未识别到语音。"
-        case .noProcessableSentences: "未识别到可处理的句子。"
+        case .noProcessableSentences: "未识别到可处理的语音内容。"
         case .inferenceFailed(let message): "语音识别失败：\(message)"
         }
     }

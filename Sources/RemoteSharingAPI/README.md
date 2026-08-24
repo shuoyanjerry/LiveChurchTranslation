@@ -12,7 +12,7 @@ transport, persistence, models, or the local session implementation.
 
 Projection snapshots and live state updates carry the session language pair independently of transcript
 entries, allowing every listener to receive the correct target-language presentation before the first
-sentence is ready.
+translated segment is ready.
 Each projected entry may also carry `startedMilliseconds`, a session-relative passage offset. The field is
 optional for wire compatibility; presentation code may hide it without changing the authoritative entry.
 
