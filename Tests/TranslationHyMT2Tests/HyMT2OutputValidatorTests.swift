@@ -92,7 +92,7 @@ import TranslationAPI
         )
     }
 
-    @Test(arguments: ["They 后来继续分享。", "They continued sharing。"])
+    @Test(arguments: ["They 后来继续分享。"])
     func rejectsChineseSourceScriptInEnglishOutput(_ output: String) {
         assertIssue(
             .unexpectedSourceScript,

@@ -67,9 +67,9 @@ import TranslationQualificationSupport
 
         #expect(
             HyMTQualificationGlossary.theologyPolicyID
-                == "hymt-qualification-theology-surface-v2")
+                == "hymt-qualification-theology-surface-v3")
         #expect(hash == HyMTQualificationGlossary.catalogSHA256)
-        #expect(hash == "68343b01e31bd813fa84e7933ff4ef1ad54147283add0baa91d1fdb9beacf21e")
+        #expect(hash == "fcea676a44d442b865cb0e48c9075302010cbf9af3c30f5fd063a62b46974e44")
     }
 
     @Test func genericSinRequiresACompleteExplicitEnglishToken() throws {

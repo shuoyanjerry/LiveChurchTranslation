@@ -1,6 +1,6 @@
 extension PublicNegationChallengeFixtures {
-    /// Public, human-authored faithful translations rejected by the current surface-token guard.
-    static let falseRejects = [
+    /// Public faithful translations that the production guard must not reject.
+    static let formerFalseRejects = [
         fixture(
             "single-bare-lexical-paraphrase", "福音不可更改。", "The gospel is immutable.",
             .mustPreserveCount(1)

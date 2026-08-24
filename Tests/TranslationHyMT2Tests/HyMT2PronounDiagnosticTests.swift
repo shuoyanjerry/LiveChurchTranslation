@@ -50,7 +50,7 @@ import TranslationAPI
         let source = "她继续分享私人见证。"
         let guidance = [guidance(0, .verifiedFemale)]
         let plan = try makePronounPlan(source: source, guidance: guidance)
-        let initial = "\(anchored(plan, 0, "he")) continued sharing."
+        let initial = "\(anchored(plan, 0, "她")) continued sharing."
         let strict = "\(anchored(plan, 0, "private secret")) continued sharing."
         let observer = PronounDiagnosticRecorder()
         let harness = try await makeTranslationHarness(
@@ -73,7 +73,7 @@ import TranslationAPI
         let observations = await observer.observations()
         #expect(observations.map(\.phase) == [.initial, .strictRetry])
         #expect(observations.map(\.expectedResolution) == [.verifiedFemale, .verifiedFemale])
-        #expect(observations.map(\.observedClass) == [.male, .singleOtherToken])
+        #expect(observations.map(\.observedClass) == [.sourceGlyph, .singleOtherToken])
         #expect(
             observations.map(\.sourceRange)
                 == guidance.flatMap { [$0.sourceRange, $0.sourceRange] }

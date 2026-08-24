@@ -25,9 +25,11 @@ import TranslationAPI
         #expect(prompts.count == 2)
         #expect(!prompts[0].contains("PRONOUN PROTOCOL CORRECTION"))
         #expect(prompts[1].contains("Failure codes: MISSING_ANCHOR"))
-        #expect(prompts[1].contains("Copy every existing whole QLR protected block"))
+        #expect(prompts[1].contains("Copy every existing Q marker"))
+        #expect(prompts[1].contains("F=已确认女性，只选一个符合句法的 she 形式"))
         #expect(prompts[1].contains("REPAIR P0001"))
-        #expect(prompts[1].contains("she/her/hers/herself"))
+        #expect(prompts[1].contains("one sentence-appropriate she-family form"))
+        #expect(prompts[1].contains("Never print a slash- or pipe-separated list"))
         #expect(prompts[1].components(separatedBy: plan.occurrences[0].protectedBlock).count == 2)
     }
 
@@ -84,7 +86,8 @@ import TranslationAPI
             ])
         #expect(correction.section.contains("ANCHOR_SHAPE_OR_CARDINALITY"))
         #expect(correction.section.contains("PRONOUN_BINDING_OR_POLICY"))
-        #expect(correction.section.contains("audited decision encoded inside each block"))
+        #expect(correction.section.contains("existing Q marker"))
+        #expect(correction.section.contains("corresponding pronoun"))
         #expect(!correction.section.contains("P0001"))
         #expect(!correction.section.contains("REPAIR P0002"))
         #expect(!correction.section.contains("sourceGlyph"))

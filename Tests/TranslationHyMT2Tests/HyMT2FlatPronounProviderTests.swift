@@ -9,7 +9,7 @@ import TranslationAPI
         let source = "她继续。"
         let guidance = [guidance(0, .verifiedFemale)]
         let plan = try makePronounPlan(source: source, guidance: guidance)
-        let initial = "\(anchored(plan, 0, "he")) continued."
+        let initial = "\(anchored(plan, 0, "private secret")) continued."
         let strict = "\(flatCertified(plan, 0, "She")) continued."
         let trace = FlatPronounTraceRecorder()
         let harness = try await makeTranslationHarness(
@@ -41,13 +41,13 @@ import TranslationAPI
         let plan = try makePronounPlan(source: source, guidance: guidance)
         let wrong = "\(anchored(plan, 0, "he")) continued."
         let occurrence = plan.occurrences[0]
-        let female = HyMT2PronounResolutionToken.value(for: .verifiedFemale)
-        let male = HyMT2PronounResolutionToken.value(for: .verifiedMale)
+        let female = HyMT2PronounResolutionToken.compactCode(for: .verifiedFemale)
+        let male = HyMT2PronounResolutionToken.compactCode(for: .verifiedMale)
         let structuralFailures = [
             "He continued.",
             "he\(String(occurrence.protectedBlock.dropLast())) continued.",
             wrong + " " + wrong,
-            wrong.replacingOccurrences(of: female, with: male),
+            wrong.replacingOccurrences(of: "\(female)>", with: "\(male)>"),
             wrong.replacingOccurrences(of: "P0001", with: "P9999"),
             wrong + " P9999",
         ]

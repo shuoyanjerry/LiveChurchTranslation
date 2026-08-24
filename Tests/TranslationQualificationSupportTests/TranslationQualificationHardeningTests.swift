@@ -67,14 +67,14 @@ import TranslationQualificationSupport
         }
     }
 
-    @Test func preferredTermFailureIsDiagnosticNotReleaseFailure() throws {
+    @Test func preferredTermMissRequiresReviewInsteadOfMachineFailure() throws {
         let values = try fixtureValues()
         let preferred = TranslationQualificationTermResult(
             source: "这里",
             preferredTarget: "synthetic term",
             acceptedTargets: [],
             required: false,
-            status: .fail
+            status: .humanReviewRequired
         )
         let changed = SyntheticTranslationAttemptCopy.make(
             values.attempt,
@@ -83,7 +83,10 @@ import TranslationQualificationSupport
         )
 
         let report = try rebuild(values, replacing: changed)
-        #expect(TranslationQualificationReleaseGate.evaluate(report).passesHardGates)
+        let result = TranslationQualificationReleaseGate.evaluate(report)
+        #expect(result.passesHardGates)
+        #expect(result.releaseCheckFailureCount == 0)
+        #expect(result.humanReviewRequiredCount > 0)
     }
 
     @Test func providerFailureAlwaysFailsReleaseGateAndStaysInDenominator() throws {

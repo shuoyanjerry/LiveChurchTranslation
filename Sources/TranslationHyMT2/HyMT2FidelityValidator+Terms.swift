@@ -75,16 +75,6 @@ extension HyMT2FidelityValidator {
         }
     }
 
-    static func containsNegation(_ text: String, language: String) -> Bool {
-        if language.lowercased().hasPrefix("zh") {
-            return ["没有", "并非", "不是", "不可", "不能", "不要", "不得", "从未", "未曾", "不"]
-                .contains(where: text.contains)
-        }
-        let words = matches(pattern: #"[A-Za-z]+(?:'[A-Za-z]+)?"#, in: text.lowercased())
-        let direct = Set(["not", "no", "never", "without", "neither", "nor", "cannot"])
-        return words.contains(where: { direct.contains($0) || $0.hasSuffix("n't") })
-    }
-
     static func containsScriptureReference(_ text: String, language: String) -> Bool {
         if !matches(pattern: #"\d+\s*:\s*\d+"#, in: text).isEmpty { return true }
         if language.lowercased().hasPrefix("zh") {

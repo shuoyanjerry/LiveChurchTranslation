@@ -13,7 +13,8 @@ enum HyMT2OutputValidator {
         requiredTerms: [TranslationTerm],
         sourceLanguage: String = "zh-Hans",
         targetLanguage: String = "en",
-        pronounPlan: HyMT2PronounPlan? = nil
+        pronounPlan: HyMT2PronounPlan? = nil,
+        context: [TranslationContextEntry] = []
     ) throws -> String {
         try validated(
             output,
@@ -21,7 +22,8 @@ enum HyMT2OutputValidator {
             requiredTerms: requiredTerms,
             sourceLanguage: sourceLanguage,
             targetLanguage: targetLanguage,
-            pronounPlan: pronounPlan
+            pronounPlan: pronounPlan,
+            context: context
         ).target
     }
 
@@ -33,7 +35,8 @@ enum HyMT2OutputValidator {
         targetLanguage: String = "en",
         pronounPlan: HyMT2PronounPlan?,
         flatRetryCapability: HyMT2FlatPronounRetryCapability? = nil,
-        strictRetry: Bool = false
+        strictRetry: Bool = false,
+        context: [TranslationContextEntry] = []
     ) throws -> HyMT2ValidatedOutput {
         let parsed = try parsePronouns(
             output,
@@ -45,14 +48,27 @@ enum HyMT2OutputValidator {
             parsed.cleanTarget,
             language: targetLanguage
         )
-        let issues = HyMT2FidelityValidator.issues(
+        var issues = HyMT2FidelityValidator.issues(
             target: target,
             source: source,
             requiredTerms: requiredTerms,
             sourceLanguage: sourceLanguage,
-            targetLanguage: targetLanguage
+            targetLanguage: targetLanguage,
+            context: context
         )
-        guard issues.isEmpty else { throw OutputValidationFailure(issues: issues) }
+        if rejectsPronounAlternativeList(
+            target,
+            targetLanguage: targetLanguage,
+            plan: pronounPlan
+        ) {
+            issues.append(.pronounAlternativeList)
+        }
+        guard issues.isEmpty else {
+            throw OutputValidationFailure(
+                issues: issues,
+                pronounRealizations: parsed.realizations
+            )
+        }
         return HyMT2ValidatedOutput(
             target: target,
             pronounRealizations: parsed.realizations
@@ -74,7 +90,13 @@ enum HyMT2OutputValidator {
                 realizations: []
             )
         }
-        if strictRetry || flatRetryCapability != nil {
+        let canonical = HyMT2PronounMarkerTokenizer.tokens(in: output)
+        if usesStrictParser(
+            output: output,
+            canonical: canonical,
+            flatRetryCapability: flatRetryCapability,
+            strictRetry: strictRetry
+        ) {
             return try HyMT2StrictRetryPronounParser.parse(
                 output,
                 plan: plan,
@@ -82,6 +104,26 @@ enum HyMT2OutputValidator {
             )
         }
         return try HyMT2PronounMarkerParser.parse(output, plan: plan)
+    }
+
+    private static func rejectsPronounAlternativeList(
+        _ target: String,
+        targetLanguage: String,
+        plan: HyMT2PronounPlan?
+    ) -> Bool {
+        plan != nil
+            && targetLanguage.lowercased().hasPrefix("en")
+            && HyMT2PronounAlternativeListDetector.containsAlternativeList(in: target)
+    }
+
+    private static func usesStrictParser(
+        output: String,
+        canonical: [HyMT2PronounAnchorToken],
+        flatRetryCapability: HyMT2FlatPronounRetryCapability?,
+        strictRetry: Bool
+    ) -> Bool {
+        strictRetry || flatRetryCapability != nil
+            || HyMT2SpacedCanonicalPronounParser.hasCandidate(canonical, in: output)
     }
 
 }

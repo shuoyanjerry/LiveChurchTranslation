@@ -11,7 +11,8 @@ import TranslationAPI
             guidance(2, .unresolvedSpokenMandarin),
         ]
         let plan = try makePronounPlan(source: source, guidance: guidance)
-        let rejected = "\(anchored(plan, 0, "she")) asked \(anchored(plan, 1, "him"))."
+        let rejected =
+            "\(anchored(plan, 0, "she")) asked \(anchored(plan, 1, "private secret"))."
         let accepted = "\(anchored(plan, 0, "she")) asked \(anchored(plan, 1, "them"))."
         let trace = PronounTraceRecorder()
         let harness = try await makeTranslationHarness(
@@ -39,7 +40,7 @@ import TranslationAPI
         #expect(observations.map(\.realizationClass) == [.feminine, .singularThey])
     }
 
-    @Test func secondSafeAlignmentFailureIsShownForReviewAndNeverTraced() async throws {
+    @Test func safeGenderMismatchIsRepairedAndTracedWithoutModelRetry() async throws {
         let source = "她继续。"
         let guidance = [guidance(0, .verifiedFemale)]
         let plan = try makePronounPlan(source: source, guidance: guidance)
@@ -60,11 +61,43 @@ import TranslationAPI
             )
         )
 
-        #expect(result.targetText == "he continued.")
-        #expect(result.review?.issueCodes == ["quality.pronoun_alignment"])
+        #expect(result.targetText == "she continued.")
+        #expect(result.review == nil)
         #expect(!result.targetText.contains("QLR_"))
-        #expect(await trace.observations().isEmpty)
-        #expect(await harness.transport.completionRequests().count == 2)
+        let observations = await trace.observations()
+        #expect(observations.map(\.phase) == [.initial])
+        #expect(observations.map(\.realizationClass) == [.feminine])
+        #expect(await harness.transport.completionRequests().count == 1)
+    }
+
+    @Test func selectedReviewedFidelityOutputRetainsValidPronounTrace() async throws {
+        let source = "她领受恩典。"
+        let guidance = [guidance(0, .verifiedFemale)]
+        let plan = try makePronounPlan(source: source, guidance: guidance)
+        let first = "\(anchored(plan, 0, "she")) received kindness."
+        let second = "\(anchored(plan, 0, "she")) received a blessing."
+        let trace = PronounTraceRecorder()
+        let harness = try await makeTranslationHarness(
+            responses: [.success(first), .success(second)],
+            pronounTraceObserver: trace
+        )
+        defer { harness.model.remove() }
+
+        let result = try await harness.provider.translate(
+            TranslationRequest(
+                id: pronounTestRequestID,
+                sourceText: source,
+                glossary: [TranslationTerm(source: "恩典", target: "grace")],
+                pronounGuidance: guidance
+            )
+        )
+
+        #expect(result.targetText == "she received a blessing.")
+        #expect(result.review?.issueCodes == ["quality.missing_required_term"])
+        let observations = await trace.observations()
+        #expect(observations.count == 1)
+        #expect(observations.first?.phase == .strictRetry)
+        #expect(observations.first?.realizationClass == .feminine)
     }
 
     @Test func invalidRangeFailsBeforeTransport() async throws {
@@ -81,7 +114,9 @@ import TranslationAPI
 
         #expect(await harness.transport.completionRequests().isEmpty)
     }
+}
 
+extension HyMT2PronounProviderTests {
     private func assertStrictPrompt(_ prompts: [String], plan: HyMT2PronounPlan) {
         #expect(prompts.count == 2)
         #expect(prompts.allSatisfy { $0.contains(plan.protectedSource) })

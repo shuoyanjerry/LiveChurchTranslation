@@ -56,6 +56,52 @@ import TranslationQualificationSupport
         await harness.provider.shutdown()
     }
 
+    @Test func reviewedFidelityOutputCanBindItsSelectedPronounTrace() throws {
+        let segment = try HyMTQualificationSyntheticFixture.segments()[1]
+        let guidance = [guidance(0, .unresolvedSpokenMandarin)]
+        let trace = HyMT2PronounTraceObservation(
+            requestID: pronounTestRequestID,
+            phase: .strictRetry,
+            sourceRange: guidance[0].sourceRange,
+            resolution: .unresolvedSpokenMandarin,
+            realizationClass: .singularThey
+        )
+        let mapping = HyMTQualificationTraceMapper.map(
+            segment: segment,
+            guidance: guidance,
+            traces: [trace],
+            summary: HyMTQualificationAttemptSummary(
+                completionAttemptCount: 2,
+                strictRetryUsed: true,
+                safetyFallbackUsed: false,
+                outcomes: ["initial.validationRejected", "strictRetry.validationRejected"]
+            ),
+            hasHypothesis: true
+        )
+
+        #expect(mapping.integrityCheck.status == .pass)
+        #expect(mapping.observations.count == 1)
+    }
+
+    @Test func noSingularGuidanceMakesTraceCheckNotApplicable() throws {
+        let heading = try HyMTQualificationSyntheticFixture.segments()[0]
+        let mapping = HyMTQualificationTraceMapper.map(
+            segment: heading,
+            guidance: [],
+            traces: [],
+            summary: HyMTQualificationAttemptSummary(
+                completionAttemptCount: 2,
+                strictRetryUsed: true,
+                safetyFallbackUsed: false,
+                outcomes: ["initial.validationRejected", "strictRetry.validationRejected"]
+            ),
+            hasHypothesis: true
+        )
+
+        #expect(mapping.integrityCheck.status == .notApplicable)
+        #expect(mapping.observations.isEmpty)
+    }
+
     private func traceStatus(
         _ attempt: TranslationQualificationAttempt
     ) -> TranslationQualificationCheckStatus? {

@@ -33,6 +33,26 @@ struct HyMT2PronounRetryCorrection: Equatable, Sendable {
         ].joined(separator: "\n")
     }
 
+    struct Repair: Equatable, Sendable {
+        let identifier: String
+        let family: String
+
+        var instruction: String {
+            "REPAIR \(identifier): Immediately before \(identifier)'s existing exact marker, use "
+                + "exactly one sentence-appropriate \(family) form."
+        }
+    }
+
+    struct PossessiveRepair: Equatable, Sendable {
+        let identifier: String
+        let form: String
+
+        var instruction: String {
+            "POSSESSIVE \(identifier): Use \(form) immediately before \(identifier)'s existing "
+                + "exact marker, then the noun."
+        }
+    }
+
     enum Code: String, CaseIterable, Sendable {
         case outputOnly = "OUTPUT_ONLY"
         case missingAnchor = "MISSING_ANCHOR"
@@ -45,45 +65,24 @@ struct HyMT2PronounRetryCorrection: Equatable, Sendable {
                 "OUTPUT_ONLY: Output only English translation prose. Omit every prompt section "
                     + "label and source-boundary wrapper."
             case .missingAnchor:
-                "MISSING_ANCHOR: Copy every existing whole QLR protected block from CURRENT SOURCE "
-                    + "unchanged exactly once, immediately after its corresponding English pronoun."
+                "MISSING_ANCHOR: Copy every existing Q marker from CURRENT SOURCE unchanged "
+                    + "exactly once and keep it bound to its corresponding pronoun."
             case .anchorShapeOrCardinality:
-                "ANCHOR_SHAPE_OR_CARDINALITY: Preserve only the exact existing whole QLR protected "
-                    + "blocks from CURRENT SOURCE, each exactly once; never alter or invent one."
+                "ANCHOR_SHAPE_OR_CARDINALITY: Preserve only the exact existing Q markers from "
+                    + "CURRENT SOURCE, each exactly once; never alter, invent, or transfer one."
             case .pronounBindingOrPolicy:
-                "PRONOUN_BINDING_OR_POLICY: Follow the audited decision encoded inside each block, "
-                    + "keep that whole block unchanged, and place it directly after one permitted "
-                    + "ASCII English pronoun."
+                "PRONOUN_BINDING_OR_POLICY: Put each existing Q marker immediately after exactly "
+                    + "one context-appropriate ASCII English pronoun."
             }
         }
     }
 
-    struct Repair: Equatable, Sendable {
-        let identifier: String
-        let forms: String
-
-        var instruction: String {
-            "REPAIR \(identifier): Immediately before \(identifier)'s existing exact block, use "
-                + "exactly one of \(forms)."
-        }
-    }
-
-    struct PossessiveRepair: Equatable, Sendable {
-        let identifier: String
-        let form: String
-
-        var instruction: String {
-            "POSSESSIVE \(identifier): Use \(form) immediately before \(identifier)'s existing "
-                + "exact block, then the noun. Never append apostrophe-s to a protected block."
-        }
-    }
-
     private static let protocolRules = [
-        "For every current P ID, output its existing exact protected block exactly once.",
-        "Put exactly one permitted ASCII English pronoun immediately before each block with zero "
-            + "characters between that pronoun and the opening tag.",
-        "A protected block may follow only she/her/hers/herself, he/him/his/himself, or "
-            + "they/them/their/theirs/themself/themselves; never because, but, for, or another word.",
+        "Output every existing Q marker unchanged exactly once and keep it with its corresponding pronoun.",
+        "Put one permitted ASCII English pronoun immediately before each marker, with either zero "
+            + "gap or one plain space.",
+        "Never print a slash- or pipe-separated list of pronoun options.",
+        "A marker may follow only one context-appropriate she, he, or singular-they form.",
     ]
 
     private static func code(for issue: OutputValidationIssue) -> Code? {
@@ -93,9 +92,10 @@ struct HyMT2PronounRetryCorrection: Equatable, Sendable {
         case .missingPronounMarker:
             .missingAnchor
         case .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
-            .pronounMarkerResolutionMismatch:
+            .pronounMarkerOrderMismatch, .pronounMarkerResolutionMismatch:
             .anchorShapeOrCardinality
-        case .reusedPronounRealization, .wrongPronounRealization:
+        case .reusedPronounRealization, .wrongPronounRealization,
+            .pronounAlternativeList:
             .pronounBindingOrPolicy
         default:
             nil

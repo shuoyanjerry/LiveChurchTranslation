@@ -16,10 +16,15 @@ enum HyMTQualificationTraceMapper {
         summary: HyMTQualificationAttemptSummary,
         hasHypothesis: Bool
     ) -> HyMTQualificationTraceMapping {
+        guard !guidance.isEmpty else {
+            return mapping(traces.isEmpty ? .notApplicable : .fail, observations: [])
+        }
         guard hasHypothesis else {
             return mapping(traces.isEmpty ? .notApplicable : .fail, observations: [])
         }
-        guard let phase = acceptedPhase(summary) else { return mapping(.fail, observations: []) }
+        guard let phase = selectedPhase(summary, traces: traces) else {
+            return mapping(.fail, observations: [])
+        }
         let expected = Dictionary(uniqueKeysWithValues: guidance.map { ($0.sourceRange, $0.resolution) })
         let occurrences = occurrenceIDs(segment)
         guard traces.count == expected.count else { return mapping(.fail, observations: []) }
@@ -51,6 +56,18 @@ enum HyMTQualificationTraceMapper {
         case "strictRetry.accepted": .strictRetry
         default: nil
         }
+    }
+
+    private static func selectedPhase(
+        _ summary: HyMTQualificationAttemptSummary,
+        traces: [HyMT2PronounTraceObservation]
+    ) -> HyMT2AttemptPhase? {
+        if let phase = acceptedPhase(summary) { return phase }
+        guard let phase = traces.first?.phase,
+            traces.allSatisfy({ $0.phase == phase }),
+            summary.outcomes.contains("\(phase.rawValue).validationRejected")
+        else { return nil }
+        return phase
     }
 
     private static func occurrenceIDs(

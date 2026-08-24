@@ -3,36 +3,40 @@ import ScriptureAPI
 enum HyMT2ScripturePolicy {
     static let editions = ScriptureEditionPair.production
 
-    static func rule(targetLanguage: String) -> String {
+    static func rule(
+        sourceLanguage: String,
+        targetLanguage: String
+    ) -> String {
         if targetLanguage.lowercased().hasPrefix("zh") {
-            return simplifiedChineseRule
+            return sourceLanguage.lowercased().hasPrefix("zh")
+                ? simplifiedChineseRuleChinese : simplifiedChineseRuleEnglish
         }
-        return englishRule
+        return sourceLanguage.lowercased().hasPrefix("zh")
+            ? englishRuleChinese : englishRuleEnglish
     }
 
-    private static var simplifiedChineseRule: String {
+    private static var simplifiedChineseRuleChinese: String {
         let edition = editions.simplifiedChinese
-        return "Use book names and biblical terminology consistent with "
-            + "\(edition.abbreviation), \(edition.fullName) (\(edition.editionLabel); "
-            + "official edition reference \(edition.officialEditionReference)). "
-            + "Preserve Arabic chapter-and-verse numbers (for example, 约翰福音 3:16), "
-            + "use 神 rather than 上帝, allow 他 or 祂 according to context, and never "
-            + "reconstruct or invent verse text that the current source did not supply. "
-            + "When the current source itself supplies a complete Scripture quotation, "
-            + "prefer the established wording of this edition over a loose paraphrase, "
-            + "but never add a clause that is absent from the source. "
-            + ScriptureEditionPair.terminologyBaselineNotice
+        return "经文书名和教会术语采用《\(edition.fullName)》（\(edition.abbreviation)）"
+            + "的常用表达，使用神而不是上帝；保留章节数字，不补写原文没有的经文。"
     }
 
-    private static var englishRule: String {
+    private static var simplifiedChineseRuleEnglish: String {
+        let edition = editions.simplifiedChinese
+        return "Use natural Simplified Chinese church and Scripture terminology consistent with "
+            + "\(edition.fullName) (\(edition.abbreviation)); write 神 rather than 上帝, preserve "
+            + "chapter-and-verse numbers, and never add Scripture absent from the source."
+    }
+
+    private static var englishRuleChinese: String {
         let edition = editions.english
-        return "Use book names and biblical terminology consistent with "
-            + "\(edition.fullName) (\(edition.abbreviation)), \(edition.editionLabel). "
-            + "Preserve conventional numeric references (for example, John 3:16), and never "
-            + "reconstruct or invent verse text that the current source did not supply. "
-            + "When the current source itself supplies a complete Scripture quotation, "
-            + "prefer the established wording of this edition over a loose paraphrase, "
-            + "but never add a clause that is absent from the source. "
-            + ScriptureEditionPair.terminologyBaselineNotice
+        return "经文书名和教会术语采用 \(edition.abbreviation) 的自然常用表达；"
+            + "保留章节数字，不补写原文没有的经文。"
+    }
+
+    private static var englishRuleEnglish: String {
+        let edition = editions.english
+        return "Use natural church and Scripture terminology consistent with \(edition.abbreviation); "
+            + "preserve chapter-and-verse numbers and never add Scripture absent from the source."
     }
 }

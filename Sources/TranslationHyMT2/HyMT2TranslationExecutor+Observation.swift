@@ -33,7 +33,31 @@ extension HyMT2TranslationExecutor {
         requestID: UUID,
         phase: HyMT2AttemptPhase
     ) async {
-        for realization in output.pronounRealizations {
+        await recordPronouns(
+            output.pronounRealizations,
+            requestID: requestID,
+            phase: phase
+        )
+    }
+
+    func recordReviewedPronouns(
+        _ output: HyMT2AssessedOutput,
+        requestID: UUID
+    ) async {
+        guard output.review != nil, let phase = output.reviewedPhase else { return }
+        await recordPronouns(
+            output.pronounRealizations,
+            requestID: requestID,
+            phase: phase
+        )
+    }
+
+    private func recordPronouns(
+        _ realizations: [HyMT2PronounRealization],
+        requestID: UUID,
+        phase: HyMT2AttemptPhase
+    ) async {
+        for realization in realizations {
             await pronounTraceObserver.record(
                 HyMT2PronounTraceObservation(
                     requestID: requestID,

@@ -18,7 +18,7 @@ enum HyMTQualificationTheologyCatalog {
         }
     }
 
-    static let policyID = "hymt-qualification-theology-surface-v2"
+    static let policyID = "hymt-qualification-theology-surface-v3"
 
     static func expectation(
         forExactLabel label: String
@@ -77,7 +77,7 @@ enum HyMTQualificationTheologyCatalog {
         entry("洗礼", "baptism", ["baptized", "baptize", "baptizes", "baptizing"]),
         entry("洗禮", "baptism", ["baptized", "baptize", "baptizes", "baptizing"]),
         entry("福音", "the gospel", ["gospel"]),
-        entry("基督", "Christ"),
+        entry("基督", "Christ", ["Christian", "Christians", "Christianity"]),
         entry(
             "十字架",
             "the cross",
@@ -85,7 +85,7 @@ enum HyMTQualificationTheologyCatalog {
         ),
         entry("永生", "eternal life", ["everlasting life"]),
         entry("悔改", "repentance", ["repent", "repented", "repents", "repenting"]),
-        entry("罪", "sin", ["sins", "sinned", "sinning"]),
+        entry("罪", "sin", ["sins", "sinned", "sinning", "sinful", "sinner", "sinners"]),
     ]
 
     private static func entry(

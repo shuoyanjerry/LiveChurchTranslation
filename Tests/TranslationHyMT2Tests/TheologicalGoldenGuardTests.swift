@@ -38,10 +38,11 @@ import TranslationAPI
 
         #expect(Set(matched) == Set(fixture.requiredTerms))
         for term in fixture.requiredTerms {
-            #expect(prompt.contains("\(term.source) translates to \(term.target)"))
+            #expect(prompt.contains("\(term.source) 翻译成 \(term.target)"))
         }
-        #expect(!prompt.contains("大使命 translates to the Great Commission"))
-        #expect(prompt.contains("without summarizing, adding, or omitting"))
+        #expect(!prompt.contains("大使命 翻译成 the Great Commission"))
+        #expect(prompt.contains("逐句完整、忠实"))
+        #expect(prompt.contains("不得概括、添加或漏译"))
         #expect(
             prompt.contains(
                 "<CURRENT_SOURCE>\n\(fixture.source)\n</CURRENT_SOURCE>"

@@ -33,7 +33,7 @@ import TranslationQualificationSupport
 
         #expect(configuration.providerSettings["contextSize"] == String(provider.contextSize))
         #expect(configuration.providerSettings["threadCount"] == String(provider.threadCount))
-        #expect(configuration.providerSettings["temperature"] == "0.0")
+        #expect(configuration.providerSettings["temperature"] == "0.7")
         #expect(
             configuration.providerSettings["qualificationGlossaryCatalogSHA256"]
                 == HyMTQualificationGlossary.catalogSHA256

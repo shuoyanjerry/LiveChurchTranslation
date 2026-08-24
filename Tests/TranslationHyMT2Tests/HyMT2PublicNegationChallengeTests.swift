@@ -3,20 +3,32 @@ import Testing
 
 @Suite("Hy-MT2 deterministic public negation challenge")
 struct HyMT2PublicNegationChallengeTests {
-    @Test(arguments: PublicNegationChallengeFixtures.falsePasses)
-    func recordsCurrentFalsePass(fixture: PublicNegationChallengeFixture) {
+    @Test(arguments: PublicNegationChallengeFixtures.repairedCountLosses)
+    func catchesIndependentNegationLoss(fixture: PublicNegationChallengeFixture) {
+        let issues = validationIssues(fixture)
+
+        #expect(fixture.humanOracle == .reject)
+        #expect(issues.contains(.missingNegation))
+    }
+
+    @Test(arguments: PublicNegationChallengeFixtures.formerFalseRejects)
+    func acceptsNonfunctionalAndFaithfulLexicalRealizations(
+        fixture: PublicNegationChallengeFixture
+    ) {
+        let issues = validationIssues(fixture)
+
+        #expect(fixture.humanOracle == .accept)
+        #expect(!issues.contains(.missingNegation))
+    }
+
+    @Test(arguments: PublicNegationChallengeFixtures.scopeLimitations)
+    func doesNotPretendSurfaceCountsCanJudgeScope(
+        fixture: PublicNegationChallengeFixture
+    ) {
         let issues = validationIssues(fixture)
 
         #expect(fixture.humanOracle == .reject)
         #expect(!issues.contains(.missingNegation))
-    }
-
-    @Test(arguments: PublicNegationChallengeFixtures.falseRejects)
-    func recordsCurrentFalseReject(fixture: PublicNegationChallengeFixture) {
-        let issues = validationIssues(fixture)
-
-        #expect(fixture.humanOracle == .accept)
-        #expect(issues.contains(.missingNegation))
     }
 
     @Test("fixtures explicitly cover all three policies and required constructions")

@@ -42,6 +42,9 @@ extension HyMT2TranslationExecutor {
         else {
             throw OutputValidationFailure(issues: [.promptControlDelimiter])
         }
+        guard !containsPronounAlternativeList(output, input: input, plan: protocolPlan) else {
+            throw OutputValidationFailure(issues: [.pronounAlternativeList])
+        }
         let assessed = try assessedSafetyFallbackOutput(output, input: input)
         guard
             !HyMT2MetaText.isProbableSourceEcho(
@@ -58,6 +61,16 @@ extension HyMT2TranslationExecutor {
             reviewIssueCodes: assessed.review?.issueCodes ?? [],
             validationIssueCount: assessed.validationIssueCount
         )
+    }
+
+    private func containsPronounAlternativeList(
+        _ output: String,
+        input: HyMT2PreparedTranslationInput,
+        plan: HyMT2PronounPlan?
+    ) -> Bool {
+        plan != nil
+            && input.targetLanguage.lowercased().hasPrefix("en")
+            && HyMT2PronounAlternativeListDetector.containsAlternativeList(in: output)
     }
 
     private func assessedSafetyFallbackOutput(
@@ -77,7 +90,8 @@ extension HyMT2TranslationExecutor {
                 let publishable = HyMT2BestEffortExtractor.assess(
                     output,
                     failure: failure,
-                    input: input
+                    input: input,
+                    phase: .safetyFallback
                 )
             else { throw failure }
             return publishable

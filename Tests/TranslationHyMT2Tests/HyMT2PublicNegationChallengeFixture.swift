@@ -23,5 +23,5 @@ struct PublicNegationChallengeFixture: Sendable {
 }
 
 enum PublicNegationChallengeFixtures {
-    static let all = falsePasses + falseRejects
+    static let all = repairedCountLosses + scopeLimitations + formerFalseRejects
 }

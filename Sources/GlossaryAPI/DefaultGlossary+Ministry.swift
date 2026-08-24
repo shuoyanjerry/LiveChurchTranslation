@@ -74,10 +74,30 @@ extension DefaultGlossary {
             targetVariants: ["preach", "proclaim", "proclamation"]),
         GlossaryEntry(source: "徒然", target: "in vain", targetVariants: ["vain"]),
         GlossaryEntry(
+            source: "神经",
+            target: "nerve",
+            targetVariants: ["nerves", "neural"]),
+        GlossaryEntry(
+            source: "神学院",
+            target: "seminary",
+            targetVariants: ["theological seminary"]),
+        GlossaryEntry(
+            source: "神学",
+            target: "theology",
+            targetVariants: ["theological"]),
+        GlossaryEntry(
             source: "永生",
             target: "eternal life",
             targetVariants: ["everlasting life"],
             enforcement: .required),
+        GlossaryEntry(
+            source: "福音医院",
+            target: "mission hospital",
+            targetVariants: ["evangelistic hospital", "gospel hospital"]),
+        GlossaryEntry(
+            source: "福音堂",
+            target: "gospel hall",
+            targetVariants: ["church hall", "gospel church"]),
         GlossaryEntry(source: "福音", target: "the gospel"),
         GlossaryEntry(source: "圣经", target: "Scripture"),
         GlossaryEntry(source: "耶稣基督", target: "Jesus Christ"),

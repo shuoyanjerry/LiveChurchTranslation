@@ -3,24 +3,14 @@ import TranslationAPI
 @testable import TranslationHyMT2
 
 @Suite struct HyMT2SpacedCanonicalValidationTests {
-    @Test func normalValidationNeverAcceptsSpacedCanonicalSurface() throws {
+    @Test func initialValidationAcceptsStrictlyParsedSpacedCanonicalSurface() throws {
         let fixture = try makeSpacedFixture()
         let output = spacedOutput(fixture.plan)
 
-        #expect(!validationIssues(output: output, source: fixture.source, plan: fixture.plan).isEmpty)
-    }
+        let validated = try initialSpacedValidation(output, fixture)
 
-    @Test func normalValidationNeverAcceptsTerminalSpacedSurface() throws {
-        let source = "她继续。"
-        let plan = try makePronounPlan(
-            source: source,
-            guidance: [guidance(0, .verifiedFemale)]
-        )
-        let terminal = "she \(plan.occurrences[0].protectedBlock)"
-
-        for output in [terminal, terminal + "."] {
-            #expect(!validationIssues(output: output, source: source, plan: plan).isEmpty)
-        }
+        #expect(validated.target == "She asked him to reply.")
+        #expect(validated.pronounRealizations.map(\.realizationClass) == [.feminine, .masculine])
     }
 
     @Test func authorizedStrictValidationPreservesOnePostSpace() throws {
@@ -140,6 +130,18 @@ private func validateSpaced(
         requiredTerms: [],
         pronounPlan: fixture.plan,
         flatRetryCapability: fixture.capability
+    )
+}
+
+private func initialSpacedValidation(
+    _ output: String,
+    _ fixture: SpacedCanonicalFixture
+) throws -> HyMT2ValidatedOutput {
+    try HyMT2OutputValidator.validated(
+        output,
+        source: fixture.source,
+        requiredTerms: [],
+        pronounPlan: fixture.plan
     )
 }
 

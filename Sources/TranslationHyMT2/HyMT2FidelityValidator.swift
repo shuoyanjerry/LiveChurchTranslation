@@ -7,7 +7,33 @@ enum HyMT2FidelityValidator {
         source: String,
         requiredTerms: [TranslationTerm],
         sourceLanguage: String = "zh-Hans",
-        targetLanguage: String = "en"
+        targetLanguage: String = "en",
+        context: [TranslationContextEntry] = []
+    ) -> [OutputValidationIssue] {
+        var issues = structuralIssues(
+            target: target,
+            source: source,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage,
+            context: context
+        )
+        issues.append(
+            contentsOf: preservationIssues(
+                target: target,
+                source: source,
+                requiredTerms: requiredTerms,
+                sourceLanguage: sourceLanguage,
+                targetLanguage: targetLanguage
+            ))
+        return issues
+    }
+
+    private static func structuralIssues(
+        target: String,
+        source: String,
+        sourceLanguage: String,
+        targetLanguage: String,
+        context: [TranslationContextEntry]
     ) -> [OutputValidationIssue] {
         var issues: [OutputValidationIssue] = []
         if target.isEmpty { issues.append(.empty) }
@@ -18,6 +44,12 @@ enum HyMT2FidelityValidator {
             targetLanguage: targetLanguage
         ) {
             issues.append(.implausibleLength)
+        }
+        if HyMT2ContextReplayDetector.detect(
+            candidateTarget: target,
+            recentContext: context
+        ) != nil {
+            issues.append(.contextReplay)
         }
         if containsMetaText(target) { issues.append(.metaText) }
         let containsPromptControl =
@@ -32,10 +64,24 @@ enum HyMT2FidelityValidator {
         if hasUnexpectedScript(target, source: source, targetLanguage: targetLanguage) {
             issues.append(.unexpectedSourceScript)
         }
-        issues.append(contentsOf: missingTerms(in: target, required: requiredTerms))
+        return issues
+    }
+
+    private static func preservationIssues(
+        target: String,
+        source: String,
+        requiredTerms: [TranslationTerm],
+        sourceLanguage: String,
+        targetLanguage: String
+    ) -> [OutputValidationIssue] {
+        var issues = missingTerms(in: target, required: requiredTerms)
         issues.append(contentsOf: missingNumbers(in: target, source: source))
-        let sourceHasNegation = containsNegation(source, language: sourceLanguage)
-        if sourceHasNegation && !containsNegation(target, language: targetLanguage) {
+        if HyMT2NegationPreservationValidator.isMissing(
+            source: source,
+            target: target,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage
+        ) {
             issues.append(.missingNegation)
         }
         let sourceHasReference = containsScriptureReference(source, language: sourceLanguage)

@@ -4,7 +4,7 @@ import TranslationAPI
 
 @MainActor
 @Suite struct HyMT2SpacedCanonicalProviderTests {
-    @Test func bindingOnlyInitialFailureEnablesSpacedStrictRetry() async throws {
+    @Test func unrepairableInitialBindingEnablesSpacedStrictRetry() async throws {
         let fixture = try makeSpacedProviderFixture()
         let strict = spacedCanonical(fixture.plan, 0, "She") + "continued."
         let trace = SpacedCanonicalTraceRecorder()
@@ -21,7 +21,7 @@ import TranslationAPI
         #expect(await trace.values().map(\.phase) == [.strictRetry])
     }
 
-    @Test func acceptsExactPublicDeityHumanTerminalShapeAndTracesBoth() async throws {
+    @Test func acceptsExactPublicDeityHumanTerminalShapeOnInitialAttempt() async throws {
         let source = "弟兄感谢神，因为他安慰了他。"
         let guidance = [
             guidance(8, .verifiedDeity),
@@ -50,10 +50,11 @@ import TranslationAPI
         #expect(result.targetText == "Brother thanks God, because He comforted him.")
         #expect(!result.targetText.contains("QLR"))
         #expect(observations.count == 2)
-        #expect(observations.allSatisfy { $0.phase == .strictRetry })
+        #expect(observations.allSatisfy { $0.phase == .initial })
         #expect(observations.map(\.sourceRange) == guidance.map(\.sourceRange))
         #expect(observations.map(\.resolution) == [.verifiedDeity, .verifiedMale])
         #expect(observations.map(\.realizationClass) == [.masculine, .masculine])
+        #expect(await harness.transport.completionRequests().count == 1)
     }
 }
 
@@ -75,9 +76,9 @@ import TranslationAPI
         #expect(await trace.values().map(\.phase) == [.strictRetry])
     }
 
-    @Test func wrongSpacedPronounIsShownWithoutProtocolForBackendReview() async throws {
+    @Test func unrepairableSpacedSurfaceIsShownWithoutMarkerForBackendReview() async throws {
         let fixture = try makeSpacedProviderFixture()
-        let strict = spacedCanonical(fixture.plan, 0, "He") + "continued."
+        let strict = spacedCanonical(fixture.plan, 0, "private secret") + "continued."
         let harness = try await makeTranslationHarness(
             responses: [.success(fixture.initial), .success(strict)]
         )
@@ -85,8 +86,8 @@ import TranslationAPI
         defer { harness.model.remove() }
         let result = try await harness.provider.translate(fixture.request)
 
-        #expect(result.targetText == "He continued.")
-        #expect(result.review?.issueCodes == ["quality.pronoun_alignment"])
+        #expect(result.targetText == "private secret continued.")
+        #expect(result.review?.issueCodes == ["quality.pronoun_protocol"])
         #expect(!result.targetText.contains("QLR"))
         #expect(await harness.transport.completionRequests().count == 2)
     }
@@ -104,7 +105,7 @@ private func makeSpacedProviderFixture() throws -> SpacedProviderFixture {
     let plan = try makePronounPlan(source: source, guidance: guidance)
     return SpacedProviderFixture(
         plan: plan,
-        initial: "\(anchored(plan, 0, "he")) continued.",
+        initial: "\(anchored(plan, 0, "private secret")) continued.",
         request: TranslationRequest(
             id: pronounTestRequestID,
             sourceText: source,

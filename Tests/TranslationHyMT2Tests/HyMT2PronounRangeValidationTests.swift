@@ -33,7 +33,7 @@ import TranslationAPI
         )
         let occurrences = plan.occurrences
         let expected =
-            "she\(occurrences[0].protectedBlock) "
+            "她\(occurrences[0].protectedBlock) "
             + "他\(occurrences[1].protectedBlock)"
             + "😀祂\(occurrences[2].protectedBlock)"
 
@@ -41,7 +41,7 @@ import TranslationAPI
         #expect(occurrences.map(\.sourceRange.location) == [0, 1, 4])
     }
 
-    @Test func canonicalizesOnlyVerifiedGlyphsInModelVisibleSource() throws {
+    @Test func preservesEverySourceGlyphInModelVisibleSource() throws {
         let plan = try makePronounPlan(
             source: "他她祂他",
             guidance: [
@@ -52,7 +52,7 @@ import TranslationAPI
             ]
         )
         let visibleGlyphs = zip(
-            ["she", "他", "they", "祂"],
+            ["他", "她", "祂", "他"],
             plan.occurrences
         ).map { glyph, occurrence in
             "\(glyph)\(occurrence.protectedBlock)"

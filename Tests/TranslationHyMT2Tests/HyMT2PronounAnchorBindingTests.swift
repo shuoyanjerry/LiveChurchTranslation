@@ -82,11 +82,19 @@ import TranslationAPI
         }
     }
 
-    @Test func rejectsAnyWhitespaceBeforeBlock() throws {
+    @Test func acceptsOnlyTheStrictlyParsedSingleSpaceBeforeBlock() throws {
         let fixture = try femaleFixture()
         let block = fixture.plan.occurrences[0].protectedBlock
 
-        for spacing in [" ", "\t", "\n", "\u{00A0}"] {
+        let clean = try HyMT2OutputValidator.validate(
+            "She \(block) continued.",
+            source: fixture.source,
+            requiredTerms: [],
+            pronounPlan: fixture.plan
+        )
+        #expect(clean == "She continued.")
+
+        for spacing in ["\t", "\n", "\u{00A0}"] {
             let output = "She\(spacing)\(block) continued."
             #expect(
                 !validationIssues(output: output, source: fixture.source, plan: fixture.plan)
