@@ -10,6 +10,7 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
     private let server: any LlamaServerControlling
     private let transport: any LlamaServerTransport
     private let endpointFactory: @Sendable () -> LlamaServerEndpoint
+    private let readinessTiming: any HyMT2ReadinessTiming
     private let attemptObserver: any HyMT2AttemptObserving
     private let pronounTraceObserver: any HyMT2PronounTraceObserving
     private let pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving
@@ -24,6 +25,7 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
         server = FoundationLlamaServerController(executableURL: helperExecutableURL)
         transport = URLSessionLlamaServerTransport()
         endpointFactory = LlamaServerEndpoint.randomLocal
+        readinessTiming = ContinuousHyMT2ReadinessTiming()
         attemptObserver = HyMT2NoOpAttemptObserver()
         pronounTraceObserver = HyMT2NoOpPronounTraceObserver()
         pronounDiagnosticObserver = HyMT2NoOpPronounDiagnosticObserver()
@@ -34,15 +36,16 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
         server: any LlamaServerControlling,
         transport: any LlamaServerTransport,
         endpointFactory: @escaping @Sendable () -> LlamaServerEndpoint,
+        readinessTiming: any HyMT2ReadinessTiming = ContinuousHyMT2ReadinessTiming(),
         attemptObserver: any HyMT2AttemptObserving = HyMT2NoOpAttemptObserver(),
         pronounTraceObserver: any HyMT2PronounTraceObserving = HyMT2NoOpPronounTraceObserver(),
-        pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving =
-            HyMT2NoOpPronounDiagnosticObserver()
+        pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving = HyMT2NoOpPronounDiagnosticObserver()
     ) {
         self.configuration = configuration
         self.server = server
         self.transport = transport
         self.endpointFactory = endpointFactory
+        self.readinessTiming = readinessTiming
         self.attemptObserver = attemptObserver
         self.pronounTraceObserver = pronounTraceObserver
         self.pronounDiagnosticObserver = pronounDiagnosticObserver
@@ -71,7 +74,8 @@ public actor HyMT2TranslationProvider: TranslationProvider, ModelRuntimeHealthCh
             try await HyMT2RuntimeReadiness(
                 server: server,
                 transport: transport,
-                configuration: configuration
+                configuration: configuration,
+                timing: readinessTiming
             ).wait(untilHealthy: endpoint)
             self.endpoint = endpoint
             loadedModelURL = modelURL

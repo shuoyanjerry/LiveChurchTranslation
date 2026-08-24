@@ -80,7 +80,8 @@ import Testing
             configuration: configuration,
             server: server,
             transport: transport,
-            endpointFactory: { HyMT2TestSupport.endpoint }
+            endpointFactory: { HyMT2TestSupport.endpoint },
+            readinessTiming: FakeHyMT2ReadinessTiming()
         )
 
         do {
@@ -124,13 +125,15 @@ import Testing
 
     private func provider(
         server: FakeLlamaServerController,
-        transport: FakeLlamaServerTransport
+        transport: FakeLlamaServerTransport,
+        readinessTiming: any HyMT2ReadinessTiming = FakeHyMT2ReadinessTiming()
     ) -> HyMT2TranslationProvider {
         HyMT2TranslationProvider(
             configuration: HyMT2TestSupport.configuration(),
             server: server,
             transport: transport,
-            endpointFactory: { HyMT2TestSupport.endpoint }
+            endpointFactory: { HyMT2TestSupport.endpoint },
+            readinessTiming: readinessTiming
         )
     }
 }

@@ -87,6 +87,18 @@ actor FakeLlamaServerTransport: LlamaServerTransport {
     }
 }
 
+actor FakeHyMT2ReadinessTiming: HyMT2ReadinessTiming {
+    private var elapsed: Duration = .zero
+
+    func now() -> Duration {
+        elapsed
+    }
+
+    func sleep(for duration: Duration) {
+        elapsed += max(duration, .zero)
+    }
+}
+
 final class TemporaryGGUF {
     let directoryURL: URL
     let fileURL: URL

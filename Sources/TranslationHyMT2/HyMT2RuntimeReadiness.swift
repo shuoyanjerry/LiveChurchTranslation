@@ -4,12 +4,24 @@ struct HyMT2RuntimeReadiness: Sendable {
     let server: any LlamaServerControlling
     let transport: any LlamaServerTransport
     let configuration: HyMT2Configuration
+    let timing: any HyMT2ReadinessTiming
+
+    init(
+        server: any LlamaServerControlling,
+        transport: any LlamaServerTransport,
+        configuration: HyMT2Configuration,
+        timing: any HyMT2ReadinessTiming = ContinuousHyMT2ReadinessTiming()
+    ) {
+        self.server = server
+        self.transport = transport
+        self.configuration = configuration
+        self.timing = timing
+    }
 
     func wait(untilHealthy endpoint: LlamaServerEndpoint) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: configuration.startupTimeout)
+        let deadline = await timing.now() + max(configuration.startupTimeout, .zero)
         var lastMessage = "health endpoint unavailable"
-        while clock.now < deadline {
+        while true {
             try Task.checkCancellation()
             guard await server.isRunning() else { throw HyMT2Error.serverTerminated }
             do {
@@ -21,7 +33,15 @@ struct HyMT2RuntimeReadiness: Sendable {
             } catch {
                 lastMessage = error.localizedDescription
             }
-            try await Task.sleep(for: configuration.healthPollInterval)
+
+            let remaining = deadline - (await timing.now())
+            guard remaining > .zero else { break }
+            let pollDelay = min(max(configuration.healthPollInterval, .zero), remaining)
+            if pollDelay > .zero {
+                try await timing.sleep(for: pollDelay)
+            } else {
+                await Task.yield()
+            }
         }
         throw HyMT2Error.startupTimedOut(lastMessage)
     }
