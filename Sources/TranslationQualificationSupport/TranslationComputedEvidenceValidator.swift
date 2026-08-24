@@ -18,7 +18,10 @@ enum TranslationComputedEvidenceValidator {
         let trace = try traceCheck(
             attempt.preservationChecks,
             expectedChecks: recomputed.checks,
-            hypothesisAvailable: attempt.hypothesisEnglish != nil
+            hypothesisAvailable: attempt.hypothesisEnglish != nil,
+            singularPronounExpected: segment.pronounOccurrences.contains {
+                $0.tokenClass == .singularPronoun
+            }
         )
         return trace.status
     }
@@ -65,7 +68,8 @@ enum TranslationComputedEvidenceValidator {
     private static func traceCheck(
         _ checks: [TranslationQualificationCheck],
         expectedChecks: [TranslationQualificationCheck],
-        hypothesisAvailable: Bool
+        hypothesisAvailable: Bool,
+        singularPronounExpected: Bool
     ) throws -> TranslationQualificationCheck {
         try require(
             checks.count == expectedChecks.count + 1,
@@ -82,7 +86,8 @@ enum TranslationComputedEvidenceValidator {
             "trace integrity check contains untrusted detail"
         )
         let allowed: Set<TranslationQualificationCheckStatus> =
-            hypothesisAvailable ? [.pass, .fail] : [.notApplicable, .fail]
+            hypothesisAvailable && singularPronounExpected
+            ? [.pass, .fail] : [.notApplicable, .fail]
         try require(allowed.contains(trace.status), "trace integrity status is invalid")
         return trace
     }

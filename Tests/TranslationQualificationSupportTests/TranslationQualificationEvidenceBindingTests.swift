@@ -77,6 +77,28 @@ import TranslationQualificationSupport
             }
         }
     }
+
+    @Test func traceIntegrityCanBeNotApplicableWithoutSingularPronouns() throws {
+        let values = try evidenceValues()
+        let heading = values.corpus.manifest.segments[0]
+        let baseline = values.report.attempts[0]
+        let checks =
+            baseline.preservationChecks.dropLast() + [
+                TranslationQualificationCheck(
+                    kind: "pronounTraceIntegrity",
+                    status: .notApplicable
+                )
+            ]
+        let attempt = SyntheticTranslationAttemptCopy.make(
+            baseline,
+            segment: heading,
+            preservationChecks: Array(checks)
+        )
+
+        #expect(throws: Never.self) {
+            _ = try rebuildEvidence(values, replacing: attempt, at: 0)
+        }
+    }
 }
 
 private func fakeGlossaryAttempt(
@@ -153,10 +175,11 @@ private func evidenceValues() throws -> TranslationEvidenceValues {
 
 private func rebuildEvidence(
     _ values: TranslationEvidenceValues,
-    replacing attempt: TranslationQualificationAttempt
+    replacing attempt: TranslationQualificationAttempt,
+    at index: Int = 1
 ) throws -> TranslationQualificationReport {
     var attempts = values.report.attempts
-    attempts[1] = attempt
+    attempts[index] = attempt
     return try TranslationQualificationReportBuilder.build(
         generatedAt: values.report.generatedAt,
         corpus: values.corpus,

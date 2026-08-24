@@ -101,7 +101,7 @@ extension SyntheticTranslationReportFactory {
             latencySeconds: Double(segment.sequence) / 100,
             failureCode: fails ? "synthetic.transport-failure" : nil,
             glossaryTerms: preservation.terms,
-            preservationChecks: preservation.checks + [traceCheck(hypothesis)],
+            preservationChecks: preservation.checks + [traceCheck(segment, hypothesis: hypothesis)],
             pronounResults: TranslationPronounEvaluator.evaluate(
                 occurrences: segment.pronounOccurrences,
                 guidance: guidance,
@@ -124,11 +124,16 @@ extension SyntheticTranslationReportFactory {
     }
 
     private static func traceCheck(
-        _ hypothesis: String?
+        _ segment: TranslationQualificationSegment,
+        hypothesis: String?
     ) -> TranslationQualificationCheck {
-        TranslationQualificationCheck(
+        let status: TranslationQualificationCheckStatus =
+            hypothesis != nil
+                && segment.pronounOccurrences.contains { $0.tokenClass == .singularPronoun }
+            ? .pass : .notApplicable
+        return TranslationQualificationCheck(
             kind: "pronounTraceIntegrity",
-            status: hypothesis == nil ? .notApplicable : .pass
+            status: status
         )
     }
 
