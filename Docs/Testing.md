@@ -386,3 +386,8 @@ unsigned or ad-hoc engineering artifact. Label it explicitly. Do not call it not
 publicly distributed, production-ready, long-sermon validated, or clean-Mac validated.
 The tag workflow creates a draft prerelease and an automated packaging report only; neither
 supersedes the human, corpus, soak, latency, device, privacy, or clean-Mac gates above.
+
+The final DMG must also pass `Scripts/audit_release_dmg.sh`, which mounts the image, verifies its
+drag-install layout, copies the app to a fresh Applications directory, closes the Mach-O dependency
+graph, and runs the relocated installation probe. The exact clean-Mac download matrix is defined in
+[DMG installation and supported Macs](DMGDistribution.md).

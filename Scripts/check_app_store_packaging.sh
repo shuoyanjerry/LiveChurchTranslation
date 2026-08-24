@@ -77,6 +77,7 @@ bash -n \
   "$SCRIPT_DIR/archive_app_store.sh" \
   "$SCRIPT_DIR/audit_app_store_archive.sh" \
   "$SCRIPT_DIR/audit_release_app.sh" \
+  "$SCRIPT_DIR/audit_release_dmg.sh" \
   "$SCRIPT_DIR/check_app_store_packaging.sh" \
   "$SCRIPT_DIR/check_bundled_licenses.sh" \
   "$SCRIPT_DIR/check_bundled_models.sh" \
@@ -96,7 +97,16 @@ bash -n \
 rg -Fq 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' \
   "$SCRIPT_DIR/audit_app_store_archive.sh" \
   || fail "App Store archive audit does not resolve its script directory"
-
+rg -Fq '"$SCRIPT_DIR/audit_release_dmg.sh" "$DMG" "$IDENTITY"' \
+  "$SCRIPT_DIR/create_dmg.sh" \
+  || fail "DMG creation does not simulate a drag installation"
+rg -Fq '"$INSTALLED_APP/Contents/MacOS/LiveChurchTranslation" --verify-installation' \
+  "$SCRIPT_DIR/audit_release_dmg.sh" \
+  || fail "DMG audit does not launch the relocated installation probe"
+rg -Fq 'audit_macho_dependencies "$MAIN"' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not close the Mach-O dependency graph"
+rg -Fq 'install_name_tool -delete_rpath "$rpath"' "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not remove build-host runtime search paths"
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
 [[ "$(plist_value "$INFO" "CFBundleName")" == "Live Church Translation" ]] \
@@ -245,6 +255,8 @@ rg -Fq '1cd5208700acedef4ef93019b6cfc148b8522d45' "$MODEL_SOURCE_MANIFEST" \
   || fail "Hy-MT2 release source is not revision-pinned"
 [[ -f "$RELEASE_WORKFLOW" && ! -L "$RELEASE_WORKFLOW" ]] \
   || fail "GitHub Release workflow is missing"
+rg -Fq 'audit_release_dmg.sh"' "$RELEASE_WORKFLOW" \
+  || fail "downloaded release artifacts do not repeat the drag-install audit"
 if rg -n '^[[:space:]]*uses:[[:space:]]+[^[:space:]]+@(v[0-9]|main|master)([^0-9a-f]|$)' \
   "$RELEASE_WORKFLOW" >/dev/null; then
   fail "GitHub Release workflow contains a mutable Action reference"
@@ -324,6 +336,7 @@ EXECUTABLE_SCRIPTS=(
   archive_app_store.sh
   audit_app_store_archive.sh
   audit_release_app.sh
+  audit_release_dmg.sh
   check_app_store_packaging.sh
   check_bundled_licenses.sh
   check_bundled_models.sh

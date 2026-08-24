@@ -46,6 +46,20 @@ if [[ -e "$APP" ]]; then
 fi
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 ditto "$BIN_DIR/LiveChurchTranslation" "$APP/Contents/MacOS/LiveChurchTranslation"
+while IFS= read -r rpath; do
+  case "$rpath" in
+    @loader_path | @executable_path)
+      ;;
+    *)
+      install_name_tool -delete_rpath "$rpath" \
+        "$APP/Contents/MacOS/LiveChurchTranslation"
+      ;;
+  esac
+done < <(
+  otool -l "$APP/Contents/MacOS/LiveChurchTranslation" \
+    | awk '$1 == "cmd" && $2 == "LC_RPATH" { wanted = 1; next }
+      wanted && $1 == "path" { print $2; wanted = 0 }'
+)
 ditto "$REPOSITORY_ROOT/Packaging/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Delete :CFBundleIconName' \
   "$APP/Contents/Info.plist" >/dev/null 2>&1 || true
