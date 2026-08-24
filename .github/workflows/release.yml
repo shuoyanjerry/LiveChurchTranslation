@@ -219,8 +219,11 @@ jobs:
         run: |
           app="$GITHUB_WORKSPACE/dist/Live Church Translation.app"
           zip="$GITHUB_WORKSPACE/dist/Live Church Translation.zip"
+          symbols_bundle="$GITHUB_WORKSPACE/dist/Live Church Translation.app.dSYM"
           [[ "$app" == "$GITHUB_WORKSPACE/dist/Live Church Translation.app" ]]
+          [[ "$symbols_bundle" == "$GITHUB_WORKSPACE/dist/Live Church Translation.app.dSYM" ]]
           rm -rf "$app"
+          rm -rf "$symbols_bundle"
           rm -f "$zip"
           ./Scripts/check_release_disk_space.sh 2147483648 "before artifact upload"
 
@@ -234,6 +237,18 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
+
+      - name: Retain matching debug symbols
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: live-church-translation-symbols-${{ github.run_id }}
+          path: |
+            dist/Live Church Translation.app.dSYM.zip
+            dist/Live Church Translation.app.dSYM.sha256
+            dist/Live Church Translation.app.dSYM.uuid
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
 
   publish-draft:
     name: Create draft GitHub prerelease

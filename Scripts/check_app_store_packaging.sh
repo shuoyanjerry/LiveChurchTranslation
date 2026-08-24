@@ -29,6 +29,7 @@ ICON_MASTER="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation-master.png"
 ICON_CATALOG="$REPOSITORY_ROOT/Assets/AppIcon.xcassets"
 ICON_SET="$ICON_CATALOG/AppIcon.appiconset"
 ICON_CONTENTS="$ICON_SET/Contents.json"
+RELEASE_WORKFLOW="$REPOSITORY_ROOT/.github/workflows/release.yml"
 
 plutil -lint "$INFO" "$MAIN" "$HELPER" "$PRIVACY" "$EXPORT_OPTIONS" >/dev/null
 python3 -m json.tool "$ICON_CATALOG/Contents.json" >/dev/null
@@ -110,9 +111,9 @@ rg -Fq 'install_name_tool -delete_rpath "$rpath"' "$SCRIPT_DIR/package_release.s
 rg -Fq 'strip -S "$APP/Contents/MacOS/LiveChurchTranslation"' \
   "$SCRIPT_DIR/package_release.sh" \
   || fail "release packaging does not strip private build paths from the app executable"
-rg -Fq 'command -v rg >/dev/null 2>&1' "$SCRIPT_DIR/audit_release_app.sh" \
-  || fail "release app audit does not require its binary scanner"
-rg -Fq 'rg -a -F -q "$REPOSITORY_ROOT/" "$binary"' \
+rg -Fq '/usr/bin/grep -a -F -q' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not use the platform binary scanner"
+rg -Fq 'binary_contains fixed "$REPOSITORY_ROOT/" "$binary"' \
   "$SCRIPT_DIR/audit_release_app.sh" \
   || fail "release app audit does not reject its actual checkout path"
 PROJECT_BUILD_PATH_PATTERN='/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/'
@@ -120,12 +121,38 @@ rg -Fq "'$PROJECT_BUILD_PATH_PATTERN'" \
   "$SCRIPT_DIR/audit_release_app.sh" \
   || fail "release app audit does not reject absolute project build paths"
 printf '%s\n' '/Users/runner/work/LiveChurchTranslation/LiveChurchTranslation/.build/release/App' \
-  | rg -q "$PROJECT_BUILD_PATH_PATTERN" \
+  | /usr/bin/grep -a -E -q -- "$PROJECT_BUILD_PATH_PATTERN" \
   || fail "release path audit pattern misses the GitHub checkout"
 if printf '%s\n' '/Users/runner/work/onnxruntime-libs/onnxruntime/core/runtime.cc' \
-  | rg -q "$PROJECT_BUILD_PATH_PATTERN"; then
+  | /usr/bin/grep -a -E -q -- "$PROJECT_BUILD_PATH_PATTERN"; then
   fail "release path audit pattern rejects an upstream dependency path"
 fi
+rg -Fq '[[ "$scan_status" == "1" ]] && return 1' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release binary path scanner does not fail closed on scan errors"
+rg -Fq 'ditto "$SOURCE_DSYM" "$DSYM"' "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not preserve matching debug symbols"
+rg -Fq '[[ "$PACKAGED_UUID" == "$DSYM_UUID" ]]' "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not bind debug symbols to the packaged executable"
+rg -Fq '/usr/bin/unzip -t "$DSYM_ARCHIVE"' "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not test the debug-symbol archive"
+rg -Fq '[[ "$EXTRACTED_DSYM_UUID" == "$DSYM_UUID" ]]' \
+  "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not validate the archived DWARF UUID"
+rg -Fq 'dwarfdump --verify "$EXTRACTED_DSYM"' "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not verify the archived DWARF structure"
+rg -Fq 'dist/Live Church Translation.app.dSYM.zip' "$RELEASE_WORKFLOW" \
+  || fail "release workflow does not retain matching debug symbols"
+[[ "$(rg -c -F 'dist/Live Church Translation.app.dSYM.zip' "$RELEASE_WORKFLOW")" == "1" ]] \
+  || fail "debug symbols must remain separate from the public release candidate artifact"
+rg -Uq 'name: live-church-translation-symbols-[^\n]+\n([[:space:]].*\n){1,12}[[:space:]]+retention-days: 90' \
+  "$RELEASE_WORKFLOW" \
+  || fail "release workflow does not retain debug symbols for incident response"
+rg -Fq 'chmod 0600 "$DSYM_ARCHIVE" "$DSYM_CHECKSUM" "$DSYM_UUID_RECORD"' \
+  "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not protect debug-symbol integrity records"
+rg -Fq 'shasum -a 256 -c "$(basename "$DSYM_CHECKSUM")"' \
+  "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not verify its debug-symbol checksum"
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
 [[ "$(plist_value "$INFO" "CFBundleName")" == "Live Church Translation" ]] \
@@ -262,7 +289,6 @@ rg -Fq 'minimumXcodeGenVersion: 2.45.4' \
 rg -Fq '090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef' \
   "$SCRIPT_DIR/fetch_xcodegen.sh" || fail "XcodeGen archive checksum is not pinned"
 MODEL_SOURCE_MANIFEST="$SCRIPT_DIR/release_model_sources.tsv"
-RELEASE_WORKFLOW="$REPOSITORY_ROOT/.github/workflows/release.yml"
 CI_WORKFLOW="$REPOSITORY_ROOT/.github/workflows/ci.yml"
 [[ -f "$MODEL_SOURCE_MANIFEST" && ! -L "$MODEL_SOURCE_MANIFEST" ]] \
   || fail "release model source manifest is missing"

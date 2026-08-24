@@ -10,6 +10,36 @@ plist_value() {
   /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
 }
 
+binary_contains() {
+  local match_mode="$1"
+  local pattern="$2"
+  local binary="$3"
+  local scan_status
+
+  case "$match_mode" in
+    fixed)
+      if LC_ALL=C /usr/bin/grep -a -F -q -- "$pattern" "$binary"; then
+        return 0
+      else
+        scan_status=$?
+      fi
+      ;;
+    extended)
+      if LC_ALL=C /usr/bin/grep -a -E -q -- "$pattern" "$binary"; then
+        return 0
+      else
+        scan_status=$?
+      fi
+      ;;
+    *)
+      fail "unknown binary scan mode"
+      ;;
+  esac
+
+  [[ "$scan_status" == "1" ]] && return 1
+  fail "could not scan Mach-O for private build paths: $(basename "$binary")"
+}
+
 audit_macho_dependencies() {
   local binary="$1"
   local dependency
@@ -17,8 +47,8 @@ audit_macho_dependencies() {
   local relative
   local rpath
 
-  if LC_ALL=C rg -a -F -q "$REPOSITORY_ROOT/" "$binary" \
-    || LC_ALL=C rg -a -q \
+  if binary_contains fixed "$REPOSITORY_ROOT/" "$binary" \
+    || binary_contains extended \
       '/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/' \
       "$binary"; then
     fail "Mach-O contains an absolute project build path: $(basename "$binary")"
@@ -75,7 +105,6 @@ APP="${1:-}"
 IDENTITY="${2:-${DEVELOPER_ID_APPLICATION:--}}"
 RUNTIME_MANIFEST="$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256"
 
-command -v rg >/dev/null 2>&1 || fail "ripgrep is required for binary path auditing"
 [[ -n "$APP" ]] || fail "usage: $0 /path/to/Application.app [signing-identity-or--]"
 [[ -d "$APP" && ! -L "$APP" && "$APP" == *.app ]] || fail "app bundle is missing or unsafe"
 [[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
