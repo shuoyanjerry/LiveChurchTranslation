@@ -47,6 +47,8 @@ trap report_gate_failure EXIT
 
 active_gate="architecture"
 "$SCRIPT_DIR/check_architecture.sh"
+active_gate="project identity"
+"$SCRIPT_DIR/check_project_identity.sh"
 active_gate="ephemeral Scripture qualification"
 "$SCRIPT_DIR/test_ephemeral_scripture_qualification.sh"
 active_gate="App Store packaging"

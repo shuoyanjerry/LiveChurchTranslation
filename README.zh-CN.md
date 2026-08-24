@@ -94,3 +94,9 @@ iPhone、iPad 和 Mac Safari 重复连接时应用不退出。修复代码已于
 源代码采用 MIT 许可。模型权重和第三方组件保留各自许可，分发前请阅读
 `THIRD_PARTY_NOTICES.md`。本项目不包含或再分发 The Church in Northville 的官方标志、照片或
 其他品牌资产，也不声称获得其隶属或背书。
+
+## 开发者
+
+本项目唯一的开发者和维护者是
+[shuoyanjerry](https://github.com/shuoyanjerry)（`jerryyanshuo@outlook.com`）。第三方许可
+文件中的作者信息仅属于对应的上游组件。

@@ -208,3 +208,9 @@ licenses; review `THIRD_PARTY_NOTICES.md` before distribution. The visual system
 original, restrained church-reader design inspired by the Northville context. It does
 not include or redistribute The Church in Northville's official logo, photography, or
 other brand assets, and this project does not claim affiliation or endorsement.
+
+## Developer
+
+The sole developer and maintainer is
+[shuoyanjerry](https://github.com/shuoyanjerry) (`jerryyanshuo@outlook.com`). Third-party
+authorship shown in bundled license notices applies only to those upstream components.
