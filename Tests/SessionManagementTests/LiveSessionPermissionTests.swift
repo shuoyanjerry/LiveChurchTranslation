@@ -2,6 +2,21 @@ import SessionManagementAPI
 import Testing
 
 @Suite struct LiveSessionPermissionTests {
+    @Test func cancelledStartDoesNotCreateASession() async {
+        let harness = SessionTestHarness()
+        let startTask = Task {
+            try? await Task.sleep(for: .seconds(10))
+            await harness.coordinator.start(inputDeviceID: nil)
+        }
+        startTask.cancel()
+        await startTask.value
+
+        let snapshot = await harness.coordinator.currentSnapshot()
+        #expect(snapshot.sessionID == nil)
+        #expect(snapshot.phase == .idle)
+        #expect((await harness.downloader.requestedDescriptors()).isEmpty)
+    }
+
     @Test func stopWhilePermissionPromptIsPendingReturnsToIdle() async throws {
         let harness = SessionTestHarness(holdsPermissionRequest: true)
         let startTask = Task { await harness.coordinator.start(inputDeviceID: nil) }

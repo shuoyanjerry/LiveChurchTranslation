@@ -16,6 +16,7 @@ import ModelRuntimeCore
 import PersistenceFileSystem
 import RecordingFileSystem
 import SessionManagement
+import SettingsAPI
 import SettingsUserDefaults
 import TranscriptCore
 import TranslationHyMT2
@@ -56,9 +57,7 @@ struct AppServiceGraph {
         glossary = DefaultGlossaryService(
             repository: FileGlossaryRepository(directory: directories.glossary)
         )
-        settings = UserDefaultsSettingsStore(
-            suiteName: "com.shuoyan.LiveChurchTranslation"
-        )
+        settings = UserDefaultsSettingsStore()
         transcripts = FileTranscriptStore(root: directories.transcripts)
         recordings = try FileSessionRecordingStore(root: directories.transcripts)
         recovery = try FileUtteranceRecoveryStore(root: directories.recovery)
@@ -119,7 +118,8 @@ struct AppServiceGraph {
 
     func makeSessionDependencies(
         directories: AppDirectories,
-        capture captureOverride: (any AudioCaptureProvider)? = nil
+        capture captureOverride: (any AudioCaptureProvider)? = nil,
+        settings settingsOverride: (any SettingsStore)? = nil
     ) throws -> LiveSessionDependencies {
         LiveSessionDependencies(
             capture: captureOverride ?? capture,
@@ -138,7 +138,7 @@ struct AppServiceGraph {
             transcriptStore: transcripts,
             recordingStore: recordings,
             recoveryStore: recovery,
-            settings: settings,
+            settings: settingsOverride ?? settings,
             logger: logger,
             diagnostics: diagnostics
         )

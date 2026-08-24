@@ -101,9 +101,13 @@ private enum StrictValidationCategory: String, CaseIterable {
         "prompt-control delimiter remains in output": .promptControl,
         "Chinese source script remains in English output": .sourceScript,
         "output script does not match the target language": .sourceScript,
+        "missing required term": .missingTerm,
+        "missing source number": .missingNumber,
         "source negation was not preserved": .negation,
         "Scripture reference was not preserved": .scripture,
         "malformed or incomplete pronoun marker": .pronounProtocol,
+        "pronoun protocol validation failed": .pronounProtocol,
+        "pronoun alignment validation failed": .pronounProtocol,
     ]
 
     private static let knownPrefixes = [

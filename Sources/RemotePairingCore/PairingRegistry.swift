@@ -29,7 +29,13 @@ public actor PairingRegistry: RemotePairingServing, RemotePairingManaging {
         }
         let credential = try tokenGenerator.token(byteCount: 32)
         let id = UUID()
-        let expiry = now.addingTimeInterval(configuration.invitationTTL)
+        let expiry: Date? =
+            role == .viewer
+            ? nil
+            : now.addingTimeInterval(configuration.invitationTTL)
+        if role == .viewer {
+            invitations = invitations.filter { $0.value.role != .viewer }
+        }
         invitations[id] = InvitationState(
             role: role,
             credentialHash: CredentialHasher.hash(credential),
@@ -46,61 +52,39 @@ public actor PairingRegistry: RemotePairingServing, RemotePairingManaging {
         )
     }
 
-    public func redeem(_ redemption: PairingRedemption, now: Date = Date()) throws -> PairingGrant {
-        guard var invitation = invitations[redemption.invitationID] else {
-            throw PairingError.invalidInvitation
-        }
-        guard invitation.expiresAt > now else {
-            invitations.removeValue(forKey: redemption.invitationID)
-            throw PairingError.invitationExpired
-        }
-        guard !invitation.used else { throw PairingError.invitationAlreadyUsed }
+    public func redeem(
+        _ redemption: PairingRedemption,
+        clientBinding: RemotePairingClientBinding,
+        now: Date = Date()
+    ) throws -> PairingGrant {
+        var invitation = try validatedInvitation(redemption, now: now)
+        let isReusableViewerInvitation = invitation.role == .viewer
+        purgeExpired(now: now)
+        let replacedViewerGrants = replacementViewerGrants(
+            invitation: invitation,
+            clientBinding: clientBinding
+        )
         guard
-            CredentialHasher.matches(
-                redemption.fragmentCredential,
-                hash: invitation.credentialHash
-            )
+            activeGrantCount - replacedViewerGrants.count
+                < configuration.maximumActiveGrants
         else {
-            throw PairingError.invalidInvitation
+            throw PairingError.capacityReached
         }
-        invitation.used = true
-        invitations[redemption.invitationID] = invitation
-        let grant = try makeGrant(redemption.peerMetadata, invitation: invitation, now: now)
+        let bearerCredential = try tokenGenerator.token(byteCount: 32)
+        removeReplacedGrants(replacedViewerGrants, now: now)
+        let grant = makeGrant(
+            redemption.peerMetadata,
+            invitation: invitation,
+            clientBinding: clientBinding,
+            bearerCredential: bearerCredential,
+            now: now
+        )
+        if !isReusableViewerInvitation {
+            invitation.used = true
+            invitations[redemption.invitationID] = invitation
+        }
         emitSnapshot(now: now)
         return grant
-    }
-
-    public func authorize(
-        bearerCredential: String,
-        requiresMutation: Bool,
-        now: Date = Date()
-    ) throws -> RemotePairingAuthorization {
-        guard
-            let match = grants.first(where: {
-                CredentialHasher.matches(bearerCredential, hash: $0.value.credentialHash)
-            })
-        else {
-            recordDenial(now: now)
-            throw PairingError.invalidGrant
-        }
-        let state = match.value
-        guard !state.revoked else { throw PairingError.grantRevoked }
-        guard state.peer.expiresAt > now else {
-            grants.removeValue(forKey: match.key)
-            appendAudit(audit(state.peer, action: .expired, now: now))
-            emitSnapshot(now: now)
-            throw PairingError.grantExpired
-        }
-        let authorization = RemotePairingAuthorization(
-            peerID: state.peer.id,
-            grantID: state.peer.grantID,
-            role: state.peer.role
-        )
-        guard !requiresMutation || authorization.role == .operator else {
-            appendAudit(audit(state.peer, action: .authorizationDenied, now: now))
-            throw PairingError.viewerIsReadOnly
-        }
-        return authorization
     }
 
 }

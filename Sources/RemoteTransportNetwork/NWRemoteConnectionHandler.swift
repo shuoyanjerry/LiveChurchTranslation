@@ -35,10 +35,10 @@ actor NWRemoteConnectionHandler {
     func start() {
         connection.stateUpdateHandler = { [weak self] state in
             guard case .failed = state else {
-                if case .cancelled = state { Task { await self?.close() } }
+                if case .cancelled = state { Task { [weak self] in await self?.close() } }
                 return
             }
-            Task { await self?.close() }
+            Task { [weak self] in await self?.close() }
         }
         connection.start(queue: queue)
         startHTTPHandshakeDeadline()
@@ -62,7 +62,9 @@ actor NWRemoteConnectionHandler {
             minimumIncompleteLength: 1,
             maximumLength: 16_384
         ) { [weak self] content, _, isComplete, error in
-            Task { await self?.received(content, isComplete: isComplete, error: error) }
+            Task { [weak self] in
+                await self?.received(content, isComplete: isComplete, error: error)
+            }
         }
     }
 

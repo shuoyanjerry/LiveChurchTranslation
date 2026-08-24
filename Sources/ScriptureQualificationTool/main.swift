@@ -6,7 +6,7 @@ import ScriptureQualificationSupport
 enum ScriptureQualificationTool {
     static func main() {
         do {
-            try run(arguments: Array(CommandLine.arguments.dropFirst()))
+            try run(arguments: Array(ProcessInfo.processInfo.arguments.dropFirst()))
         } catch {
             FileHandle.standardError.write(Data("preflight failed: \(error.localizedDescription)\n".utf8))
             exit(EXIT_FAILURE)

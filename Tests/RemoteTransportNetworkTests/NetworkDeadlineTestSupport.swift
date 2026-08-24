@@ -12,7 +12,11 @@ struct DeadlineServerFixture {
     let server: NWRemoteTransportServer
     let endpoint: RemoteEndpoint
 
-    static func start(timeout: Duration) async throws -> Self {
+    static func start(
+        timeout: Duration,
+        maximumConnections: Int = 1,
+        maximumConnectionsPerPeer: Int = 1
+    ) async throws -> Self {
         let sharing = RemoteSharingSwitch()
         await sharing.setEnabled(true)
         let pairing = ListenerPairingFake()
@@ -28,7 +32,8 @@ struct DeadlineServerFixture {
         let endpoint = try await server.start(
             configuration: .init(
                 advertisedHostName: "localhost",
-                maximumConnections: 1,
+                maximumConnections: maximumConnections,
+                maximumConnectionsPerPeer: maximumConnectionsPerPeer,
                 bonjour: .init(
                     name: "Deadline Test Reader",
                     type: "_churchtranslate._tcp",
@@ -51,11 +56,11 @@ actor DeadlineTCPConnection {
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "org.churchtranslation.remote.deadline-test")
 
-    init(port: UInt16) throws {
+    init(host: String = "127.0.0.1", port: UInt16) throws {
         guard let endpointPort = NWEndpoint.Port(rawValue: port) else {
             throw DeadlineTestError.invalidPort
         }
-        connection = NWConnection(host: "127.0.0.1", port: endpointPort, using: .tcp)
+        connection = NWConnection(host: NWEndpoint.Host(host), port: endpointPort, using: .tcp)
     }
 
     func start() async throws {

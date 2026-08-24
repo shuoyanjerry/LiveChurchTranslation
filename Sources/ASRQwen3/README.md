@@ -39,12 +39,15 @@ state; it never reopens or hashes model artifacts.
 ## Failure Modes
 
 Missing or corrupt artifacts fail model loading. Empty and sub-threshold audio
-are rejected before decoding. Known nonspeech sentinels and a six-term minimum,
-ordered hotword echo are rejected after decoding; when an echo prefixes real
-speech, only the exact echo prefix is removed. A prompt-only first decode or a
-pathological character or phrase loop triggers exactly one decode without
-hotwords. A repeated failure is surfaced for durable retry and never enters the
-transcript. The low-energy gate runs before either decode and is unchanged.
+are rejected before decoding. A complete ordered hotword echo is detected for
+prompts of every size; the established six-term threshold is retained for
+truncated echoes from larger prompts. Prompt-only output, a suspected prompt
+prefix, or a pathological character or phrase loop triggers exactly one decode
+without hotwords. The provider uses a valid unprompted result instead of deleting
+text from the prompted result, so genuine speech that starts with a glossary term
+is preserved. A prefix fallback must remove the suspected echo without shortening
+the compacted recognized body; otherwise the complete first result is kept.
+The low-energy gate runs before either decode and is unchanged.
 
 ## Tests
 

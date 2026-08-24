@@ -63,4 +63,15 @@ struct HyMT2PreparedTranslationInput: Sendable {
     let terms: [TranslationTerm]
     let context: [TranslationContextEntry]
     let pronounPlan: HyMT2PronounPlan?
+
+    var withoutPronounProtocol: HyMT2PreparedTranslationInput {
+        HyMT2PreparedTranslationInput(
+            source: source,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage,
+            terms: terms,
+            context: context,
+            pronounPlan: nil
+        )
+    }
 }

@@ -33,17 +33,32 @@ public actor InMemoryDiagnosticsRecorder: DiagnosticsRecorder {
     }
 
     public func export() async throws -> URL {
-        try FileManager.default.createDirectory(
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(
             at: exportDirectory,
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try fileManager.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: exportDirectory.path
         )
         let url = exportDirectory.appending(
-            path: "diagnostics-\(Int(Date().timeIntervalSince1970)).json"
+            path: "diagnostics-\(UUID().uuidString.lowercased()).json"
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(records).write(to: url, options: .atomic)
+        do {
+            try encoder.encode(records).write(to: url, options: .atomic)
+            try fileManager.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: url.path
+            )
+        } catch {
+            try? fileManager.removeItem(at: url)
+            throw error
+        }
         return url
     }
 

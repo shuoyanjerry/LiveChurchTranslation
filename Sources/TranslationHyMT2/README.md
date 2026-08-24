@@ -98,6 +98,11 @@ policy-invalid target blocks enter the same single strict-retry path. Complete p
 removed before a safe best-effort candidate is returned. Empty output, prompt-control delimiters,
 or residual protocol text are never published; if neither attempt has a safe candidate, a typed
 retryable `invalidOutput` keeps the source audio pending for later translation.
+If both protocol-bearing attempts fail only pronoun validation, one final prompt omits
+the pronoun protocol. Its safe nonempty output remains visible with backend pronoun and
+fidelity warnings, while any request ordinal, including whitespace-split unknown
+`Pdddd` values, remains fail-closed. Ordinary identifiers outside the exact reserved
+ordinal shape remain valid.
 When the initial rejection concerns the pronoun protocol, the strict retry receives
 only a fixed failure code and its corresponding protected-block repair rule. Failed output,
 source text, target text, marker IDs, and observed text are never replayed in that

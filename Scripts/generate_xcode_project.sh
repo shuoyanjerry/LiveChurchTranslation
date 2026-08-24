@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SPEC="$REPOSITORY_ROOT/Packaging/XcodeGen/project.yml"
-PROJECT="$REPOSITORY_ROOT/QuietLiturgyReader.xcodeproj"
+PROJECT="$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj"
 XCODEGEN="$("$SCRIPT_DIR/fetch_xcodegen.sh")"
 
 cd "$REPOSITORY_ROOT"

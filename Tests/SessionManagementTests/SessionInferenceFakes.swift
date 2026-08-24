@@ -108,7 +108,7 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
             targetText: "We are justified by faith; this is grace.",
             duration: .milliseconds(35),
             review: reviewedRequestIndices.contains(requestIndex)
-                ? TranslationReview(issueCodes: ["quality.missing_required_term"])
+                ? TranslationReview(issueCodes: ["quality.pronoun_alignment"])
                 : nil
         )
     }

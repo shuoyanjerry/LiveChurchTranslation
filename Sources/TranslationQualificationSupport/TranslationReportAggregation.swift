@@ -14,6 +14,7 @@ extension TranslationQualificationReportBuilder {
             successCount: attempts.filter { $0.status == .success }.count,
             failureCount: attempts.filter { $0.status == .failure }.count,
             strictRetryCount: attempts.filter(\.strictRetryUsed).count,
+            safetyFallbackCount: attempts.filter { $0.safetyFallbackUsed == true }.count,
             latency: latency(attempts.map(\.latencySeconds)),
             checkPassCount: statuses.filter { $0 == .pass }.count,
             checkFailCount: statuses.filter { $0 == .fail }.count,

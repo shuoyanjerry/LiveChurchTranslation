@@ -5,7 +5,7 @@ import TranslationAPI
 @MainActor
 @Suite struct HyMT2BestEffortCollisionTests {
     @Test func ordinaryIdentifiersRemainVisibleWithoutPronounProtocol() async throws {
-        let expected = "Read P3, 123456789ABC, and <Question> next."
+        let expected = "Read P3, P0001, AP0001B, P00010, and <Question> next."
         let harness = try await makeTranslationHarness(responses: [.success(expected)])
         defer { harness.model.remove() }
 
@@ -30,13 +30,13 @@ import TranslationAPI
     }
 
     @Test func ordinaryIdentifiersRemainVisibleAlongsidePronounGuidance() async throws {
-        let source = "她让我们读 P3、123456789ABC 和下一项。"
+        let source = "她让我们读 P3、AP0001B、P00010 和下一项。"
         let plan = try makePronounPlan(
             source: source,
             guidance: [guidance(0, .verifiedFemale)]
         )
         let output =
-            "\(anchored(plan, 0, "She")) asked us to read P3, 123456789ABC, and <Question>."
+            "\(anchored(plan, 0, "She")) asked us to read P3, AP0001B, P00010, and <Question>."
         let harness = try await makeTranslationHarness(responses: [.success(output)])
         defer { harness.model.remove() }
 
@@ -51,7 +51,7 @@ import TranslationAPI
 
         #expect(
             result.targetText
-                == "She asked us to read P3, 123456789ABC, and <Question>."
+                == "She asked us to read P3, AP0001B, P00010, and <Question>."
         )
     }
 }

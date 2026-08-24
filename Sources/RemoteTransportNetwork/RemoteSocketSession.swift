@@ -6,6 +6,7 @@ public actor RemoteSocketSession {
     public let peerID: RemotePeerID
     private let grantID: RemoteGrantID
     private let bearerCredential: String
+    private let clientBinding: RemotePairingClientBinding
     private let pairing: any RemotePairingServing
     private let projection: any RemoteProjectionProviding
     private var isClosed = false
@@ -15,12 +16,14 @@ public actor RemoteSocketSession {
         peerID: RemotePeerID,
         grantID: RemoteGrantID,
         bearerCredential: String,
+        clientBinding: RemotePairingClientBinding,
         pairing: any RemotePairingServing,
         projection: any RemoteProjectionProviding
     ) {
         self.peerID = peerID
         self.grantID = grantID
         self.bearerCredential = bearerCredential
+        self.clientBinding = clientBinding
         self.pairing = pairing
         self.projection = projection
     }
@@ -72,6 +75,7 @@ public actor RemoteSocketSession {
         do {
             authorization = try await pairing.authorize(
                 bearerCredential: bearerCredential,
+                clientBinding: clientBinding,
                 requiresMutation: false,
                 now: Date()
             )

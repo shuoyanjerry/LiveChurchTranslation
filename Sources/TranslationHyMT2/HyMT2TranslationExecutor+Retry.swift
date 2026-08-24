@@ -41,7 +41,7 @@ extension HyMT2TranslationExecutor {
                 requestID: request.context.requestID,
                 phase: .strictRetry
             )
-            return try selectedFallback(output: output, failure: failure, request: request)
+            return try await selectedFallback(output: output, failure: failure, request: request)
         }
     }
 
@@ -49,20 +49,32 @@ extension HyMT2TranslationExecutor {
         output: String,
         failure: OutputValidationFailure,
         request: HyMT2StrictRetryRequest
-    ) throws -> HyMT2AssessedOutput {
-        guard
-            let assessed = HyMT2BestEffortExtractor.assess(
-                output,
-                failure: failure,
-                input: request.context.input
-            )
-        else {
-            if let fallback = request.fallback { return fallback }
-            throw HyMT2Error.invalidOutput(failure.issues.map(\.description))
+    ) async throws -> HyMT2AssessedOutput {
+        let assessed = HyMT2BestEffortExtractor.assess(
+            output,
+            failure: failure,
+            input: request.context.input
+        )
+        if let assessed {
+            guard let fallback = request.fallback else { return assessed }
+            return assessed.validationIssueCount <= fallback.validationIssueCount
+                ? assessed
+                : fallback
         }
-        guard let fallback = request.fallback else { return assessed }
-        return assessed.validationIssueCount <= fallback.validationIssueCount
-            ? assessed
-            : fallback
+        if let fallback = request.fallback { return fallback }
+        guard qualifiesForSafetyFallback(failure, request: request) else {
+            throw HyMT2Error.invalidOutput(failure.safeDescriptions)
+        }
+        return try await safetyFallback(request.context)
+    }
+
+    private func qualifiesForSafetyFallback(
+        _ failure: OutputValidationFailure,
+        request: HyMT2StrictRetryRequest
+    ) -> Bool {
+        request.context.input.pronounPlan != nil
+            && request.fallback == nil
+            && !failure.issues.isEmpty
+            && failure.issues.allSatisfy(\.isPronounValidationIssue)
     }
 }

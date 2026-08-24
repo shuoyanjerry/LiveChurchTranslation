@@ -1,4 +1,5 @@
 import LiveReader
+import OSLog
 import SwiftUI
 
 public struct LiveChurchTranslationApp: App {
@@ -14,7 +15,11 @@ public struct LiveChurchTranslationApp: App {
                 audioImporter: dependencies.audioImporter
             )
         } catch {
-            startup = .failed(error.localizedDescription)
+            Logger(
+                subsystem: "com.shuoyan.LiveChurchTranslation",
+                category: "startup"
+            ).fault("Startup failed: \(error.localizedDescription, privacy: .private)")
+            startup = .failed
         }
     }
 
@@ -29,8 +34,8 @@ public struct LiveChurchTranslationApp: App {
                     sharingFeature: dependencies.sharingFeature,
                     audioImporter: dependencies.audioImporter
                 )
-            case .failed(let message):
-                StartupFailureView(message: message)
+            case .failed:
+                StartupFailureView()
             }
         }
         .windowResizability(.contentMinSize)
@@ -39,5 +44,5 @@ public struct LiveChurchTranslationApp: App {
 
 private enum Startup {
     case ready(AppSceneDependencies)
-    case failed(String)
+    case failed
 }

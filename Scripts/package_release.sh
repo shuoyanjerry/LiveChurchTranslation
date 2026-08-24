@@ -4,18 +4,21 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPOSITORY_ROOT/dist"
-APP="$DIST_DIR/Quiet Liturgy Reader.app"
+APP="$DIST_DIR/Live Church Translation.app"
 RUNTIME="$REPOSITORY_ROOT/.artifacts/llama-b10549"
 MODELS="${RELEASE_MODELS_DIR:-$REPOSITORY_ROOT/.artifacts/release-models}"
 IDENTITY="${DEVELOPER_ID_APPLICATION:--}"
 VERSION="${APP_VERSION:-1.0.0}"
 BUILD_NUMBER="${APP_BUILD_NUMBER:-1}"
+RECLAIM_BUILD_SPACE="${RELEASE_RECLAIM_BUILD_SPACE:-0}"
 
 "$SCRIPT_DIR/check_app_store_packaging.sh"
 [[ "$VERSION" =~ ^[0-9]+([.][0-9]+){0,2}$ ]] \
   || { echo "APP_VERSION must contain one to three numeric components." >&2; exit 1; }
 [[ "$BUILD_NUMBER" =~ ^[0-9]+([.][0-9]+){0,2}$ ]] \
   || { echo "APP_BUILD_NUMBER must contain one to three numeric components." >&2; exit 1; }
+[[ "$RECLAIM_BUILD_SPACE" == "0" || "$RECLAIM_BUILD_SPACE" == "1" ]] \
+  || { echo "RELEASE_RECLAIM_BUILD_SPACE must be 0 or 1." >&2; exit 1; }
 
 if [[ "$IDENTITY" != "-" ]]; then
   MATCHING_IDENTITY="$({ security find-identity -v -p codesigning || true; } \
@@ -38,7 +41,7 @@ BIN_DIR="$(swift build -c release --show-bin-path)"
 
 mkdir -p "$DIST_DIR"
 if [[ -e "$APP" ]]; then
-  [[ "$APP" == "$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.app" ]]
+  [[ "$APP" == "$REPOSITORY_ROOT/dist/Live Church Translation.app" ]]
   rm -rf "$APP"
 fi
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -46,14 +49,14 @@ ditto "$BIN_DIR/LiveChurchTranslation" "$APP/Contents/MacOS/LiveChurchTranslatio
 ditto "$REPOSITORY_ROOT/Packaging/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Delete :CFBundleIconName' \
   "$APP/Contents/Info.plist" >/dev/null 2>&1 || true
-/usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string AppIconQuiet' \
+/usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string AppIconLiveChurchTranslation' \
   "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
 ditto "$REPOSITORY_ROOT/THIRD_PARTY_NOTICES.md" "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
 ditto "$REPOSITORY_ROOT/PRIVACY.md" "$APP/Contents/Resources/PRIVACY.md"
-ditto "$REPOSITORY_ROOT/Assets/AppIconQuiet.icns" \
-  "$APP/Contents/Resources/AppIconQuiet.icns"
+ditto "$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation.icns" \
+  "$APP/Contents/Resources/AppIconLiveChurchTranslation.icns"
 ditto "$RUNTIME/LICENSE" "$APP/Contents/Resources/llama.cpp-LICENSE"
 ditto "$REPOSITORY_ROOT/Packaging/PrivacyInfo.xcprivacy" \
   "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
@@ -61,7 +64,7 @@ ditto "$REPOSITORY_ROOT/Packaging/zh-Hans.lproj" \
   "$APP/Contents/Resources/zh-Hans.lproj"
 ditto "$REPOSITORY_ROOT/Packaging/Licenses" \
   "$APP/Contents/Resources/Licenses"
-ditto "$MODELS" "$APP/Contents/Resources/Models"
+ditto --clone "$MODELS" "$APP/Contents/Resources/Models"
 "$SCRIPT_DIR/check_bundled_models.sh" "$APP"
 "$SCRIPT_DIR/check_bundled_licenses.sh" "$APP/Contents/Resources/Licenses"
 
@@ -90,5 +93,11 @@ codesign -d --entitlements :- "$APP/Contents/MacOS/llama-server" >/dev/null
 "$SCRIPT_DIR/check_bundled_models.sh" "$APP"
 "$SCRIPT_DIR/audit_release_app.sh" "$APP" "$IDENTITY"
 otool -L "$APP/Contents/MacOS/LiveChurchTranslation"
+if [[ "$RECLAIM_BUILD_SPACE" == "1" && -e "$REPOSITORY_ROOT/.build" ]]; then
+  BUILD_ROOT="$REPOSITORY_ROOT/.build"
+  [[ "$BUILD_ROOT" == "$REPOSITORY_ROOT/.build" && ! -L "$BUILD_ROOT" ]]
+  rm -rf "$BUILD_ROOT"
+  echo "Removed transient Swift build products after packaging."
+fi
 echo "Created Developer ID/engineering artifact $APP"
 echo "This artifact is not a Mac App Store archive or upload package."

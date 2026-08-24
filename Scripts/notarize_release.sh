@@ -3,15 +3,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.app"
-DMG="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.dmg"
-: "${DEVELOPER_ID_APPLICATION:?Set DEVELOPER_ID_APPLICATION to a Developer ID identity}"
-EVIDENCE_DIR="$REPOSITORY_ROOT/dist/release-evidence"
+APP="$REPOSITORY_ROOT/dist/Live Church Translation.app"
+DMG="$REPOSITORY_ROOT/dist/Live Church Translation.dmg"
+EVIDENCE_DIR="$REPOSITORY_ROOT/dist/Live Church Translation.release-evidence"
 
 fail() {
   echo "Release notarization failed: $*" >&2
   exit 1
 }
+
+[[ -z "$(git -C "$REPOSITORY_ROOT" status --porcelain=v1 --untracked-files=normal)" ]] \
+  || fail "a formal release must start from a clean Git worktree"
+: "${DEVELOPER_ID_APPLICATION:?Set DEVELOPER_ID_APPLICATION to a Developer ID identity}"
 
 if [[ -n "${NOTARY_PROFILE:-}" ]]; then
   NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
@@ -50,7 +53,7 @@ submit_and_require_acceptance() {
 }
 
 "$SCRIPT_DIR/package_release.sh"
-ZIP="$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.zip"
+ZIP="$REPOSITORY_ROOT/dist/Live Church Translation.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
 mkdir -p "$EVIDENCE_DIR"
@@ -61,6 +64,8 @@ submit_and_require_acceptance \
   "$ZIP" "$EVIDENCE_DIR/notary-app.json" "$EVIDENCE_DIR/notary-app-log.json"
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
+rm -f "$ZIP"
+"$SCRIPT_DIR/check_release_disk_space.sh" 3221225472 "before notarized DMG creation"
 "$SCRIPT_DIR/create_dmg.sh"
 submit_and_require_acceptance \
   "$DMG" "$EVIDENCE_DIR/notary-dmg.json" "$EVIDENCE_DIR/notary-dmg-log.json"

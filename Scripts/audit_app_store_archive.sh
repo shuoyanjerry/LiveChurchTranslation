@@ -6,6 +6,8 @@ fail() {
   exit 1
 }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 plist_value() {
   /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
 }
@@ -57,6 +59,8 @@ APPS=("$APPLICATIONS_DIR"/*.app)
 shopt -u nullglob
 [[ "${#APPS[@]}" -eq 1 ]] || fail "archive must contain exactly one app"
 APP="${APPS[0]}"
+[[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
+  || fail "archived app must be named Live Church Translation.app"
 CONTENTS="$APP/Contents"
 INFO="$CONTENTS/Info.plist"
 PRIVACY="$CONTENTS/Resources/PrivacyInfo.xcprivacy"
@@ -75,10 +79,18 @@ PROFILE="$CONTENTS/embedded.provisionprofile"
 "$SCRIPT_DIR/check_bundled_licenses.sh" "$CONTENTS/Resources/Licenses"
 
 plutil -lint "$INFO" "$PRIVACY" >/dev/null || fail "bundle plist validation failed"
+[[ "$(plist_value "$INFO" "CFBundleName" || true)" == "Live Church Translation" ]] \
+  || fail "CFBundleName must be Live Church Translation"
+[[ "$(plist_value "$INFO" "CFBundleDisplayName" || true)" == "Live Church Translation" ]] \
+  || fail "CFBundleDisplayName must be Live Church Translation"
 require_nonempty "$INFO" "NSMicrophoneUsageDescription" "microphone usage description"
 require_nonempty "$INFO" "NSLocalNetworkUsageDescription" "local-network usage description"
-[[ "$(plist_value "$INFO" "NSBonjourServices:0" || true)" == "_churchtranslate._tcp" ]] \
-  || fail "Bonjour service declaration is missing"
+[[ "$(plutil -extract NSAppTransportSecurity json -o - "$INFO")" \
+  == '{"NSAllowsLocalNetworking":true}' ]] \
+  || fail "ATS must allow only local networking without broad cleartext exceptions"
+[[ "$(plutil -extract NSBonjourServices json -o - "$INFO")" \
+  == '["_churchtranslate._tcp"]' ]] \
+  || fail "Bonjour must declare only the reviewed reader service"
 [[ "$(plist_value "$INFO" "CFBundleIconName" || true)" == "AppIcon" ]] \
   || fail "bundle does not identify the reviewed AppIcon asset"
 [[ "$(plist_value "$INFO" "ITSAppUsesNonExemptEncryption" || true)" == "false" ]] \
@@ -138,7 +150,7 @@ codesign --verify --deep --strict --verbose=2 "$APP" \
 require_distribution_signature "$APP"
 require_distribution_signature "$HELPER"
 
-TEMP_DIR="$(mktemp -d /tmp/quiet-liturgy-store-audit.XXXXXX)"
+TEMP_DIR="$(mktemp -d /tmp/live-church-translation-store-audit.XXXXXX)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 MAIN_ENTITLEMENTS="$TEMP_DIR/main-entitlements.plist"
 HELPER_ENTITLEMENTS="$TEMP_DIR/helper-entitlements.plist"

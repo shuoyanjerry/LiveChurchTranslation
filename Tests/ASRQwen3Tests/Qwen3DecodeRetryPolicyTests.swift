@@ -30,17 +30,6 @@ struct Qwen3DecodeRetryPolicyTests {
         )
     }
 
-    @Test func doesNotRetryPromptPrefixWhenRecognizedBodyRemains() {
-        let output = Self.promptOnlyOutput + "神爱世人。"
-
-        #expect(
-            Qwen3DecodeRetryPolicy.retryReason(
-                firstOutput: output,
-                hotwords: Self.terms
-            ) == nil
-        )
-    }
-
     @Test func neverRetriesWithoutHotwords() {
         #expect(
             !Qwen3DecodeRetryPolicy.shouldRetryWithoutHotwords(
@@ -54,6 +43,12 @@ struct Qwen3DecodeRetryPolicyTests {
         #expect(
             Qwen3DecodeRetryPolicy.outputGuardHotwords(
                 after: .promptOnly,
+                originalHotwords: Self.terms
+            ) == Self.terms
+        )
+        #expect(
+            Qwen3DecodeRetryPolicy.outputGuardHotwords(
+                after: .promptPrefix,
                 originalHotwords: Self.terms
             ) == Self.terms
         )

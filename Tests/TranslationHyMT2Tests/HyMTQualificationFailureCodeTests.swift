@@ -11,7 +11,9 @@ import TranslationAPI
             ("model commentary or instruction text", "meta"),
             ("prompt-control delimiter remains in output", "ctl"),
             ("Chinese source script remains in English output", "zh"),
+            ("missing required term", "term"),
             ("missing required term: private-term", "term"),
+            ("missing source number", "num"),
             ("missing number: 8675309", "num"),
             ("source negation was not preserved", "neg"),
             ("Scripture reference was not preserved", "verse"),
@@ -94,7 +96,8 @@ import TranslationAPI
     @Test func nearMatchesAndEmptyReasonListFailClosedToOther() {
         let nearMatches = [
             "empty output private",
-            "missing required term",
+            "missing required term private",
+            "missing source number private",
             "missing number:",
             "pronounish marker P0001",
         ]

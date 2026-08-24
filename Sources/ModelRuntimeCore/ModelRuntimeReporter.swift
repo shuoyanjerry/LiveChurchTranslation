@@ -22,7 +22,7 @@ public actor ModelRuntimeReporter: ModelRuntimeReporting {
         return AsyncStream { continuation in
             continuations[id] = continuation
             continuation.onTermination = { [weak self] _ in
-                Task { await self?.removeContinuation(id) }
+                Task { [weak self] in await self?.removeContinuation(id) }
             }
         }
     }

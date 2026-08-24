@@ -1,8 +1,8 @@
-# Quiet Liturgy Reader Privacy Policy
+# Live Church Translation Privacy Policy
 
 Effective: August 22, 2026
 
-Quiet Liturgy Reader processes microphone audio, imported audio, transcripts, and
+Live Church Translation processes microphone audio, imported audio, transcripts, and
 translations locally on the user's Mac. The app does not create an account, include
 advertising or tracking, or send meeting content to the developer or an AI service.
 

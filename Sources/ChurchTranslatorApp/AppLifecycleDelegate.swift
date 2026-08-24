@@ -1,5 +1,5 @@
 import AppKit
-import LiveReader
+import AudioImportAPI
 import SessionManagementAPI
 
 @MainActor

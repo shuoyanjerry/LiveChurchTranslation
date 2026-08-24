@@ -93,4 +93,50 @@ enum OutputValidationIssue: Equatable, Sendable {
 
 struct OutputValidationFailure: Error, Equatable, Sendable {
     let issues: [OutputValidationIssue]
+
+    var safeDescriptions: [String] {
+        issues.map(\.safeDescription)
+    }
+}
+
+extension OutputValidationIssue {
+    var safeDescription: String {
+        switch self {
+        case .negativePronounSourceRange, .emptyPronounSourceRange,
+            .pronounSourceRangeOutOfBounds, .pronounSourceRangeNotOnCharacterBoundary,
+            .duplicatePronounSourceRange, .overlappingPronounSourceRanges,
+            .pronounSourceRangeWrongGlyph, .tooManyPronounOccurrences,
+            .reservedPronounMarkerCollision, .missingPronounMarker,
+            .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
+            .pronounMarkerResolutionMismatch:
+            "pronoun protocol validation failed"
+        case .reusedPronounRealization, .wrongPronounRealization:
+            "pronoun alignment validation failed"
+        case .missingTerm:
+            "missing required term"
+        case .missingNumber:
+            "missing source number"
+        case .empty, .implausibleLength, .metaText, .promptControlDelimiter,
+            .unexpectedSourceScript, .missingNegation, .malformedScriptureReference:
+            description
+        }
+    }
+
+    var isPronounValidationIssue: Bool {
+        switch self {
+        case .negativePronounSourceRange, .emptyPronounSourceRange,
+            .pronounSourceRangeOutOfBounds, .pronounSourceRangeNotOnCharacterBoundary,
+            .duplicatePronounSourceRange, .overlappingPronounSourceRanges,
+            .pronounSourceRangeWrongGlyph, .tooManyPronounOccurrences,
+            .reservedPronounMarkerCollision, .missingPronounMarker,
+            .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
+            .pronounMarkerResolutionMismatch, .reusedPronounRealization,
+            .wrongPronounRealization:
+            true
+        case .empty, .implausibleLength, .metaText, .promptControlDelimiter,
+            .unexpectedSourceScript, .missingTerm, .missingNumber,
+            .missingNegation, .malformedScriptureReference:
+            false
+        }
+    }
 }

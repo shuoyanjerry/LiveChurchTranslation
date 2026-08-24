@@ -6,7 +6,7 @@ struct MicrophonePermissionGuidanceView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 18) {
+            VStack(spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 30, weight: .medium))
                     .foregroundStyle(ChurchTheme.olive)
@@ -25,23 +25,17 @@ struct MicrophonePermissionGuidanceView: View {
             }
             .padding(.horizontal, 38)
             .padding(.top, 34)
-            .padding(.bottom, 26)
+            .padding(.bottom, 28)
             Divider().overlay(ChurchTheme.stone)
-            VStack(spacing: 14) {
-                Text("你仍可导入音频或浏览资料库；设备端模型会继续在后台自动准备。")
-                    .font(.caption)
-                    .foregroundStyle(ChurchTheme.muted)
-                    .multilineTextAlignment(.center)
-                HStack(spacing: 12) {
-                    Button("稍后") { coordinator.deferGuidance() }
-                        .buttonStyle(ChurchSecondaryButtonStyle())
-                        .keyboardShortcut(.cancelAction)
-                    primaryButton
-                }
+            HStack(spacing: 12) {
+                Button("稍后") { coordinator.deferGuidance() }
+                    .buttonStyle(ChurchSecondaryButtonStyle())
+                    .keyboardShortcut(.cancelAction)
+                primaryButton
             }
             .padding(24)
         }
-        .frame(width: 470)
+        .frame(width: 420)
         .background(ChurchTheme.background)
     }
 
@@ -76,7 +70,7 @@ struct MicrophonePermissionGuidanceView: View {
 
     private var title: String {
         switch coordinator.guidance {
-        case .notDetermined: "启用实时语音"
+        case .notDetermined: "允许麦克风"
         case .denied: "需要麦克风权限"
         case .restricted: "麦克风访问受限"
         case nil: ""
@@ -86,13 +80,11 @@ struct MicrophonePermissionGuidanceView: View {
     private var message: String {
         switch coordinator.guidance {
         case .notDetermined:
-            "实时听抄与翻译需要使用麦克风。音频只在这台 Mac 上处理；"
-                + "仅在你点按“允许麦克风”后，应用才会显示 macOS 授权窗口。"
+            "实时翻译需要使用麦克风。"
         case .denied:
-            "麦克风权限当前已关闭。请在“系统设置 > 隐私与安全性 > 麦克风”中"
-                + "允许“教会实时翻译”使用麦克风。"
+            "请在系统设置中允许 Live Church Translation 使用麦克风。"
         case .restricted:
-            "此 Mac 的管理或家长控制策略限制了麦克风访问。你可以打开系统设置检查限制。"
+            "此 Mac 不允许访问麦克风。"
         case nil: ""
         }
     }

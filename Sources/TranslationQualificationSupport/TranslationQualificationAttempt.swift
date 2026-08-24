@@ -13,10 +13,15 @@ public struct TranslationQualificationAttempt: Codable, Equatable, Sendable {
     public let exactStringMetricEligible: Bool
     public let contextSegmentIDs: [String]
     public let strictRetryUsed: Bool
+    /// Present in reports produced after the completeness-first safety phase shipped.
+    public let safetyFallbackUsed: Bool?
     public let completionAttemptCount: Int
     public let completionOutcomes: [String]
     public let latencySeconds: Double
     public let failureCode: String?
+    /// Backend-only warnings attached to a safe, nonempty provider completion.
+    /// Optionality keeps historical schema-v1/v2 evidence decodable.
+    public let backendReviewIssueCodes: [String]?
     public let glossaryTerms: [TranslationQualificationTermResult]
     public let preservationChecks: [TranslationQualificationCheck]
     public let pronounResults: [TranslationQualificationPronounResult]
@@ -28,10 +33,12 @@ public struct TranslationQualificationAttempt: Codable, Equatable, Sendable {
         translationSourceText: String,
         contextSegmentIDs: [String],
         strictRetryUsed: Bool,
+        safetyFallbackUsed: Bool? = nil,
         completionAttemptCount: Int,
         completionOutcomes: [String],
         latencySeconds: Double,
         failureCode: String?,
+        backendReviewIssueCodes: [String]? = nil,
         glossaryTerms: [TranslationQualificationTermResult],
         preservationChecks: [TranslationQualificationCheck],
         pronounResults: [TranslationQualificationPronounResult]
@@ -50,10 +57,12 @@ public struct TranslationQualificationAttempt: Codable, Equatable, Sendable {
         exactStringMetricEligible = segment.qualification.exactStringScoringEligible
         self.contextSegmentIDs = contextSegmentIDs
         self.strictRetryUsed = strictRetryUsed
+        self.safetyFallbackUsed = safetyFallbackUsed
         self.completionAttemptCount = completionAttemptCount
         self.completionOutcomes = completionOutcomes
         self.latencySeconds = latencySeconds
         self.failureCode = failureCode
+        self.backendReviewIssueCodes = backendReviewIssueCodes
         self.glossaryTerms = glossaryTerms
         self.preservationChecks = preservationChecks
         self.pronounResults = pronounResults
@@ -72,6 +81,8 @@ public struct TranslationQualificationAggregate: Codable, Equatable, Sendable {
     public let successCount: Int
     public let failureCount: Int
     public let strictRetryCount: Int
+    /// Absent only when decoding evidence created before the safety phase existed.
+    public let safetyFallbackCount: Int?
     public let latency: TranslationQualificationLatency
     public let checkPassCount: Int
     public let checkFailCount: Int

@@ -38,9 +38,9 @@ extension NWRemoteTransportServer {
         activeListener?.cancel()
         let openConnections = connections.values
         connections.removeAll()
+        connectionBindings.removeAll()
         for connection in openConnections { await connection.close() }
         components = nil
-        await pairingManager.revokeAll(now: Date())
         setStatus(status)
         emit(.connectionCountChanged(0))
     }
@@ -66,6 +66,7 @@ extension NWRemoteTransportServer {
         listener = nil
         activeListenerID = nil
         activeListener?.cancel()
+        connectionBindings.removeAll()
         startContinuation?.resume(throwing: error)
         startContinuation = nil
         switch error {

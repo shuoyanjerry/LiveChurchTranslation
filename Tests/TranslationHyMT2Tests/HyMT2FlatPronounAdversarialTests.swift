@@ -47,6 +47,7 @@ import TranslationAPI
         let valid = flatCertified(fixture.plan, 0, "she")
         let residuals = [
             valid + " P9999",
+            valid + " P 9 9 9 9",
             valid + " 111111112222_P0001",
             valid + " <QLR_REPLAY>",
             valid + " QLR_UNRESOLVED",

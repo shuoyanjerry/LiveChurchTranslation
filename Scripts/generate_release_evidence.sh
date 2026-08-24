@@ -8,10 +8,11 @@ fail() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP="${1:-$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.app}"
-DMG="${2:-$REPOSITORY_ROOT/dist/Quiet Liturgy Reader.dmg}"
+APP="${1:-$REPOSITORY_ROOT/dist/Live Church Translation.app}"
+DMG="${2:-$REPOSITORY_ROOT/dist/Live Church Translation.dmg}"
 RELEASE_MODE="${3:-dry-run}"
-EVIDENCE_DIR="$REPOSITORY_ROOT/dist/release-evidence"
+EVIDENCE_DIR="$REPOSITORY_ROOT/dist/Live Church Translation.release-evidence"
+EVIDENCE_LABEL="$(basename "$EVIDENCE_DIR")"
 SOURCE_MANIFEST="$SCRIPT_DIR/release_model_sources.tsv"
 MODEL_ROOT="$APP/Contents/Resources/Models"
 MODEL_MANIFEST="$EVIDENCE_DIR/MODEL-MANIFEST.tsv"
@@ -23,6 +24,19 @@ CHECKSUMS="$EVIDENCE_DIR/SHA256SUMS"
 
 [[ "$RELEASE_MODE" == "dry-run" || "$RELEASE_MODE" == "developer-id-notarized" ]] \
   || fail "release mode must be dry-run or developer-id-notarized"
+[[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
+  || fail "app artifact must be named Live Church Translation.app"
+[[ "$(basename "$DMG")" == "Live Church Translation.dmg" ]] \
+  || fail "DMG artifact must be named Live Church Translation.dmg"
+COMMIT="$(git -C "$REPOSITORY_ROOT" rev-parse HEAD)"
+if [[ -z "$(git -C "$REPOSITORY_ROOT" status --porcelain=v1 --untracked-files=normal)" ]]; then
+  SOURCE_STATE="clean"
+else
+  SOURCE_STATE="dirty"
+fi
+if [[ "$RELEASE_MODE" == "developer-id-notarized" && "$SOURCE_STATE" != "clean" ]]; then
+  fail "a formal release must be built from a clean Git worktree"
+fi
 [[ -d "$APP" && -f "$DMG" ]] || fail "app and DMG must exist before evidence generation"
 "$SCRIPT_DIR/check_release_models.sh" "$MODEL_ROOT"
 mkdir -p "$EVIDENCE_DIR"
@@ -56,7 +70,6 @@ ditto "$REPOSITORY_ROOT/Packaging/LicenseFiles.sha256" "$LICENSE_MANIFEST"
 INFO="$APP/Contents/Info.plist"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO")"
-COMMIT="$(git -C "$REPOSITORY_ROOT" rev-parse HEAD)"
 DMG_BYTES="$(stat -f '%z' "$DMG")"
 [[ "$DMG_BYTES" -lt 2147483648 ]] \
   || fail "final DMG must be smaller than GitHub's 2 GiB per-asset limit"
@@ -70,7 +83,9 @@ else
 fi
 SIGNATURE="$(codesign -dv --verbose=4 "$APP" 2>&1)"
 TEAM="$(awk -F= '/^TeamIdentifier=/ {print $2; exit}' <<<"$SIGNATURE")"
-[[ -n "$TEAM" ]] || TEAM="ad-hoc"
+if [[ -z "$TEAM" || "$TEAM" == "not set" ]]; then
+  TEAM="ad-hoc"
+fi
 
 APP_NOTARY_ID="not performed"
 APP_NOTARY_STATUS="dry-run"
@@ -95,6 +110,7 @@ fi
   printf 'linguistic quality, theological correctness, long-session reliability, or clean-Mac acceptance.\n\n'
   printf -- '- Version/build: `%s (%s)`\n' "$VERSION" "$BUILD"
   printf -- '- Git commit: `%s`\n' "$COMMIT"
+  printf -- '- Git source state: `%s`\n' "$SOURCE_STATE"
   printf -- '- Generated UTC: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   printf -- '- Mode: `%s`\n' "$RELEASE_MODE"
   printf -- '- Architecture: `arm64`\n'
@@ -119,8 +135,9 @@ fi
   printf '%s  %s\n' "$DMG_SHA" "$(basename "$DMG")"
   while IFS= read -r file; do
     [[ "$file" != "$CHECKSUMS" ]] || continue
-    printf '%s  release-evidence/%s\n' \
-      "$(shasum -a 256 "$file" | awk '{print $1}')" "$(basename "$file")"
+    printf '%s  %s/%s\n' \
+      "$(shasum -a 256 "$file" | awk '{print $1}')" \
+      "$EVIDENCE_LABEL" "$(basename "$file")"
   done < <(find "$EVIDENCE_DIR" -maxdepth 1 -type f | LC_ALL=C sort)
 } >"$CHECKSUMS"
 

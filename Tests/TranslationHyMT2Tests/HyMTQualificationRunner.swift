@@ -74,7 +74,7 @@ extension HyMTQualificationRunner {
             guidance: resolution.pronounGuidance
         )
         let termExpectations = try termExpectations(for: request, segment: segment)
-        let outcome = await translate(request)
+        let outcome = try await translate(request)
         let input = await attemptInput(
             segment: segment,
             recent: recent,
@@ -123,7 +123,7 @@ extension HyMTQualificationRunner {
         )
     }
 
-    private func translate(_ request: TranslationRequest) async -> HyMTQualificationOutcome {
+    private func translate(_ request: TranslationRequest) async throws -> HyMTQualificationOutcome {
         let clock = ContinuousClock()
         let started = clock.now
         do {
@@ -131,12 +131,16 @@ extension HyMTQualificationRunner {
             return HyMTQualificationOutcome(
                 hypothesis: result.targetText,
                 latencySeconds: seconds(started.duration(to: clock.now)),
-                error: result.review.map { HyMT2Error.invalidOutput($0.issueCodes) }
+                backendReviewIssueCodes: result.review?.issueCodes ?? [],
+                error: nil
             )
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             return HyMTQualificationOutcome(
                 hypothesis: nil,
                 latencySeconds: seconds(started.duration(to: clock.now)),
+                backendReviewIssueCodes: [],
                 error: error
             )
         }
@@ -151,6 +155,7 @@ extension HyMTQualificationRunner {
 struct HyMTQualificationOutcome {
     let hypothesis: String?
     let latencySeconds: Double
+    let backendReviewIssueCodes: [String]
     let error: (any Error)?
 }
 

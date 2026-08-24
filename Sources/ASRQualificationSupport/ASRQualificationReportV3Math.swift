@@ -81,7 +81,7 @@ enum ASRQualificationReportV3Math {
         attemptCount: Int
     ) -> Double {
         guard attemptCount > 0 else { return 0 }
-        let withinThreshold = successful.count { $0.elapsedSeconds <= 3 }
+        let withinThreshold = successful.lazy.filter { $0.elapsedSeconds <= 3 }.count
         return Double(withinThreshold) / Double(attemptCount)
     }
 }

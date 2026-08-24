@@ -4,14 +4,20 @@ import SettingsAPI
 
 extension LiveSessionCoordinator {
     public func start(inputDeviceID: AudioInputID?) async {
-        guard !isActive, stopTask == nil, state.sessionID == nil else { return }
+        guard !Task.isCancelled, !isActive, stopTask == nil, state.sessionID == nil else {
+            return
+        }
         let sessionID = UUID()
-        await initializeSession(id: sessionID)
+        guard await initializeSession(id: sessionID) else { return }
+        guard !Task.isCancelled else {
+            await stop()
+            return
+        }
         guard await authorizeCapture(for: sessionID) else { return }
         await prepareSession(inputDeviceID: inputDeviceID, sessionID: sessionID)
     }
 
-    private func initializeSession(id: UUID) async {
+    private func initializeSession(id: UUID) async -> Bool {
         isActive = true
         didStartCapture = false
         inferenceIsReady = false
@@ -25,7 +31,12 @@ extension LiveSessionCoordinator {
         terminalRejectedSentenceCount = 0
         diskRecoveryMode = nil
         await utteranceProcessor.resetContext()
+        guard isActive, !Task.isCancelled else {
+            isActive = false
+            return false
+        }
         beginSession(id: id)
+        return true
     }
 
     private func authorizeCapture(for sessionID: UUID) async -> Bool {

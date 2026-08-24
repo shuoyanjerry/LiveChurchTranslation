@@ -5,17 +5,23 @@ public struct RemoteTransportConfiguration: Equatable, Sendable {
     public let advertisedHostName: String
     public let preferredPort: UInt16
     public let maximumConnections: Int
+    public let maximumConnectionsPerPeer: Int
     public let bonjour: RemoteBonjourDescriptor
 
     public init(
         advertisedHostName: String,
         preferredPort: UInt16 = 0,
         maximumConnections: Int = 32,
+        maximumConnectionsPerPeer: Int = 6,
         bonjour: RemoteBonjourDescriptor
     ) {
         self.advertisedHostName = advertisedHostName.lowercased()
         self.preferredPort = preferredPort
         self.maximumConnections = min(max(maximumConnections, 1), 128)
+        self.maximumConnectionsPerPeer = min(
+            max(maximumConnectionsPerPeer, 1),
+            self.maximumConnections
+        )
         self.bonjour = bonjour
     }
 }

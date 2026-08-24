@@ -16,19 +16,19 @@ INFO_PLIST="$REPOSITORY_ROOT/Packaging/Info.plist"
 ENTITLEMENTS="$REPOSITORY_ROOT/Packaging/LiveChurchTranslation.entitlements"
 PROJECT="${APP_STORE_PROJECT:-}"
 WORKSPACE="${APP_STORE_WORKSPACE:-}"
-SCHEME="${APP_STORE_SCHEME:-QuietLiturgyReader}"
+SCHEME="${APP_STORE_SCHEME:-LiveChurchTranslation}"
 TEAM_ID="${APP_STORE_TEAM_ID:-}"
 SIGNING_IDENTITY="${APP_STORE_SIGNING_IDENTITY:-Apple Distribution}"
 BUNDLE_ID="${APP_STORE_BUNDLE_ID:-$(/usr/libexec/PlistBuddy \
   -c 'Print :CFBundleIdentifier' "$INFO_PLIST")}"
 VERSION="${APP_VERSION:-1.0.0}"
 BUILD_NUMBER="${APP_BUILD_NUMBER:-1}"
-ARCHIVE="${APP_STORE_ARCHIVE_PATH:-$REPOSITORY_ROOT/dist/AppStore/QuietLiturgyReader.xcarchive}"
+ARCHIVE="${APP_STORE_ARCHIVE_PATH:-$REPOSITORY_ROOT/dist/AppStore/LiveChurchTranslation.xcarchive}"
 
 "$SCRIPT_DIR/check_app_store_packaging.sh"
 
 if [[ -z "$PROJECT" && -z "$WORKSPACE" ]]; then
-  PROJECT="$REPOSITORY_ROOT/QuietLiturgyReader.xcodeproj"
+  PROJECT="$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj"
 fi
 
 if [[ -n "$PROJECT" && "$PROJECT" != /* ]]; then
@@ -110,7 +110,7 @@ COMMON_ARGS=(
   SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
 )
 
-SETTINGS_LOG="$(mktemp /tmp/quiet-liturgy-build-settings.XXXXXX)"
+SETTINGS_LOG="$(mktemp /tmp/live-church-translation-build-settings.XXXXXX)"
 trap 'rm -f "$SETTINGS_LOG"' EXIT
 xcodebuild "${COMMON_ARGS[@]}" -showBuildSettings >"$SETTINGS_LOG"
 grep -Eq 'PRODUCT_TYPE = com[.]apple[.]product-type[.]application$' "$SETTINGS_LOG" \

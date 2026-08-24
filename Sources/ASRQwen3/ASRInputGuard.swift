@@ -26,9 +26,10 @@ enum ASRInputGuard {
 
     static func isPromptOnlyHallucination(_ text: String, hotwords: String) -> Bool {
         guard !text.isEmpty else { return false }
-        if removingPromptEchoPrefix(text, hotwords: hotwords).isEmpty { return true }
         let output = compacted(text)
         let terms = promptTerms(in: hotwords)
+        guard !output.isEmpty, !terms.isEmpty else { return false }
+        if terms.joined() == output { return true }
         for start in terms.indices {
             var candidate = ""
             for end in start..<terms.endIndex {
@@ -40,17 +41,29 @@ enum ASRInputGuard {
         return false
     }
 
-    static func removingPromptEchoPrefix(_ text: String, hotwords: String) -> String {
-        let expected = tokens(in: hotwords)
-        guard expected.count >= 6 else { return text }
-        let compactOutput = compacted(text)
-        for count in stride(from: expected.count, through: 6, by: -1) {
-            let prefix = expected.prefix(count).joined()
-            guard compactOutput.hasPrefix(prefix) else { continue }
-            let remainder = suffix(afterCompactedPrefixOfLength: prefix.count, in: text)
-            return removingPromptEchoPrefix(remainder, hotwords: hotwords)
+    static func promptEchoPrefixTermCount(_ text: String, hotwords: String) -> Int? {
+        let output = compacted(text)
+        let terms = promptTerms(in: hotwords)
+        guard !output.isEmpty, !terms.isEmpty else { return nil }
+
+        let minimumCandidateCount = terms.count <= 5 ? terms.count : 6
+        for count in stride(from: terms.count, through: minimumCandidateCount, by: -1) {
+            let prefix = terms.prefix(count).joined()
+            if output.count > prefix.count, output.hasPrefix(prefix) { return count }
         }
-        return text
+        return nil
+    }
+
+    static func promptEchoBodyLength(_ text: String, hotwords: String) -> Int? {
+        guard let termCount = promptEchoPrefixTermCount(text, hotwords: hotwords) else {
+            return nil
+        }
+        let prefixLength = promptTerms(in: hotwords).prefix(termCount).joined().count
+        return max(0, compacted(text).count - prefixLength)
+    }
+
+    static func compactedLength(_ text: String) -> Int {
+        compacted(text).count
     }
 
     static func isKnownNonspeechHallucination(_ text: String) -> Bool {
@@ -79,24 +92,4 @@ enum ASRInputGuard {
             .lowercased()
     }
 
-    private static func suffix(
-        afterCompactedPrefixOfLength target: Int,
-        in text: String
-    ) -> String {
-        var consumed = 0
-        var index = text.startIndex
-        while index < text.endIndex, consumed < target {
-            let next = text.index(after: index)
-            if text[index].unicodeScalars.contains(where: { !tokenSeparators.contains($0) }) {
-                consumed += 1
-            }
-            index = next
-        }
-        let remainder = text[index...]
-        let firstContent = remainder.firstIndex { character in
-            character.unicodeScalars.contains { !tokenSeparators.contains($0) }
-        }
-        guard let firstContent else { return "" }
-        return String(remainder[firstContent...])
-    }
 }

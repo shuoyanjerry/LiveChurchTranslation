@@ -3,6 +3,7 @@
 @MainActor
 func makeTranslationHarness(
     responses: [Result<String, HyMT2Error>],
+    cancellationRequestIndices: Set<Int> = [],
     attemptObserver: any HyMT2AttemptObserving = HyMT2NoOpAttemptObserver(),
     pronounTraceObserver: any HyMT2PronounTraceObserving = HyMT2NoOpPronounTraceObserver(),
     pronounDiagnosticObserver: any HyMT2PronounDiagnosticObserving =
@@ -10,7 +11,10 @@ func makeTranslationHarness(
 ) async throws -> TranslationHarness {
     let model = try TemporaryGGUF()
     let server = FakeLlamaServerController()
-    let transport = FakeLlamaServerTransport(responses: responses)
+    let transport = FakeLlamaServerTransport(
+        responses: responses,
+        cancellationRequestIndices: cancellationRequestIndices
+    )
     let provider = HyMT2TranslationProvider(
         configuration: HyMT2TestSupport.configuration(),
         server: server,

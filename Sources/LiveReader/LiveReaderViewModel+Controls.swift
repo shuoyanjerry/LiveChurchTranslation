@@ -6,7 +6,7 @@ extension LiveReaderViewModel {
         if isRunning {
             await controller.stop()
         } else if externalSessionControlLock {
-            presentedError = "请先等待当前音频导入完成，再开始实时翻译。"
+            presentedError = "请先完成当前音频导入。"
         } else {
             presentsRecordingNotice = true
         }
@@ -23,13 +23,17 @@ extension LiveReaderViewModel {
         await modelPreparation.retryModelPreparation()
     }
 
-    public func selectTranslationMode(_ mode: TranslationMode) async {
-        guard !sessionControlsLocked, mode != settings.translationMode else { return }
+    @discardableResult
+    public func selectTranslationMode(_ mode: TranslationMode) async -> Bool {
+        guard !sessionControlsLocked else { return false }
+        guard mode != settings.translationMode else { return true }
         let previous = settings
         settings.translationMode = mode
         if !(await saveSettings()) {
             settings = previous
+            return false
         }
+        return true
     }
 
     public func selectAudioInput(_ id: AudioInputID?) async {

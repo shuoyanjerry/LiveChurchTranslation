@@ -105,7 +105,13 @@ extension LiveSessionCoordinator {
             await stopTask.value
             return
         }
-        guard let sessionID = state.sessionID else { return }
+        guard let sessionID = state.sessionID else {
+            guard isActive else { return }
+            isActive = false
+            captureStartupTask?.cancel()
+            preparationTask?.cancel()
+            return
+        }
         isActive = false
         state.transition(to: .stopping, message: "正在完成当前语句…")
         publishState()

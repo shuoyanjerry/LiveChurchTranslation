@@ -43,6 +43,8 @@ public struct RemoteHTTPRouter: Sendable {
             )
         } catch PairingError.viewerIsReadOnly {
             return response(status: 403, reason: "Forbidden")
+        } catch PairingError.capacityReached {
+            return response(status: 429, reason: "Too Many Requests")
         } catch {
             return response(status: 400, reason: "Bad Request")
         }

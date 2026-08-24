@@ -6,21 +6,31 @@ import RemoteSharingFeatureAPI
 extension LocalNetworkSharingFeature {
     func createInvitation(_ role: LocalSharingInvitationRole) async {
         guard let endpoint else { return }
-        guard role == .viewer else {
-            invitation = nil
+        guard role == .viewer else { return }
+        if invitation?.role == .viewer {
             publishOnState()
             return
         }
+        guard !invitationRequestInFlight else { return }
+        invitationRequestInFlight = true
+        defer { invitationRequestInFlight = false }
+        let requestRevision = invitationRevision
         do {
             let issued = try await pairing.issueMacApprovedInvitation(
                 role: .viewer,
                 now: Date()
             )
-            guard let url = issued.fragmentURL(baseURL: endpoint.baseURL) else { return }
+            guard requestRevision == invitationRevision, self.endpoint == endpoint else {
+                await pairing.revokeInvitation(id: issued.id, now: Date())
+                return
+            }
+            guard let url = issued.fragmentURL(baseURL: endpoint.baseURL) else {
+                await pairing.revokeInvitation(id: issued.id, now: Date())
+                return
+            }
             invitation = LocalSharingInvitation(
                 role: .viewer,
-                url: url,
-                expiresAt: issued.expiresAt
+                url: url
             )
             publishOnState()
         } catch {

@@ -39,13 +39,16 @@ actor FakeLlamaServerTransport: LlamaServerTransport {
     private var responses: [Result<String, HyMT2Error>]
     private var healthChecks = 0
     private var requests: [LlamaCompletionRequest] = []
+    private let cancellationRequestIndices: Set<Int>
 
     init(
         healthFailures: Int = 0,
-        responses: [Result<String, HyMT2Error>] = []
+        responses: [Result<String, HyMT2Error>] = [],
+        cancellationRequestIndices: Set<Int> = []
     ) {
         healthFailuresRemaining = healthFailures
         self.responses = responses
+        self.cancellationRequestIndices = cancellationRequestIndices
     }
 
     func checkHealth(
@@ -64,7 +67,11 @@ actor FakeLlamaServerTransport: LlamaServerTransport {
         at _: LlamaServerEndpoint,
         timeout _: TimeInterval
     ) throws -> String {
+        let requestIndex = requests.count
         requests.append(request)
+        if cancellationRequestIndices.contains(requestIndex) {
+            throw CancellationError()
+        }
         guard !responses.isEmpty else {
             throw HyMT2Error.transportFailure("missing fake response")
         }

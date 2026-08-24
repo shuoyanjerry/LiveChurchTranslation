@@ -1,19 +1,19 @@
 # Online Mandarin Sermon QA Corpus
 
 Date: 2026-08-21
-Updated: 2026-08-22
+Updated: 2026-08-23
 
 ## Outcome
 
-Seven Exa research workflows have now reviewed 630 returned result slots. The first six workflows reviewed 578 slots and produced 208 exact-string unique URLs after cross-workflow deduplication. The GRN/public-domain extension requested 80 more slots: 52 were returned and reviewed, while 28 failed with Exa HTTP 402 after the search credit limit was reached. Failed slots are not counted as reviewed, and the extension URLs were not folded into the earlier unique-URL count.
+Eight Exa research workflows have now reviewed 690 returned result slots. The first six workflows reviewed 578 slots and produced 208 exact-string unique URLs after cross-workflow deduplication. The GRN/public-domain extension requested 80 more slots: 52 were returned and reviewed, while 28 failed with Exa HTTP 402 after the search credit limit was reached. A release-focused extension then reviewed 60 results from official Mandarin church archives. Failed slots are not counted as reviewed, and neither extension was folded into the earlier unique-URL count.
 
-The private, gitignored QA corpus contains 14 downloaded items: eight real-sermon recordings from seven named speakers (four female, three male), five GRN scripted programs, and one LibriVox public-domain scripture-reading section. Measured audio duration is 41,190.639 seconds (11.442 hours). The 2026-08-22 extension added five items and 12,175.856 seconds (3.382 hours).
+The private, gitignored QA corpus contains 18 downloaded items: 12 real-sermon recordings from 11 named speakers (four female, seven male), five GRN scripted programs, and one LibriVox public-domain scripture-reading section. Source-container duration is 52,147.996799 seconds (14.486 hours). The genuine-sermon stratum is 37,524.884495 declared seconds (10.424 hours); the exact decoded 16 kHz PCM value is 37,524.487375 seconds. The 2026-08-23 extension added four genuine sermons and 10,957.357495 declared seconds (3.044 hours).
 
 The repository does not contain downloaded media, captions, transcripts, or protected manuscripts. The machine-readable private manifest is `.artifacts/sermon-corpus/online-sermon-corpus-manifest.json`; its public v1 contract is [`OnlineSermonCorpusManifest.schema.json`](OnlineSermonCorpusManifest.schema.json).
 
 ## Research Method
 
-The seven workflows covered:
+The eight workflows covered:
 
 1. Official churches in Greater China, Singapore, and Malaysia.
 2. Official Chinese-diaspora churches in North America, Europe, and Australia.
@@ -22,6 +22,7 @@ The seven workflows covered:
 5. Copyright, item-specific license, robots, and platform terms.
 6. Coverage gaps: female voices, regional Mandarin, joint services, music, low-bitrate audio, and long-running sessions.
 7. Official GRN Mandarin program/audio/script pairs plus clearly marked Creative Commons and public-domain material.
+8. Release-gate gaps in official North American Mandarin sermon archives, emphasizing independent speakers, long-form church PA audio, and direct first-party media.
 
 Candidates were kept only when the church, ministry, or copyright holder was the primary source. A download button, a crawlable path, or a public Drive link was not treated as permission to redistribute or train on the content.
 
@@ -39,6 +40,10 @@ The extension used Exa for discovery and cross-checking, then verified canonical
 | [Living Spring Chinese Christian Church](https://mail.livingspring.efca.org.au/index.php/zh-tw/sermons-tw/mandarinsermon-tw) | 刘卢秀玲姊妹, female, 45:21 | None | Official listen source; private QA only |
 | [West Los Angeles Chinese Baptist Church](https://www.wlacbc.org/Chi/multimedia-archive/2-8-2026-%e5%9c%8b%e7%b2%b5%e8%aa%9e%e8%81%af%e5%90%88%e5%b4%87%e6%8b%9c-%e3%80%8c%e4%ba%8b%e5%a5%89%e4%b8%bb%e7%9a%84%e4%ba%ba%e8%a6%81%e5%bc%b7%e5%89%9b%e8%b5%b7%e4%be%86%e3%80%8d/) | 陈浩强牧师, male, 1:06:32 | None | Official Download MP3 source; private QA only |
 | [Richmond Emmanuel Church](https://remchurch.org/index.php/sundays/sermon-audio/sermon/6370-2026-02-15-19-07-53) | 王建国牧师, male, 1:08:25 | Chinese topic summary, not a transcript | Official download, All Rights Reserved; private QA only |
+| [Vancouver Chinese Alliance Church](https://www.vcac.ca/mandarin/archives/sermons/) | 顾永杰牧师, male, 37:51.216 | None | Official direct audio; private listening and QA only |
+| [Vancouver Chinese Alliance Church](https://www.vcac.ca/mandarin/archives/sermons/) | 唐福文牧师, male, 39:51.745 | None | Official direct audio; private listening and QA only |
+| [Ann Arbor Chinese Christian Church](http://www.aaccc.org/%e7%9c%9f%e5%af%a6%e7%9a%84%e6%95%ac%e6%8b%9c-the-real-worship/) | 王牧师, male, 53:46.680 | None | Official direct audio; private listening and QA only |
+| [ECBC Mandarin](https://ecbchurch.org/mandarin/sermons/2026%e5%b9%b45%e6%9c%883%e6%97%a5-%e6%81%a9%e5%8f%ac/) | 聂书全牧师, male, 51:07.716 | None | Official Save Audio source; private listening and QA only |
 | [GRN Words of Life 1](https://globalrecordings.net/en/program/29260) | Unnamed Mandarin narrator(s), 40:47 | Approved English source guides for four spoken tracks; adaptation guides, not verbatim translations | Item notice permits unmodified copying for personal/local ministry use; no sale or bundling |
 | [GRN Good News — Female](https://globalrecordings.net/en/program/64259) | Unnamed female voice, 40 MP3s, 48:29.309 | Official [zh-Hans](https://globalrecordings.net/en/script/zh-Hans/395) and [English](https://globalrecordings.net/en/script/en/395) variants; adaptation guides, not verbatim or timecoded | Audio item notice: unmodified personal/local-ministry copying; no sale/bundling; broader use needs permission |
 | [GRN Good News for university students](https://globalrecordings.net/en/program/62908) | Unnamed voice, 40 MP3s, 37:03.438 | Official [zh-Hans](https://globalrecordings.net/en/script/zh-Hans/394) and [English](https://globalrecordings.net/en/script/en/394) variants; adaptation guides, not verbatim or timecoded | Same program-specific audio boundary; no training or repository redistribution |
@@ -62,6 +67,21 @@ All four GRN archives passed `unzip -t`. Durations below are sums of `afinfo` me
 
 The private manifest also records hashes for every downloaded script, program-page snapshot, provider-policy snapshot, and LibriVox/Internet Archive metadata snapshot. Media and snapshots remain beneath the already ignored `.artifacts/sermon-corpus/` tree.
 
+## 2026-08-23 Genuine-Sermon Extension Integrity
+
+The four new files were acquired only from the churches' own sermon pages or media directories. Each source was probed as MP3, its byte length and SHA-256 were checked before conversion, and the source was hashed again after conversion. No item grants this project permission to train on or redistribute the recording.
+
+| Item | Audio metadata | SHA-256 |
+|---|---|---|
+| VCAC — 喜乐的人生 | MP3, 36,352,964 bytes; stereo 44.1 kHz; 2,271.216327 s | `58141dabafe738cb203e99dfe97c4182e83aa1e109b83a71f476387fceedddd9` |
+| VCAC — 望门兴叹 | MP3, 38,279,994 bytes; stereo 44.1 kHz; 2,391.745250 s | `02a4c09922ffbd4e095161b3f6a49b59a9da12355b30d21f4f52f823f195c7c2` |
+| AACCC — 真实的敬拜 | MP3, 15,244,452 bytes; mono 32 kHz; 3,226.680000 s | `8b64d607f649929913c33725ff1c99499af9b80c63a985ce27c56e1a56b1828f` |
+| ECBC — 恩召 | MP3, 28,190,573 bytes; mono 44.1 kHz; 3,067.715918 s | `a3ab7a8f2f1284104f4e0cb6c743def525a1a9d01fa19aa394cb3db5f68595b5` |
+
+The expanded replay contains 18 logical items and 132 independent WAV tracks. FFmpeg 9.0.1 produced mono 16 kHz signed 16-bit PCM with metadata removed and bit-exact flags; a repeated conversion smoke was byte-identical. The replay manifest records 834,285,196 exact frames (52,142.824750 seconds), including 600,391,798 frames (37,524.487375 seconds) across the 12 genuine sermons. Tracks remain separate and reset state at every boundary.
+
+This satisfies only the structural 12-sermon, eight-hour, and six-speaker floor. It does not satisfy human endpoint labels, blinded ASR accuracy, translation fidelity, soak, latency, device, or clean-Mac release gates. The replay manifest therefore deliberately keeps `release_sermon_count_gate_met=false` until those independent qualifications finish.
+
 ## Script Fidelity and Content Coverage
 
 - GRN scripts 394, 395, and 418 explicitly describe themselves as basic translation/recording guidelines that may be explained, replaced, or omitted for a language and culture. The Chinese and English pages are useful semantic references, but they are neither subtitles nor trustworthy sentence-level gold translations.
@@ -75,10 +95,11 @@ The private manifest also records hashes for every downloaded script, program-pa
 2. Friendship Nancy and Caleb for alternating interpretation, code switching, speaker variation, and long-session endpointing.
 3. ECBC and Living Spring for independent female voices, low-bitrate stress, and endpoint-only evaluation.
 4. WLACBC and REM for male voices, joint-service conditions, theological terms, and one-hour recovery tests.
-5. GRN 29260 for short semantic turns, salvation vocabulary, archival audio, and music rejection. Its English scripts are semantic source guides rather than translation goldens.
-6. GRN 64259 and 62908 for 80 short, uniformly structured lessons, a publisher-identified female variant, and differences between general and targeted register.
-7. GRN 80921 for compact narrative discourse; GRN 30090 for long turns, music boundaries, scripture-heavy language, and the official low-quality warning.
-8. LibriVox Acts 1–2 for cleanly scoped public-domain scripture recitation and Pentecost/Holy Spirit terminology. Treat the text as intended-verbatim but unverified, not as a scored golden until manually collated.
+5. VCAC, AACCC, and the second ECBC sermon for four independent male speakers, long-form church PA acoustics, low-bitrate stress, theology, and endpoint replay.
+6. GRN 29260 for short semantic turns, salvation vocabulary, archival audio, and music rejection. Its English scripts are semantic source guides rather than translation goldens.
+7. GRN 64259 and 62908 for 80 short, uniformly structured lessons, a publisher-identified female variant, and differences between general and targeted register.
+8. GRN 80921 for compact narrative discourse; GRN 30090 for long turns, music boundaries, scripture-heavy language, and the official low-quality warning.
+9. LibriVox Acts 1–2 for cleanly scoped public-domain scripture recitation and Pentecost/Holy Spirit terminology. Treat the text as intended-verbatim but unverified, not as a scored golden until manually collated.
 
 ## URL-Only Stress Set
 
@@ -103,6 +124,7 @@ YouTube content is retained only as official page or watch URLs; it is not downl
 - [YouTube Terms](https://www.youtube.com/t/terms) control all YouTube-only candidates. The project does not bypass the player, download video/audio, or extract captions.
 - Harper Church declares `ai-train=no,use=reference` in robots metadata. Its Mandarin/English pair remains a URL-only qualitative reference and is excluded from downloads and training.
 - Other downloaded items are official direct files without an open reuse license. They remain private, non-commercial, gitignored QA inputs and are not training data.
+- The four 2026-08-23 additions follow the same conservative boundary: first-party audio is retained only in the gitignored private QA tree, with source attribution and a delete-on-request requirement.
 
 Re-run qualification from the manifest, verify every SHA-256 before use, and never copy an artifact into `Sources`, `Tests`, release bundles, or the public repository. This extension used no YouTube downloader and ran no ASR, translation, endpoint, or other model.
 

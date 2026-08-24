@@ -47,17 +47,14 @@ public struct RemoteWebSocketGateway: Sendable {
     ) async throws -> RemoteSocketOpenResult {
         try security.validateWebSocket(request, peer: peer)
         guard await sharing.isEnabled() else { throw RemoteTransportError.unauthorized }
-        let credential = try RemoteCredentialExtractor.credential(from: request)
-        let pairedAuthorization: RemotePairingAuthorization
-        do {
-            pairedAuthorization = try await pairing.authorize(
-                bearerCredential: credential,
-                requiresMutation: false,
-                now: Date()
-            )
-        } catch {
+        guard let clientBinding = peer.pairingClientBinding else {
             throw RemoteTransportError.unauthorized
         }
+        let credential = try RemoteCredentialExtractor.credential(from: request)
+        let pairedAuthorization = try await authorize(
+            credential: credential,
+            clientBinding: clientBinding
+        )
         let authorization = RemoteControlAuthorization(
             peerID: pairedAuthorization.peerID,
             grantID: pairedAuthorization.grantID,
@@ -69,6 +66,7 @@ public struct RemoteWebSocketGateway: Sendable {
             peerID: authorization.peerID,
             grantID: authorization.grantID,
             bearerCredential: credential,
+            clientBinding: clientBinding,
             pairing: pairing,
             projection: projection
         )
@@ -78,5 +76,21 @@ public struct RemoteWebSocketGateway: Sendable {
             initialEnvelope: .init(payload: .snapshot(connection.snapshot)),
             session: session
         )
+    }
+
+    private func authorize(
+        credential: String,
+        clientBinding: RemotePairingClientBinding
+    ) async throws -> RemotePairingAuthorization {
+        do {
+            return try await pairing.authorize(
+                bearerCredential: credential,
+                clientBinding: clientBinding,
+                requiresMutation: false,
+                now: Date()
+            )
+        } catch {
+            throw RemoteTransportError.unauthorized
+        }
     }
 }

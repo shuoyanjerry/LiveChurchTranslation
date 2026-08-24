@@ -1,5 +1,7 @@
-import LiveReader
+import AudioImportAPI
+import AudioImportSessionAdapter
 import AudioFileAVFoundation
+import LiveReader
 import RemoteControlCore
 import RemoteControlSessionAdapter
 import RemoteDiscoveryBonjour
@@ -79,11 +81,12 @@ enum AppComposition {
         services: AppServiceGraph,
         directories: AppDirectories
     ) -> any AudioImporting {
-        ImportedAudioTranscriber { url in
+        ImportedAudioTranscriber(inputDeviceID: FileAudioCaptureProvider.inputID) { url, mode in
             LiveSessionCoordinator(
                 dependencies: try services.makeSessionDependencies(
                     directories: directories,
-                    capture: FileAudioCaptureProvider(url: url)
+                    capture: FileAudioCaptureProvider(url: url),
+                    settings: ImportedAudioSettingsStore(base: services.settings, mode: mode)
                 ),
                 models: productionModels,
                 modelPreparation: services.modelPreparation,

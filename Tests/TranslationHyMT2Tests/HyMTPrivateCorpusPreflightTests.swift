@@ -32,5 +32,15 @@ struct HyMTPrivateCorpusPreflightTests {
             corpus.manifest.segments,
             limit: HyMT2Configuration().maximumGlossaryTerms
         )
+        for segment in corpus.manifest.segments {
+            let source = segment.observedASRAmbiguousChinese
+            let evidence = try HyMTQualificationGlossary.evidenceExpectations(
+                source: source,
+                matchedTerms: HyMTQualificationGlossary.matchedTerms(in: source),
+                manifestTerms: segment.theologyTerms,
+                limit: HyMT2Configuration().maximumGlossaryTerms
+            )
+            #expect(evidence.allSatisfy { source.localizedStandardContains($0.source) })
+        }
     }
 }

@@ -3,12 +3,10 @@ import SwiftUI
 public struct StatusPill: View {
     private let text: String
     private let color: Color
-    private let pulses: Bool
 
-    public init(text: String, color: Color, pulses: Bool = false) {
+    public init(text: String, color: Color) {
         self.text = text
         self.color = color
-        self.pulses = pulses
     }
 
     public var body: some View {
@@ -26,6 +24,5 @@ public struct StatusPill: View {
         .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(text)
-        .accessibilityValue(pulses ? "Active" : "Inactive")
     }
 }

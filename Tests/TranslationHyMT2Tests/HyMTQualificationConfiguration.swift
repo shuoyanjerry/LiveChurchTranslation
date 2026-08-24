@@ -8,7 +8,8 @@ struct HyMTQualificationConfiguration {
         "BILINGUAL_TRANSLATION_REPORT", "TRANSLATION_QUALIFICATION_SOURCE_BUNDLE_SHA256",
         "TRANSLATION_QUALIFICATION_TEST_EXECUTABLE_SHA256",
     ]
-    static let manifestSHA256 = "c9a084145ad7b575c77239c81f9c8f47919dff4ee9f3910f008fcb71ca5a2e50"
+    static let manifestSHA256 =
+        "d63632efc67e9e5fb88a1dbc063cf796e079b6cbbd115320a989ff53ff2fc7bb"
     static let schemaSHA256 = "865c5f8d7496112e9d634be98bd1ca0731d393b4c29d36a121ad52adb026d7d7"
     static let modelSHA256 = "dc5f44fcf1fa496ee7ad725982c0c8c553a4de00259b53af84c4b89fb0c06699"
     static let modelRevision = "1cd5208700acedef4ef93019b6cfc148b8522d45"

@@ -32,7 +32,7 @@ final class AudioPlayerViewModel: ObservableObject {
             player = audio
             duration = audio.duration
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "无法播放此录音。"
         }
     }
 

@@ -10,7 +10,6 @@ extension LiveReaderViewModel {
             glossaryEntries = try await glossary.snapshot().entries
             return true
         } catch {
-            presentedError = error.localizedDescription
             return false
         }
     }
@@ -21,7 +20,6 @@ extension LiveReaderViewModel {
             glossaryEntries = try await glossary.snapshot().entries
             return glossaryEntries
         } catch {
-            presentedError = error.localizedDescription
             return nil
         }
     }
@@ -43,7 +41,7 @@ extension LiveReaderViewModel {
             settings = settingsToSave
             return true
         } catch {
-            presentedError = error.localizedDescription
+            presentedError = "设置未保存，请重试。"
             return false
         }
     }

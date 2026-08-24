@@ -104,4 +104,34 @@ import TranslationQualificationSupport
         await harness.provider.shutdown()
     }
 
+    @Test func safeReviewedCompletionIsSuccessButNeverEntersRollingContext() async throws {
+        let segments = try HyMTQualificationSyntheticFixture.segments()
+        let recorder = HyMTQualificationAttemptRecorder()
+        let traceRecorder = HyMTQualificationPronounTraceRecorder()
+        let pronounOutput = try HyMTQualificationSyntheticFixture.unresolvedPronounOutput()
+        let reviewOutput = "The translation is central to communication."
+        let harness = try await makeTranslationHarness(
+            responses: [
+                .success(reviewOutput), .success(reviewOutput),
+                .success(pronounOutput), .success(pronounOutput), .success(pronounOutput),
+            ],
+            attemptObserver: recorder,
+            pronounTraceObserver: traceRecorder
+        )
+
+        let attempts = try await HyMTQualificationRunner(
+            provider: harness.provider,
+            recorder: recorder,
+            pronounTraceRecorder: traceRecorder,
+            requestIDFactory: { pronounTestRequestID }
+        ).run(segments: segments)
+
+        #expect(attempts[0].status == .success)
+        #expect(attempts[0].failureCode == nil)
+        #expect(attempts[0].backendReviewIssueCodes?.contains("quality.meta_text") == true)
+        #expect(!TranslationQualificationCompletionPolicy.approvesContext(attempts[0]))
+        #expect(attempts[1].contextSegmentIDs.isEmpty)
+        await harness.provider.shutdown()
+    }
+
 }

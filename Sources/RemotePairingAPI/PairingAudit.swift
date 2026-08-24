@@ -4,6 +4,7 @@ import RemoteSharingAPI
 public struct PairingAuditRecord: Equatable, Codable, Sendable {
     public enum Action: String, Codable, Sendable {
         case invitationIssued
+        case invitationRevoked
         case paired
         case authorizationDenied
         case revoked

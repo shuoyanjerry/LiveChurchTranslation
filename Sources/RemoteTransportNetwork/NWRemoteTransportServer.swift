@@ -19,6 +19,7 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
     var activeListenerID: UUID?
     var components: RemoteServerComponents?
     var connections: [UUID: NWRemoteConnectionHandler] = [:]
+    var connectionBindings: [UUID: RemotePairingClientBinding] = [:]
     var currentStatus = RemoteTransportStatus.stopped
     var startContinuation: CheckedContinuation<RemoteEndpoint, any Error>?
     var eventContinuations: [UUID: AsyncStream<RemoteTransportEvent>.Continuation] = [:]
@@ -51,15 +52,9 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
         return try await withCheckedThrowingContinuation { continuation in
             startContinuation = continuation
             do {
-                let newListener: NWListener
-                if configuration.preferredPort == 0 {
-                    newListener = try NWListener(using: .tcp)
-                } else {
-                    guard let port = NWEndpoint.Port(rawValue: configuration.preferredPort) else {
-                        throw RemoteTransportLifecycleError.invalidConfiguration
-                    }
-                    newListener = try NWListener(using: .tcp, on: port)
-                }
+                let newListener = try makeIPv4Listener(
+                    preferredPort: configuration.preferredPort
+                )
                 listener = newListener
                 let listenerID = UUID()
                 activeListenerID = listenerID
@@ -86,6 +81,7 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
         startContinuation = nil
         let openConnections = connections.values
         connections.removeAll()
+        connectionBindings.removeAll()
         for connection in openConnections { await connection.close() }
         components = nil
         activeConfiguration = nil
@@ -102,7 +98,7 @@ public actor NWRemoteTransportServer: RemoteTransportServing {
             eventContinuations[id] = continuation
             continuation.yield(.statusChanged(currentStatus))
             continuation.onTermination = { [weak self] _ in
-                Task { await self?.removeEventContinuation(id) }
+                Task { [weak self] in await self?.removeEventContinuation(id) }
             }
         }
     }

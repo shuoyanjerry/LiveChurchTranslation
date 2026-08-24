@@ -1,4 +1,7 @@
+import AudioImportAPI
+import Foundation
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 import UniformTypeIdentifiers
@@ -10,6 +13,7 @@ public struct AppWorkspaceView: View {
     @ObservedObject private var permissionCoordinator: MicrophonePermissionCoordinator
     @State private var selection = WorkspaceSection.live
     @State private var showsAudioImporter = false
+    @State private var pendingImportMode: TranslationMode?
     private let sharingFeature: any LocalSharingFeature
     private let audioImporter: any AudioImporting
 
@@ -50,7 +54,7 @@ public struct AppWorkspaceView: View {
             case .library:
                 SessionLibraryView(
                     viewModel: libraryViewModel,
-                    onImport: { showsAudioImporter = true },
+                    onImport: beginAudioImport,
                     onCancelImport: { Task { await audioImporter.cancelImport() } }
                 )
             }
@@ -73,17 +77,24 @@ public struct AppWorkspaceView: View {
             allowedContentTypes: [.audio],
             allowsMultipleSelection: false
         ) { result in
-            guard case .success(let urls) = result, let url = urls.first else {
-                if case .failure(let error) = result {
-                    libraryViewModel.presentedError = error.localizedDescription
+            guard
+                case .success(let urls) = result,
+                let url = urls.first,
+                let mode = pendingImportMode
+            else {
+                pendingImportMode = nil
+                if case .failure(let error) = result, !isUserCancellation(error) {
+                    libraryViewModel.presentedError = "无法打开该音频文件。"
                 }
                 return
             }
+            pendingImportMode = nil
             selection = .library
             liveViewModel.setExternalSessionControlLock(true)
             Task {
                 await libraryViewModel.importAudio(
                     from: url,
+                    mode: mode,
                     using: audioImporter,
                     liveSessionIsRunning: liveViewModel.isRunning
                 )
@@ -91,8 +102,25 @@ public struct AppWorkspaceView: View {
             }
         }
     }
+}
 
-    private var permissionPresentation: Binding<Bool> {
+extension AppWorkspaceView {
+    fileprivate func beginAudioImport(mode: TranslationMode) {
+        guard !liveViewModel.isRunning else {
+            libraryViewModel.presentedError = "请先停止实时翻译。"
+            return
+        }
+        pendingImportMode = mode
+        showsAudioImporter = true
+    }
+
+    fileprivate func isUserCancellation(_ error: any Error) -> Bool {
+        let cocoaError = error as NSError
+        return cocoaError.domain == NSCocoaErrorDomain
+            && cocoaError.code == NSUserCancelledError
+    }
+
+    fileprivate var permissionPresentation: Binding<Bool> {
         Binding(
             get: { permissionCoordinator.isPresented },
             set: { isPresented in
@@ -101,20 +129,17 @@ public struct AppWorkspaceView: View {
         )
     }
 
-    private var brand: some View {
+    fileprivate var brand: some View {
         HStack(spacing: 11) {
             Image(systemName: "book.pages")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(ChurchTheme.olive)
                 .frame(width: 34, height: 34)
                 .background(ChurchTheme.surface, in: Circle())
-            VStack(alignment: .leading, spacing: 1) {
-                Text("教会实时翻译")
-                    .font(.system(size: 15, weight: .semibold, design: .serif))
-                Text("本地语音翻译")
-                    .font(.caption2)
-                    .foregroundStyle(ChurchTheme.muted)
-            }
+            Text("Live Church Translation")
+                .font(.system(size: 15, weight: .semibold, design: .serif))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14)
         .padding(.top, 14)

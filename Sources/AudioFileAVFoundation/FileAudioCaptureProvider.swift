@@ -54,7 +54,7 @@ public actor FileAudioCaptureProvider: AudioCaptureProvider {
         let captureID = UUID()
         activeCapture = ActiveCapture(id: captureID, decoder: decoder)
         let lifetime = FileAudioStreamLifetime { [weak self] in
-            Task { await self?.cancelCapture(id: captureID) }
+            Task { [weak self] in await self?.cancelCapture(id: captureID) }
         }
         return AsyncThrowingStream(unfolding: { [weak self] in
             _ = lifetime

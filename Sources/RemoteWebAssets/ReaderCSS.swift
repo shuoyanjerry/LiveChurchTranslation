@@ -20,9 +20,10 @@ private enum ReaderCSSLayout {
         }
         * { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; background: var(--canvas); color: var(--ink); }
-        body { overflow: hidden; }
+        body { overflow: hidden; display: flex; flex-direction: column; }
         .topbar {
-          height: 72px;
+          min-height: 72px;
+          flex: 0 0 auto;
           padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px
             max(20px, env(safe-area-inset-left));
           display: flex;
@@ -32,21 +33,23 @@ private enum ReaderCSSLayout {
           background: rgba(245, 245, 247, .94);
           backdrop-filter: blur(16px);
         }
-        .brand { display: flex; align-items: center; }
-        .brand strong, .brand small { display: block; }
+        .brand { display: flex; align-items: center; min-width: 0; }
         .brand strong { font: 600 17px Georgia, serif; }
-        .brand small { font-size: 12px; color: var(--muted); margin-top: 2px; }
         .connection {
+          flex: 0 1 auto;
           font-size: 13px;
           color: var(--muted);
           padding: 8px 12px;
           border: 1px solid var(--stone);
           border-radius: 999px;
+          overflow-wrap: anywhere;
+          text-align: center;
         }
         .connection.live { color: var(--live); border-color: #b8cbbb; }
         .connection.error { color: var(--danger); }
         main {
-          height: calc(100% - 72px);
+          flex: 1;
+          min-height: 0;
           overflow-y: auto;
           overscroll-behavior: contain;
           padding: 28px max(18px, env(safe-area-inset-right))
@@ -102,11 +105,13 @@ private enum ReaderCSSLayout {
           line-height: 1.5;
           margin: 0;
           letter-spacing: -.01em;
+          overflow-wrap: anywhere;
         }
         .source {
           font: 400 14px/1.55 -apple-system, BlinkMacSystemFont, sans-serif;
           color: var(--muted);
           margin: 10px 0 0;
+          overflow-wrap: anywhere;
         }
         .entry.latest { border-left: 3px solid var(--gold); padding-left: 18px; }
         """#
@@ -159,9 +164,8 @@ private enum ReaderCSSControls {
         [hidden] { display: none !important; }
         :focus-visible { outline: 3px solid #4e6e7d; outline-offset: 3px; }
         @media (max-width: 600px) {
-          .topbar { height: 66px; }
-          .brand small { display: none; }
-          main { height: calc(100% - 66px); padding-top: 12px; }
+          .topbar { min-height: 66px; }
+          main { padding-top: 12px; }
           .reader { border-radius: 6px; padding: 24px 20px; }
           .reader-head { align-items: center; }
           .reader h1 { font-size: 34px; }

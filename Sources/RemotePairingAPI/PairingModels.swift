@@ -12,17 +12,32 @@ public enum PairingError: String, Error, Equatable, Sendable {
     case viewerIsReadOnly
 }
 
+/// Opaque, server-observed identity used to scope a bearer grant to its redeeming client.
+public struct RemotePairingClientBinding: Hashable, Sendable, CustomStringConvertible {
+    public let rawValue: String
+
+    public var description: String { "<redacted>" }
+
+    public init?(rawValue: String) {
+        guard (1...128).contains(rawValue.utf8.count),
+            rawValue.utf8.allSatisfy({ (33...126).contains($0) })
+        else { return nil }
+        self.rawValue = rawValue
+    }
+}
+
 public struct PairingInvitation: Equatable, Codable, Sendable, CustomStringConvertible {
     public let id: UUID
     public let role: RemoteRole
     public let fragmentCredential: String
-    public let expiresAt: Date
+    /// `nil` only for a viewer invitation that lives until local sharing stops.
+    public let expiresAt: Date?
 
     public var description: String {
         "PairingInvitation(id: \(id), role: \(role), credential: <redacted>)"
     }
 
-    public init(id: UUID, role: RemoteRole, fragmentCredential: String, expiresAt: Date) {
+    public init(id: UUID, role: RemoteRole, fragmentCredential: String, expiresAt: Date?) {
         self.id = id
         self.role = role
         self.fragmentCredential = fragmentCredential

@@ -1,6 +1,6 @@
 # Engineering Qualification Snapshot — 2026-08-21
 
-This file records evidence observed during development of Quiet Liturgy Reader and the
+This file records evidence observed during development of Live Church Translation and the
 final local engineering build below. It is not a production-release certificate; any
 subsequent source change requires a rebuild and requalification before these artifact
 results can be reused.

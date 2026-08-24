@@ -1,6 +1,6 @@
 # Mac App Store submission runbook
 
-This runbook is the release source of truth for **Quiet Liturgy Reader**. A green
+This runbook is the release source of truth for **Live Church Translation**. A green
 Swift test run, an ad-hoc `.app`, a Developer ID `.dmg`, or a successful notarization
 is not a Mac App Store build.
 
@@ -15,7 +15,7 @@ archive:
   privacy-policy URL, or App Store Connect credentials are available to this checkout.
 
 The repository now contains a genuine macOS Application target in
-`QuietLiturgyReader.xcodeproj`, a shared `QuietLiturgyReader` Archive scheme, and a
+`LiveChurchTranslation.xcodeproj`, a shared `LiveChurchTranslation` Archive scheme, and a
 repository-local Swift package dependency on the production `ChurchTranslatorApp`
 library. Static structure, plist, scheme, dependency-lock, entitlement, privacy,
 runtime-manifest, and deterministic-generation checks pass. An actual Xcode build,
@@ -64,7 +64,7 @@ XCODEGEN_OFFLINE=1 XCODE_PROJECT_SKIP_PACKAGE_RESOLVE=1 \
 ```
 
 Review and commit both `Packaging/XcodeGen/project.yml` and the resulting
-`QuietLiturgyReader.xcodeproj`. Never hand-edit the generated `project.pbxproj`.
+`LiveChurchTranslation.xcodeproj`. Never hand-edit the generated `project.pbxproj`.
 The target compiles the thin App host, which delegates to the production composition
 root in the local Swift package, and satisfies this contract:
 
@@ -146,8 +146,8 @@ APP_STORE_TEAM_ID=ABCDEFGHIJ \
 ./Scripts/export_app_store.sh
 ```
 
-The archive script defaults to the tracked `QuietLiturgyReader.xcodeproj` and shared
-`QuietLiturgyReader` scheme. `APP_STORE_PROJECT`, `APP_STORE_WORKSPACE`, and
+The archive script defaults to the tracked `LiveChurchTranslation.xcodeproj` and shared
+`LiveChurchTranslation` scheme. `APP_STORE_PROJECT`, `APP_STORE_WORKSPACE`, and
 `APP_STORE_SCHEME` remain explicit overrides for a controlled release environment.
 
 The scripts do not pass `-allowProvisioningUpdates` unless
@@ -206,7 +206,7 @@ Publish `PRIVACY.md` at a stable public HTTPS URL and enter that URL in App Stor
 Connect. The bundled copy is useful in-app but does not replace the public privacy
 policy URL. Suggested short disclosure:
 
-> Quiet Liturgy Reader processes speech, imported audio, translations, transcripts,
+> Live Church Translation processes speech, imported audio, translations, transcripts,
 > and saved meeting recordings locally on your Mac. It does not use ads, analytics,
 > or tracking. Live LAN sharing is off until you enable it and pair a device. The speech
 > and translation models are bundled with the app; your audio and transcript are not uploaded.
@@ -220,7 +220,7 @@ for the exact binary; this document is not legal advice.
 
 Paste and adapt this text for the exact submitted build:
 
-> Quiet Liturgy Reader is a local-first macOS live transcription and translation
+> Live Church Translation is a local-first macOS live transcription and translation
 > tool. No account or test credentials are required. Choose Chinese to English or
 > English to Simplified Chinese on the Live screen. The revision-pinned ASR and translation
 > models are bundled in the signed app, verified before loading, and run locally without a

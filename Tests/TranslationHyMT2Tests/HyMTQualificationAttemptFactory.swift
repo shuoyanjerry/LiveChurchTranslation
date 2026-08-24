@@ -21,10 +21,12 @@ enum HyMTQualificationAttemptFactory {
             translationSourceText: input.translationSource,
             contextSegmentIDs: input.contextIDs,
             strictRetryUsed: input.summary.strictRetryUsed,
+            safetyFallbackUsed: input.summary.safetyFallbackUsed,
             completionAttemptCount: input.summary.completionAttemptCount,
             completionOutcomes: input.summary.outcomes,
             latencySeconds: input.latencySeconds,
             failureCode: input.error.map(HyMTQualificationFailureCode.make),
+            backendReviewIssueCodes: input.backendReviewIssueCodes,
             glossaryTerms: preservation.terms,
             preservationChecks: preservation.checks + [input.traceIntegrityCheck],
             pronounResults: TranslationPronounEvaluator.evaluate(
@@ -46,6 +48,7 @@ struct HyMTQualificationAttemptInput {
     let traceIntegrityCheck: TranslationQualificationCheck
     let termExpectations: [TranslationQualificationTermExpectation]
     let hypothesis: String?
+    let backendReviewIssueCodes: [String]
     let summary: HyMTQualificationAttemptSummary
     let latencySeconds: Double
     let error: (any Error)?

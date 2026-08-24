@@ -59,11 +59,11 @@ otool -L "$RUNTIME/llama-server" | grep -q '@rpath/libllama-server-impl.dylib' \
 
 mkdir -p "$EXECUTABLES" "$RESOURCES"
 for name in "${FILES[@]}"; do
-  ditto "$RUNTIME/$name" "$EXECUTABLES/$name"
+  ditto --clone "$RUNTIME/$name" "$EXECUTABLES/$name"
 done
-ditto "$RUNTIME/LICENSE" "$RESOURCES/llama.cpp-LICENSE"
-ditto "$MODELS" "$RESOURCES/Models"
-ditto "$LICENSES" "$RESOURCES/Licenses"
+ditto --clone "$RUNTIME/LICENSE" "$RESOURCES/llama.cpp-LICENSE"
+ditto --clone "$MODELS" "$RESOURCES/Models"
+ditto --clone "$LICENSES" "$RESOURCES/Licenses"
 "$REPOSITORY_ROOT/Scripts/check_release_models.sh" "$RESOURCES/Models"
 "$REPOSITORY_ROOT/Scripts/check_bundled_licenses.sh" "$RESOURCES/Licenses"
 chmod 0755 "$EXECUTABLES/llama-server" "$EXECUTABLES"/*.dylib
