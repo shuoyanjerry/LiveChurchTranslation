@@ -49,6 +49,45 @@ import TranslationAPI
         #expect(HyMT2PronounDeterministicRepairer.repair(output, plan: plan) == output)
     }
 
+    @Test(arguments: [
+        "continued", "can", "could", "did", "had", "may", "might", "must", "shall", "should",
+        "will", "would",
+    ])
+    func repairsUnresolvedSubjectBeforeNumberInvariantWord(_ followingWord: String) throws {
+        let plan = try makePronounPlan(
+            source: "他继续。",
+            guidance: [guidance(0, .unresolvedSpokenMandarin)]
+        )
+        let output = "\(anchored(plan, 0, "He")) \(followingWord)."
+
+        let repaired = HyMT2PronounDeterministicRepairer.repair(output, plan: plan)
+
+        #expect(repaired == "\(anchored(plan, 0, "They")) \(followingWord).")
+    }
+
+    @Test(arguments: ["is", "was", "has", "does", "continues", "later"])
+    func refusesUnprovenNumberChangingSubjectRepair(_ followingWord: String) throws {
+        let plan = try makePronounPlan(
+            source: "他继续。",
+            guidance: [guidance(0, .unresolvedSpokenMandarin)]
+        )
+        let output = "\(anchored(plan, 0, "He")) \(followingWord)."
+
+        #expect(HyMT2PronounDeterministicRepairer.repair(output, plan: plan) == output)
+    }
+
+    @Test func keepsDeityAndUnresolvedRepairsIndependent() throws {
+        let plan = try makePronounPlan(
+            source: "祂呼召他。",
+            guidance: [guidance(0, .verifiedDeity), guidance(3, .unresolvedSpokenMandarin)]
+        )
+        let output = "\(anchored(plan, 0, "They")) called \(anchored(plan, 1, "him"))."
+
+        let repaired = HyMT2PronounDeterministicRepairer.repair(output, plan: plan)
+
+        #expect(repaired == "\(anchored(plan, 0, "He")) called \(anchored(plan, 1, "them")).")
+    }
+
     @Test func refusesTamperedResolutionCode() throws {
         let plan = try makePronounPlan(
             source: "她继续。",

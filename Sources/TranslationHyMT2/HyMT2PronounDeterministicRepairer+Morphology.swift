@@ -8,7 +8,13 @@ extension HyMT2PronounDeterministicRepairer {
         let source = binding.word
         guard let observed = PronounForm(rawValue: source.lowercased()),
             let slot = slot(for: observed, hint: occurrence.morphologyHint),
-            isAgreementSafe(observed: observed, slot: slot, expected: occurrence.resolution)
+            isAgreementSafe(
+                observed: observed,
+                slot: slot,
+                expected: occurrence.resolution,
+                subjectAgreementIsNumberInvariant:
+                    binding.subjectAgreementIsNumberInvariant
+            )
         else { return nil }
         let replacement = form(for: occurrence.resolution, slot: slot, observed: observed)
         return applyingCase(of: source, to: replacement)
@@ -28,12 +34,14 @@ extension HyMT2PronounDeterministicRepairer {
     private static func isAgreementSafe(
         observed: PronounForm,
         slot: MorphologySlot,
-        expected: TranslationPronounResolution
+        expected: TranslationPronounResolution,
+        subjectAgreementIsNumberInvariant: Bool
     ) -> Bool {
         guard slot == .subject else { return true }
         let observedIsNeutral = observed.family == .neutral
         let expectedIsNeutral = expected == .unresolvedSpokenMandarin
         return observedIsNeutral == expectedIsNeutral
+            || subjectAgreementIsNumberInvariant
     }
 
     private static func form(
