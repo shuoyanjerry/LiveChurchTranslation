@@ -187,7 +187,7 @@ jobs:
           RELEASE_RECLAIM_BUILD_SPACE: "1"
         run: |
           ./Scripts/package_release.sh
-          ./Scripts/check_release_disk_space.sh 3221225472 "before dry-run DMG creation"
+          ./Scripts/check_release_disk_space.sh 5368709120 "before dry-run DMG creation"
           ./Scripts/create_dmg.sh
           ./Scripts/generate_release_evidence.sh \
             "dist/Live Church Translation.app" \
@@ -247,6 +247,12 @@ jobs:
       attestations: write
       artifact-metadata: write
     steps:
+      - name: Check out audited source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Download audited candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -263,6 +269,12 @@ jobs:
             echo "The final DMG is not smaller than GitHub's 2 GiB asset limit." >&2
             exit 1
           }
+          xcrun stapler validate "Live Church Translation.dmg"
+          spctl --assess --type open --context context:primary-signature \
+            --verbose=4 "Live Church Translation.dmg"
+          "$GITHUB_WORKSPACE/Scripts/audit_release_dmg.sh" \
+            "$GITHUB_WORKSPACE/dist/Live Church Translation.dmg" \
+            developer-id-notarized
 
       - name: Attest DMG provenance
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1

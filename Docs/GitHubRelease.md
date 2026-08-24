@@ -88,8 +88,10 @@ never trusted without these checks.
    status, Apple-recorded SHA-256, sealed SHA-256, and unchanged local artifact must all agree.
    Staple and validate the app, create and sign the DMG, then repeat the same sealed submission and
    validation flow for the DMG.
-7. Re-run `hdiutil verify` after the DMG ticket is stapled, require Gatekeeper assessment, and
-   require the final DMG to be strictly smaller than
+7. Re-run `hdiutil verify` after the DMG ticket is stapled, require Gatekeeper assessment, mount the
+   image read-only, simulate dragging the app into a fresh Applications directory, re-audit the
+   relocated app, run its non-interactive installation probe, and require the final DMG to be
+   strictly smaller than
    2,147,483,648 bytes, GitHub's per-asset limit.
 8. Generate evidence, upload it as an Actions artifact, download and re-verify it in the
    least-privilege draft job, attest the DMG, and create a draft prerelease.
@@ -99,11 +101,11 @@ never trusted without these checks.
    accepted.
 
 The standard Apple Silicon `macos-15` runner has a 14 GB SSD. The workflow records free space,
-requires at least 6 GiB before the release build, removes transient Swift build products after the
-app passes its audit, deletes the app-notarization ZIP before creating the DMG, and removes the
-expanded app before artifact upload. Packaging uses APFS clone copies for the model bundle and DMG
-staging. These are correctness guards against a partially written candidate, not optional speed
-optimizations. See GitHub's current
+requires at least 6 GiB before the release build and at least 5 GiB before DMG creation plus the
+drag-copy audit, removes transient Swift build products after the app passes its audit, deletes the
+app-notarization ZIP before creating the DMG, and removes the expanded app before artifact upload.
+Packaging uses APFS clone copies for the model bundle and DMG staging. These are correctness guards
+against a partially written candidate, not optional speed optimizations. See GitHub's current
 [hosted-runner specification](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
 before changing the thresholds or runner label.
 
@@ -158,3 +160,6 @@ For a local formal run, either provide the three App Store Connect API key varia
 `Scripts/notarize_release.sh`, or set `NOTARY_PROFILE` to a previously validated `notarytool`
 Keychain profile. Never commit certificates, private keys, profile credentials, or generated
 release assets.
+
+The fixed local output path and supported-Mac installation contract are documented in
+[DMG installation and supported Macs](DMGDistribution.md).

@@ -10,6 +10,58 @@ plist_value() {
   /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
 }
 
+audit_macho_dependencies() {
+  local binary="$1"
+  local dependency
+  local has_local_rpath=0
+  local relative
+  local rpath
+
+  while IFS= read -r rpath; do
+    case "$rpath" in
+      @loader_path | @executable_path)
+        has_local_rpath=1
+        ;;
+      *)
+        fail "Mach-O contains an external runtime search path: $rpath"
+        ;;
+    esac
+  done < <(
+    otool -l "$binary" \
+      | awk '$1 == "cmd" && $2 == "LC_RPATH" { wanted = 1; next }
+        wanted && $1 == "path" { print $2; wanted = 0 }'
+  )
+
+  while IFS= read -r dependency; do
+    case "$dependency" in
+      /System/Library/* | /usr/lib/*)
+        ;;
+      @rpath/*)
+        relative="${dependency#@rpath/}"
+        [[ "$has_local_rpath" == "1" \
+          && -n "$relative" && "$relative" != */* \
+          && -f "$CONTENTS/MacOS/$relative" \
+          && ! -L "$CONTENTS/MacOS/$relative" ]] \
+          || fail "Mach-O dependency is not bundled beside its executable: $dependency"
+        ;;
+      @loader_path/*)
+        relative="${dependency#@loader_path/}"
+        [[ -n "$relative" && "$relative" != */* \
+          && -f "$(dirname "$binary")/$relative" \
+          && ! -L "$(dirname "$binary")/$relative" ]] \
+          || fail "Mach-O loader dependency is missing: $dependency"
+        ;;
+      *)
+        fail "Mach-O contains an external runtime dependency: $dependency"
+        ;;
+    esac
+  done < <(
+    otool -L "$binary" \
+      | tail -n +2 \
+      | sed -E 's/^[[:space:]]*//; s/[[:space:]]+\(compatibility.*$//'
+  )
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP="${1:-}"
@@ -79,6 +131,11 @@ actual_dylibs="$(find "$CONTENTS/MacOS" -maxdepth 1 -type f -name '*.dylib' \
   | wc -l | tr -d ' ')"
 [[ "$actual_dylibs" == "$expected_dylibs" ]] \
   || fail "unexpected llama.cpp dylib inventory"
+audit_macho_dependencies "$MAIN"
+audit_macho_dependencies "$HELPER"
+for library in "$CONTENTS"/MacOS/*.dylib; do
+  audit_macho_dependencies "$library"
+done
 codesign --verify --strict --verbose=2 "$HELPER" || fail "helper signature is invalid"
 codesign --verify --deep --strict --verbose=2 "$APP" || fail "app signature is invalid"
 codesign -d --entitlements :- "$APP" >"$ENTITLEMENTS" 2>/dev/null \

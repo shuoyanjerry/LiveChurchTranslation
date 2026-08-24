@@ -121,7 +121,7 @@ submit_and_require_acceptance \
 xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 rm -f "$ZIP"
-"$SCRIPT_DIR/check_release_disk_space.sh" 3221225472 "before notarized DMG creation"
+"$SCRIPT_DIR/check_release_disk_space.sh" 5368709120 "before notarized DMG creation"
 "$SCRIPT_DIR/create_dmg.sh"
 submit_and_require_acceptance \
   "$DMG" "$EVIDENCE_DIR/notary-dmg.json" "$EVIDENCE_DIR/notary-dmg-log.json" \
@@ -131,4 +131,5 @@ xcrun stapler validate "$DMG"
 hdiutil verify "$DMG"
 spctl --assess --type execute --verbose=4 "$APP"
 spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG"
+"$SCRIPT_DIR/audit_release_dmg.sh" "$DMG" "$DEVELOPER_ID_APPLICATION"
 "$SCRIPT_DIR/generate_release_evidence.sh" "$APP" "$DMG" developer-id-notarized

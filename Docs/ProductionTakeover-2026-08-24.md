@@ -89,6 +89,29 @@ real-time factor. The report SHA-256 is
 runtime and terminology compatibility only. One fixture transcribed “Prayer” as “Greer”, so real
 English church speakers and acoustics remain mandatory before release.
 
+## DMG relocation rehearsal
+
+The 2026-08-24 engineering rehearsal built the complete self-contained Apple Silicon application,
+including all seven pinned model artifacts, the pinned llama.cpp helper and ten dynamic libraries.
+The quality gate passed 103 targets, strict lint across 1,225 Swift files, a warnings-as-errors
+release build, 1,112 Swift tests, endpoint packet tests, notarization evidence tests, architecture,
+licensing, formatting, and static dead-code checks.
+
+Packaging removed the Swift build host's absolute runtime search path. The final app dependency
+audit found only macOS system libraries and bundled `@rpath` dependencies resolved through
+`@loader_path`. The new DMG audit then mounted the image read-only, verified the root application
+and `/Applications` shortcut, copied the app into a fresh simulated Applications directory,
+revalidated its signatures, resources, architecture, model inventory, license inventory, and
+Mach-O dependency closure, and passed the relocated non-interactive startup probe.
+
+The dry-run candidate is version/build `0.0.0 (24)`, 2,011,093,772 bytes, and SHA-256
+`619dada46447e5f4d7098feaa7dcb2d22a0db2642220abc88b803ecd2601aea2`. It is an ad-hoc engineering
+artifact built from a pre-commit working tree, not a distributable release. It proves that the
+payload fits GitHub's 2 GiB asset ceiling and survives the local drag-copy rehearsal; it does not
+prove Gatekeeper acceptance after download on another Mac. The supported installation target
+remains Apple Silicon M1 or newer with macOS 15.0 or newer. Developer ID signing, notarization,
+stapling, GitHub quarantine download, and the clean standard-user Mac matrix remain mandatory.
+
 ## Release gates
 
 A production claim requires current evidence on the exact protected commit:
