@@ -19,6 +19,8 @@ struct HyMTQualificationConfiguration {
     let workspaceRoot: URL
     let manifestURL: URL
     let reportFilename: String
+    let reviewPacketFilename: String
+    let freezeRequestFilename: String
     let modelURL: URL
     let helperURL: URL
     let backgroundLoad: String
@@ -39,7 +41,7 @@ struct HyMTQualificationConfiguration {
         let workspace =
             environment["TRANSLATION_QUALIFICATION_WORKSPACE_ROOT"]
             ?? FileManager.default.currentDirectoryPath
-        let reportFilename = try requiredValue("BILINGUAL_TRANSLATION_REPORT", environment)
+        let filenames = try privateFilenames(environment)
         let sourceHash = try requiredSHA(
             "TRANSLATION_QUALIFICATION_SOURCE_BUNDLE_SHA256",
             environment
@@ -48,17 +50,13 @@ struct HyMTQualificationConfiguration {
             "TRANSLATION_QUALIFICATION_TEST_EXECUTABLE_SHA256",
             environment
         )
-        try TranslationQualificationReportWriter.validatePrivateFilename(reportFilename)
-        return Self(
-            workspaceRoot: URL(fileURLWithPath: workspace, isDirectory: true),
-            manifestURL: try requiredURL("BILINGUAL_TRANSLATION_MANIFEST", environment),
-            reportFilename: reportFilename,
-            modelURL: try requiredURL("HYMT_MODEL_DIR", environment),
-            helperURL: try requiredURL("HYMT_LLAMA_SERVER", environment),
-            backgroundLoad: environment["TRANSLATION_QUALIFICATION_BACKGROUND_LOAD"]
-                ?? "uncontrolled-user-session",
-            expectedSourceBundleSHA256: sourceHash,
-            expectedTestExecutableSHA256: executableHash
+        try validatePrivateFilenames(filenames)
+        return try makeConfiguration(
+            workspace: workspace,
+            filenames: filenames,
+            sourceHash: sourceHash,
+            executableHash: executableHash,
+            environment: environment
         )
     }
 
@@ -117,5 +115,52 @@ struct HyMTQualificationConfiguration {
             throw TranslationQualificationError.invalidManifest("invalid environment hash \(key)")
         }
         return value
+    }
+}
+
+extension HyMTQualificationConfiguration {
+    fileprivate struct PrivateFilenames {
+        let report: String
+        let reviewPacket: String
+        let freezeRequest: String
+    }
+
+    fileprivate static func privateFilenames(_ environment: [String: String]) throws -> PrivateFilenames {
+        let report = try requiredValue("BILINGUAL_TRANSLATION_REPORT", environment)
+        return PrivateFilenames(
+            report: report,
+            reviewPacket: environment["BILINGUAL_TRANSLATION_REVIEW_PACKET"]
+                ?? String(report.dropLast(5)) + ".review-packet.json",
+            freezeRequest: environment["BILINGUAL_TRANSLATION_FREEZE_REQUEST"]
+                ?? String(report.dropLast(5)) + ".freeze-request.json"
+        )
+    }
+
+    fileprivate static func validatePrivateFilenames(_ filenames: PrivateFilenames) throws {
+        try TranslationQualificationReportWriter.validatePrivateFilename(filenames.report)
+        try TranslationQualificationReportWriter.validatePrivateFilename(filenames.reviewPacket)
+        try TranslationQualificationReportWriter.validatePrivateFilename(filenames.freezeRequest)
+    }
+
+    fileprivate static func makeConfiguration(
+        workspace: String,
+        filenames: PrivateFilenames,
+        sourceHash: String,
+        executableHash: String,
+        environment: [String: String]
+    ) throws -> Self {
+        Self(
+            workspaceRoot: URL(fileURLWithPath: workspace, isDirectory: true),
+            manifestURL: try requiredURL("BILINGUAL_TRANSLATION_MANIFEST", environment),
+            reportFilename: filenames.report,
+            reviewPacketFilename: filenames.reviewPacket,
+            freezeRequestFilename: filenames.freezeRequest,
+            modelURL: try requiredURL("HYMT_MODEL_DIR", environment),
+            helperURL: try requiredURL("HYMT_LLAMA_SERVER", environment),
+            backgroundLoad: environment["TRANSLATION_QUALIFICATION_BACKGROUND_LOAD"]
+                ?? "uncontrolled-user-session",
+            expectedSourceBundleSHA256: sourceHash,
+            expectedTestExecutableSHA256: executableHash
+        )
     }
 }

@@ -1,5 +1,6 @@
 import AudioImportAPI
 @testable import AudioImportSessionAdapter
+import Foundation
 import SessionManagementAPI
 import Testing
 
@@ -9,19 +10,37 @@ import Testing
     }
 
     @Test func unresolvedTranscriptIsRejected() {
-        #expect(throws: AudioImportError.self) {
+        let sessionID = UUID()
+        #expect(
+            throws: AudioImportError.savedWithIncompleteTranscript(sessionID: sessionID)
+        ) {
             try AudioImportCompletionValidator.validate(
-                snapshot(outcome: .savedWithUnresolvedUtterances(count: 3))
+                snapshot(outcome: .savedWithUnresolvedUtterances(count: 3)),
+                savedSessionID: sessionID
             )
         }
     }
 
     @Test func failedPhaseIsRejectedEvenWhenPersistenceSaved() {
-        #expect(throws: AudioImportError.self) {
+        let sessionID = UUID()
+        #expect(
+            throws: AudioImportError.savedWithIncompleteTranscript(sessionID: sessionID)
+        ) {
             try AudioImportCompletionValidator.validate(
-                snapshot(phase: .failed(message: "Import incomplete"), outcome: .saved)
+                snapshot(phase: .failed(message: "Import incomplete"), outcome: .saved),
+                savedSessionID: sessionID
             )
         }
+    }
+
+    @Test func incompleteTranscriptUsesConcisePublicMessageWithoutIdentity() {
+        let sessionID = UUID()
+        let error = AudioImportError.savedWithIncompleteTranscript(sessionID: sessionID)
+
+        #expect(error.errorDescription == "录音已保存，听抄未完整。")
+        #expect(!(error.errorDescription ?? "").contains(sessionID.uuidString))
+        #expect(!String(describing: error).contains(sessionID.uuidString))
+        #expect(!String(reflecting: error).contains(sessionID.uuidString))
     }
 
     @Test func cancellationIsNotReportedAsAProcessingFailure() {

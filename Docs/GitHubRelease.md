@@ -21,6 +21,14 @@ The workflow never publishes a draft. A human owner reviews the evidence and the
 release gates before deciding whether to publish it. Reruns refuse to overwrite an existing
 GitHub Release for the same tag.
 
+Packaging evidence is not translation-quality authority. Publishing also requires the exact HyMT
+run's root-signed freeze attestation, byte-identical private review packet, root-signed reviewer
+registry, and two-reviewer v2 settlement to pass the attested adjudication gate. The freeze authority
+and reviewer-registry roots are source-pinned and cannot be supplied by workflow inputs. Both
+production root sets are intentionally empty until real independent key governance and two actual
+reviewers are provisioned; therefore the current repository remains formal-release **NO-GO** even if
+a packaging workflow is green.
+
 Repository owners must protect the default branch and configure the referenced
 `production-release` GitHub Environment with required reviewers before enabling formal tags. All
 Apple credentials belong in that environment, not in repository-level secrets.
@@ -75,12 +83,20 @@ never trusted without these checks.
    `Contents/MacOS`; the resulting app contains ordinary self-contained files.
 5. Sign nested dylibs, sign `llama-server`, then sign the outer app with Developer ID, hardened
    runtime, a secure timestamp, and the reviewed entitlements.
-6. Submit the app ZIP to `notarytool`, require `Accepted`, staple and validate the app, create and
-   sign the DMG, then repeat notarization and stapling for the DMG.
-7. Require Gatekeeper assessment and require the final DMG to be strictly smaller than
+6. Seal the app ZIP hash before submission, submit it to `notarytool`, require `Accepted`, and
+   privately retain the submission JSON, Apple log, and submitted-artifact hash. The request ID,
+   status, Apple-recorded SHA-256, sealed SHA-256, and unchanged local artifact must all agree.
+   Staple and validate the app, create and sign the DMG, then repeat the same sealed submission and
+   validation flow for the DMG.
+7. Re-run `hdiutil verify` after the DMG ticket is stapled, require Gatekeeper assessment, and
+   require the final DMG to be strictly smaller than
    2,147,483,648 bytes, GitHub's per-asset limit.
 8. Generate evidence, upload it as an Actions artifact, download and re-verify it in the
    least-privilege draft job, attest the DMG, and create a draft prerelease.
+9. Before publication, verify the separately retained translation freeze, postflight, packet,
+   reviewer registry, and signed settlement on the exact protected commit. The verifier must print
+   `RELEASE_READY=true` only as its final line; caller-provided legacy "trusted SHA" values are not
+   accepted.
 
 The standard Apple Silicon `macos-15` runner has a 14 GB SSD. The workflow records free space,
 requires at least 6 GiB before the release build, removes transient Swift build products after the
@@ -110,7 +126,17 @@ and includes:
 - `RELEASE-REPORT.md` with commit, version/build, toolchain, sizes, signing team, and notarization
   submission IDs/statuses. Dry runs record whether local sources were dirty, while formal
   notarization refuses a dirty Git worktree before building and evidence generation rechecks it; and
-- raw successful `notarytool` JSON on formal runs.
+- raw successful `notarytool` submission JSON, the corresponding Apple notarization log JSON, and a
+  sealed SHA-256 file for each submitted artifact on formal runs. All six files must be ordinary,
+  nonempty, runner-owned `0600` files. Evidence generation rejects duplicate JSON keys, mismatched
+  request IDs or statuses, malformed hashes, and any Apple-recorded hash that differs from the
+  sealed submitted-artifact hash. Their IDs, paths, and hashes are recorded in
+  `RELEASE-REPORT.md`; credential values are never written by the release scripts.
+
+The submitted DMG hash is intentionally recorded separately from the final DMG hash because
+stapling adds the notarization ticket after Apple accepts the upload. Formal evidence generation
+therefore also re-runs app and DMG ticket validation, final-DMG verification, and both Gatekeeper
+assessments instead of treating the retained JSON as proof that the final files are usable.
 
 The automated report intentionally says that it is packaging evidence only. Human release notes
 must add the exact corpus decisions, review results, soak duration, latency and memory evidence,

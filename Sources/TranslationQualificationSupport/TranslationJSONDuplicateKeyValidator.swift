@@ -1,8 +1,8 @@
 import Foundation
 
 /// Rejects duplicate object fields before Foundation can collapse them.
-enum TranslationJSONDuplicateKeyValidator {
-    static func validate(_ data: Data) throws {
+public enum TranslationJSONDuplicateKeyValidator {
+    public static func validate(_ data: Data) throws {
         var parser = TranslationJSONParser(bytes: Array(data))
         try parser.parseDocument()
     }

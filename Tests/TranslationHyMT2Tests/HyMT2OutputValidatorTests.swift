@@ -140,3 +140,37 @@ import TranslationAPI
         }
     }
 }
+
+extension HyMT2OutputValidatorTests {
+    @Test func requiredLatinTermDoesNotMatchInsideAnotherWord() {
+        assertIssue(
+            .missingTerm("the cross"),
+            output: "The disciples traveled across the region.",
+            source: "门徒背起十字架走遍那地。",
+            terms: [
+                TranslationTerm(
+                    source: "十字架",
+                    target: "the cross",
+                    acceptedTargets: ["cross"]
+                )
+            ]
+        )
+    }
+
+    @Test func acceptsTheologicallyEquivalentCrossVariant() throws {
+        let result = try HyMT2OutputValidator.validate(
+            "Jesus was crucified for our redemption.",
+            source: "耶稣在十字架上为着我们的救赎舍命。",
+            requiredTerms: [
+                TranslationTerm(
+                    source: "十字架",
+                    target: "the cross",
+                    acceptedTargets: ["cross", "crucified", "crucifixion"]
+                ),
+                TranslationTerm(source: "救赎", target: "redemption"),
+            ]
+        )
+
+        #expect(result == "Jesus was crucified for our redemption.")
+    }
+}

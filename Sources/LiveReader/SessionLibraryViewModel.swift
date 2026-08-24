@@ -1,9 +1,7 @@
 import AppKit
-import AudioImportAPI
 import Combine
 import Foundation
 import PersistenceAPI
-import SettingsAPI
 import TranscriptAPI
 import UtteranceRecoveryAPI
 
@@ -75,31 +73,6 @@ public final class SessionLibraryViewModel: ObservableObject {
         }
     }
 
-    public func importAudio(
-        from url: URL,
-        mode: TranslationMode,
-        using importer: any AudioImporting,
-        liveSessionIsRunning: Bool
-    ) async {
-        guard !liveSessionIsRunning else {
-            presentedError = "请先停止实时翻译。"
-            return
-        }
-        isImporting = true
-        defer { isImporting = false }
-        do {
-            try await importer.importAudio(from: url, mode: mode)
-            selectedSessionID = nil
-            await load()
-        } catch AudioImportError.cancelled {
-            await load()
-        } catch is CancellationError {
-            await load()
-        } catch {
-            presentedError = "音频处理未完成，请重试。"
-        }
-    }
-
     public func revealSelected() {
         guard let summary = selectedSummary else { return }
         NSWorkspace.shared.activateFileViewerSelecting([summary.location])
@@ -112,6 +85,28 @@ public final class SessionLibraryViewModel: ObservableObject {
 
     public func transcriptURL(for summary: StoredSessionSummary) -> URL? {
         safeFile(named: "transcript.md", in: summary.location)
+    }
+
+    func beginAudioImportPresentation() {
+        presentedError = nil
+        isImporting = true
+    }
+
+    func endAudioImportPresentation() {
+        isImporting = false
+    }
+
+    func recentSessionSummaries() async throws -> [StoredSessionSummary] {
+        try await store.recentSessions(limit: 500)
+    }
+
+    func applyImportRefresh(
+        sessions: [StoredSessionSummary],
+        selectedSessionID: UUID?
+    ) async {
+        self.sessions = sessions
+        self.selectedSessionID = selectedSessionID
+        await loadSelection()
     }
 
     private func loadSelection() async {

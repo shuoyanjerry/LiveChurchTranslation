@@ -18,7 +18,7 @@ enum HyMTQualificationTheologyCatalog {
         }
     }
 
-    static let policyID = "hymt-qualification-theology-surface-v1"
+    static let policyID = "hymt-qualification-theology-surface-v2"
 
     static func expectation(
         forExactLabel label: String
@@ -54,8 +54,16 @@ enum HyMTQualificationTheologyCatalog {
         entry("重生", "regeneration", ["born again", "new birth"]),
         entry("赎罪", "atonement", ["atone", "atoned", "atones", "atoning"]),
         entry("贖罪", "atonement", ["atone", "atoned", "atones", "atoning"]),
-        entry("救赎", "redemption", ["redeem", "redeemed", "redeems", "redeeming"]),
-        entry("救贖", "redemption", ["redeem", "redeemed", "redeems", "redeeming"]),
+        entry(
+            "救赎",
+            "redemption",
+            ["redeem", "redeemed", "redeems", "redeeming", "redemptive"]
+        ),
+        entry(
+            "救贖",
+            "redemption",
+            ["redeem", "redeemed", "redeems", "redeeming", "redemptive"]
+        ),
         entry("三位一体", "the Trinity", ["Trinitarian", "the triune God"]),
         entry("三位一體", "the Trinity", ["Trinitarian", "the triune God"]),
         entry("圣灵", "the Holy Spirit", ["Holy Spirit"]),
@@ -70,8 +78,12 @@ enum HyMTQualificationTheologyCatalog {
         entry("洗禮", "baptism", ["baptized", "baptize", "baptizes", "baptizing"]),
         entry("福音", "the gospel", ["gospel"]),
         entry("基督", "Christ"),
-        entry("十字架", "the cross", ["cross"]),
-        entry("永生", "eternal life"),
+        entry(
+            "十字架",
+            "the cross",
+            ["cross", "crucify", "crucified", "crucifies", "crucifying", "crucifixion"]
+        ),
+        entry("永生", "eternal life", ["everlasting life"]),
         entry("悔改", "repentance", ["repent", "repented", "repents", "repenting"]),
         entry("罪", "sin", ["sins", "sinned", "sinning"]),
     ]

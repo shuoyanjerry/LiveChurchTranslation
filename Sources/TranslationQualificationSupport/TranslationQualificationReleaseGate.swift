@@ -1,3 +1,5 @@
+import Foundation
+
 public struct TranslationQualificationGateResult: Equatable, Sendable {
     public let providerFailureCount: Int
     public let hardCheckFailureCount: Int
@@ -6,6 +8,10 @@ public struct TranslationQualificationGateResult: Equatable, Sendable {
     public let backendReviewAttemptCount: Int
     public let backendReviewIssueCount: Int
     public let provenanceBindingFailureCount: Int
+    public let resolvedHumanReviewCount: Int
+    public let outstandingHumanReviewCount: Int
+    public let reviewFailureCount: Int
+    public let reviewBindingFailureCount: Int
 
     public var passesHardGates: Bool {
         providerFailureCount == 0 && hardCheckFailureCount == 0
@@ -14,19 +20,25 @@ public struct TranslationQualificationGateResult: Equatable, Sendable {
     public var passesReleaseReadyGates: Bool {
         providerFailureCount == 0
             && releaseCheckFailureCount == 0
-            && humanReviewRequiredCount == 0
-            && backendReviewAttemptCount == 0
-            && backendReviewIssueCount == 0
             && provenanceBindingFailureCount == 0
+            && outstandingHumanReviewCount == 0
+            && reviewFailureCount == 0
+            && reviewBindingFailureCount == 0
     }
 }
 
 public enum TranslationQualificationReleaseGate {
     public static func evaluate(
         _ report: TranslationQualificationReport,
-        expectation: TranslationReleaseExpectation? = nil
+        expectation: TranslationReleaseExpectation? = nil,
+        humanReviewSidecar: Data? = nil
     ) -> TranslationQualificationGateResult {
         let attempts = report.attempts
+        let review = HumanReviewSettlementEvaluator.evaluate(
+            report: report,
+            expectation: expectation,
+            sidecarData: humanReviewSidecar
+        )
         return TranslationQualificationGateResult(
             providerFailureCount: attempts.filter { $0.status == .failure }.count,
             hardCheckFailureCount: attempts.reduce(0) { $0 + hardFailures(in: $1) },
@@ -41,20 +53,41 @@ public enum TranslationQualificationReleaseGate {
             provenanceBindingFailureCount:
                 expectation.map {
                     TranslationProvenanceValidator.isReleaseBound(report, expectation: $0)
-                } == true ? 0 : 1
+                } == true ? 0 : 1,
+            resolvedHumanReviewCount: review.resolvedCount,
+            outstandingHumanReviewCount: review.outstandingCount,
+            reviewFailureCount: review.reviewFailureCount,
+            reviewBindingFailureCount: review.bindingFailureCount
         )
     }
 
     public static func requireReleaseReadyGates(
         _ report: TranslationQualificationReport,
-        expectation: TranslationReleaseExpectation
+        expectation: TranslationReleaseExpectation,
+        humanReviewSidecar: Data? = nil
     ) throws {
-        let result = evaluate(report, expectation: expectation)
+        let result = evaluate(
+            report,
+            expectation: expectation,
+            humanReviewSidecar: humanReviewSidecar
+        )
         guard result.passesReleaseReadyGates else {
             throw TranslationQualificationError.invalidReport(
                 "translation qualification release-ready gates failed"
             )
         }
+    }
+
+    public static func requireAttestedReleaseReadyGates(
+        _ report: TranslationQualificationReport,
+        expectation: TranslationAttestedReleaseExpectation,
+        humanReviewSidecar: Data
+    ) throws {
+        try requireReleaseReadyGates(
+            report,
+            expectation: expectation.releaseExpectation,
+            humanReviewSidecar: humanReviewSidecar
+        )
     }
 
     private static func allFailures(in attempt: TranslationQualificationAttempt) -> Int {

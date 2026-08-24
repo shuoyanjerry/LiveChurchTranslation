@@ -92,16 +92,22 @@ extension LiveReaderHeader {
         Menu {
             microphonePicker
         } label: {
-            InlineMenuLabel(title: "麦克风设置", systemImage: "mic")
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+            InlineMenuLabel(
+                title: MicrophoneControlPresentation.title(
+                    selectedInputName: selectedInputName,
+                    expanded: false
+                ),
+                systemImage: "mic"
+            )
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .menuStyle(.borderlessButton)
         .fixedSize(horizontal: true, vertical: false)
         .foregroundStyle(ChurchTheme.ink)
         .disabled(viewModel.sessionControlsLocked)
-        .accessibilityLabel("音频输入")
+        .accessibilityLabel(MicrophoneControlPresentation.settingsTitle)
         .accessibilityValue(selectedInputName)
         .help(selectedInputName)
     }

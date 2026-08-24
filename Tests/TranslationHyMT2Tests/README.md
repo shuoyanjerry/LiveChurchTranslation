@@ -36,8 +36,68 @@ version, and `postflightVerified: true`; it contains no transcript text, local p
 An existing report or sidecar, missing or malformed report, or any persistent drift fails closed. Reports
 contain only hashes, counts, revisions, and settings for these identities—never local model, helper,
 corpus, or workspace paths. Existing output evidence is never overwritten. A quality-gate failure
-preserves the report as a diagnostic artifact and prints `RELEASE_READY=false`; only a passing gate
-prints `RELEASE_READY=true`.
+preserves the report as a diagnostic artifact. The freeze phase never has formal release authority;
+only the separately root-attested adjudication path can print `RELEASE_READY=true`.
+
+### Two-phase blind-review workflow
+
+The default invocation is the freeze phase. It never reads a reviewer registry or review settlement:
+
+```sh
+HYMT_MODEL_DIR=/absolute/model \
+HYMT_LLAMA_SERVER=/absolute/llama-server \
+BILINGUAL_TRANSLATION_MANIFEST=/absolute/private-manifest.json \
+BILINGUAL_TRANSLATION_REPORT=exact-run.json \
+Scripts/run_hymt_bilingual_qualification.sh
+```
+
+Even when the initial no-review gate returns nonzero, a successful postflight leaves four new,
+mode-0600, no-overwrite files: the exact report, `<report>.postflight.json`, the review packet
+named by `BILINGUAL_TRANSLATION_REVIEW_PACKET` or `<report-without-.json>.review-packet.json`, and
+the canonical unsigned freeze request named by `BILINGUAL_TRANSLATION_FREEZE_REQUEST` or
+`<report-without-.json>.freeze-request.json`.
+Record the printed `REPORT_FILE_SHA256`, `CANONICAL_REPORT_BINDING_SHA256`,
+`POSTFLIGHT_ATTESTATION_SHA256`, `HUMAN_REVIEW_PACKET_SHA256`, and `FREEZE_REQUEST_SHA256`. The
+request contains complete file, canonical-report, full-attempt, provider, environment, and execution
+provenance bindings, but it is not an attestation and cannot make a release ready.
+
+An independently protected release authority must recompute the request from the exact trusted run
+before signing it with an offline or KMS-held Ed25519 key. The private key must never enter this
+repository, the candidate workspace, environment variables, or a job that executes changeable
+candidate code. Only the public key and active policy revision are compiled into the formal verifier.
+The production authority set is intentionally empty until that governance is provisioned, so formal
+adjudication currently fails closed.
+
+After two independent reviewers finish, run the adjudication phase against the unchanged tree and
+the same model, helper, manifest, report, and postflight. It does not start the model or regenerate the
+report, postflight timestamp, attempts, or latency:
+
+```sh
+TRANSLATION_QUALIFICATION_ADJUDICATE=1 \
+HYMT_MODEL_DIR=/absolute/model \
+HYMT_LLAMA_SERVER=/absolute/llama-server \
+BILINGUAL_TRANSLATION_MANIFEST=/absolute/private-manifest.json \
+BILINGUAL_TRANSLATION_REPORT=exact-run.json \
+BILINGUAL_TRANSLATION_REVIEW_PACKET=exact-run.review-packet.json \
+BILINGUAL_TRANSLATION_FREEZE_ATTESTATION=/absolute/root-signed-freeze.json \
+BILINGUAL_TRANSLATION_REVIEWER_REGISTRY=/absolute/root-signed-registry.json \
+BILINGUAL_TRANSLATION_HUMAN_REVIEW_SIDECAR=/absolute/signed-settlement.json \
+Scripts/run_hymt_bilingual_qualification.sh
+```
+
+The signed freeze, registry, and settlement files must be caller-owned, regular, non-symlinked,
+nonempty mode-0600 files. Their v2 schemas reject missing, unknown, duplicate, reordered, or
+noncanonical JSON. The reviewer registry is accepted only when its Ed25519 root key, registry ID,
+policy, and exact revision match the source-fixed production policy; a caller-supplied path or hash is
+never a trust anchor. Each reviewer signature binds the exact packet SHA and root-signed registry SHA
+in addition to the report, reviewer identity, complete opaque item coverage, and verdicts.
+
+Adjudication verifies the freeze root before treating any report attempt as trusted, rehashes the
+current source, executable, model, helper, runtime, manifest, schema, and configuration, rebuilds the
+postflight and review packet byte-for-byte, then uses the attested-only release gate. It reopens and
+rehashes the freeze, report, postflight, packet, registry, settlement, and runtime inputs after the gate;
+`RELEASE_READY=true` is printed last. Legacy caller-provided report, postflight, registry, or sidecar
+"trusted SHA" variables are explicitly rejected.
 
 These repeated snapshots are not an atomic filesystem guarantee. A process already able to mutate the
 model or helper paths could transiently replace same-size content after one hash, allow the helper to

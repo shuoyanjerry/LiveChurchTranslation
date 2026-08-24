@@ -61,4 +61,22 @@ import TranslationQualificationSupport
         }
     }
 
+    @Test func humanSemanticReviewRequiresSemanticEligibility() throws {
+        let fixture = try SyntheticTranslationWorkspace()
+        let data = try Data(contentsOf: fixture.manifestURL)
+        var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var segments = try #require(object["segments"] as? [[String: Any]])
+        var qualification = try #require(segments[1]["qualification"] as? [String: Any])
+        qualification["semanticScoringEligible"] = false
+        qualification["requiresHumanSemanticReview"] = true
+        segments[1]["qualification"] = qualification
+        object["segments"] = segments
+        let changed = try JSONSerialization.data(withJSONObject: object)
+        let manifest = try TranslationQualificationManifestDecoder.decode(changed)
+
+        #expect(throws: TranslationQualificationError.self) {
+            try TranslationManifestValidator.validate(manifest)
+        }
+    }
+
 }

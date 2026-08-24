@@ -21,7 +21,7 @@ extension LiveReaderHeader {
     }
 
     var microphonePicker: some View {
-        Picker("麦克风", selection: microphoneSelection) {
+        Picker(MicrophoneControlPresentation.settingsTitle, selection: microphoneSelection) {
             Text("系统默认麦克风").tag(Optional<AudioInputID>.none)
             ForEach(viewModel.devices) { device in
                 Text(device.name).tag(Optional(device.id))

@@ -346,7 +346,10 @@ let package = Package(
         ),
         test(
             "LiveReaderTests",
-            dependencies: ["LiveReader", "RemoteSharingFeatureAPI", "ScriptureAPI", "SettingsAPI"]
+            dependencies: [
+                "AudioImportAPI", "LiveReader", "PersistenceAPI", "RemoteSharingFeatureAPI",
+                "ScriptureAPI", "SettingsAPI", "TranscriptAPI", "UtteranceRecoveryAPI",
+            ]
         ),
         test(
             "UtteranceRecoveryFileSystemTests",

@@ -74,9 +74,17 @@ actor FakeAudioCaptureProvider: AudioCaptureProvider {
 }
 
 actor FakeAudioProcessor: AudioProcessor {
+    private let delay: Duration?
     private var received: [AudioFrame] = []
 
-    func process(_ frame: AudioFrame) -> ProcessedAudioFrame {
+    init(delay: Duration? = nil) {
+        self.delay = delay
+    }
+
+    func process(_ frame: AudioFrame) async throws -> ProcessedAudioFrame {
+        if let delay {
+            try await Task.sleep(for: delay)
+        }
         received.append(frame)
         return ProcessedAudioFrame(
             samples: frame.samples,

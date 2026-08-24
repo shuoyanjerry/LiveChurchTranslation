@@ -10,12 +10,6 @@ extension HyMTBilingualSermonQualificationTests {
         let configuration = input.configuration
         let executionGuard = input.executionGuard
         let report = evidence.report
-        let gateFailure = try releaseGateFailure(
-            report,
-            expectation: evidence.expectation,
-            configuration: configuration,
-            executionGuard: executionGuard
-        )
         let reportURL = try writeDiagnostic(
             report,
             expectation: evidence.expectation,
@@ -23,8 +17,16 @@ extension HyMTBilingualSermonQualificationTests {
             executionGuard: executionGuard
         )
         let reportHash = try TranslationQualificationSHA256.hash(fileAt: reportURL)
+        let bindingHash = try TranslationHumanReviewEvidence.reportBinding(for: report).reportSHA256
         print("DIAGNOSTIC_REPORT_SHA256=\(reportHash)")
-        print("RELEASE_READY=\(gateFailure == nil ? "true" : "false")")
+        print("CANONICAL_REPORT_BINDING_SHA256=\(bindingHash)")
+        let gateFailure = try releaseGateFailure(
+            report,
+            expectation: evidence.expectation,
+            configuration: configuration,
+            executionGuard: executionGuard
+        )
+        print("AUTOMATED_QUALITY_GATES_READY=\(gateFailure == nil ? "true" : "false")")
         if let gateFailure {
             print("RELEASE_GATE_FAILURE=quality-or-review-gates-failed")
             throw gateFailure

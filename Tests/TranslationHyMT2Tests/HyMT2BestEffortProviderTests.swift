@@ -62,6 +62,29 @@ import TranslationAPI
         #expect(result.review?.issueCodes.contains("quality.meta_text") == true)
     }
 
+    @Test func theologicalOmissionRetriesThenShowsSafeCandidateWithBackendFlag() async throws {
+        let source = "耶稣在十字架上宣告成了，祂所成就的救赎工作已经完成，信徒因此领受永生。"
+        let target =
+            "Jesus declared that His work was finished, and believers received new life through Him."
+        let terms = [
+            TranslationTerm(source: "十字架", target: "the cross", requirement: .required),
+            TranslationTerm(source: "救赎", target: "redemption", requirement: .required),
+            TranslationTerm(source: "永生", target: "eternal life", requirement: .required),
+        ]
+        let harness = try await makeTranslationHarness(
+            responses: [.success(target), .success(target)]
+        )
+        defer { harness.model.remove() }
+
+        let result = try await harness.provider.translate(
+            TranslationRequest(sourceText: source, glossary: terms)
+        )
+
+        #expect(result.targetText == target)
+        #expect(result.review?.issueCodes == ["quality.missing_required_term"])
+        #expect(await harness.transport.completionRequests().count == 2)
+    }
+
     private func requiredTermRequest() -> TranslationRequest {
         TranslationRequest(
             sourceText: "我们因信称义。",

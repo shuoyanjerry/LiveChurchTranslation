@@ -30,12 +30,23 @@ extension DefaultGlossary {
             source: "重生",
             target: "regeneration",
             targetVariants: ["born again", "new birth"]),
+        GlossaryEntry(
+            source: "救赎",
+            target: "redemption",
+            targetVariants: ["redeem", "redeemed", "redeems", "redeeming", "redemptive"],
+            enforcement: .required),
         GlossaryEntry(source: "赎罪", target: "atonement", enforcement: .required),
         GlossaryEntry(source: "悔改", target: "repentance"),
         GlossaryEntry(source: "信心", target: "faith"),
         GlossaryEntry(source: "罪性", target: "sinful nature"),
         GlossaryEntry(source: "原罪", target: "original sin"),
-        GlossaryEntry(source: "十字架", target: "the cross"),
+        GlossaryEntry(
+            source: "十字架",
+            target: "the cross",
+            targetVariants: [
+                "cross", "crucify", "crucified", "crucifies", "crucifying", "crucifixion",
+            ],
+            enforcement: .required),
         GlossaryEntry(source: "复活", target: "resurrection"),
         GlossaryEntry(
             source: "基督身体的复活",
@@ -62,7 +73,11 @@ extension DefaultGlossary {
             target: "preaching",
             targetVariants: ["preach", "proclaim", "proclamation"]),
         GlossaryEntry(source: "徒然", target: "in vain", targetVariants: ["vain"]),
-        GlossaryEntry(source: "永生", target: "eternal life"),
+        GlossaryEntry(
+            source: "永生",
+            target: "eternal life",
+            targetVariants: ["everlasting life"],
+            enforcement: .required),
         GlossaryEntry(source: "福音", target: "the gospel"),
         GlossaryEntry(source: "圣经", target: "Scripture"),
         GlossaryEntry(source: "耶稣基督", target: "Jesus Christ"),

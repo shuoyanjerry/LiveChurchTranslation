@@ -46,13 +46,18 @@ public final class ImportedAudioTranscriber: AudioImporting {
         }
         activeImportTask = task
         do {
-            try await task.value
+            try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: {
+                task.cancel()
+                Task { await controller.stop() }
+            }
         } catch is CancellationError {
             await controller.stop()
-            return
+            throw AudioImportError.cancelled
         } catch {
             await controller.stop()
-            if cancellationRequested { return }
+            if cancellationRequested { throw AudioImportError.cancelled }
             throw error
         }
     }
@@ -66,15 +71,25 @@ public final class ImportedAudioTranscriber: AudioImporting {
     private func waitForCompletion(
         _ events: AsyncStream<LiveSessionEvent>
     ) async throws {
-        var observedSession = false
+        var observedSessionID: UUID?
         for await event in events {
             try Task.checkCancellation()
             guard case .stateChanged(let snapshot) = event else { continue }
-            observedSession = observedSession || snapshot.sessionID != nil
-            guard observedSession, snapshot.sessionID == nil else { continue }
-            try AudioImportCompletionValidator.validate(snapshot)
+            if let sessionID = snapshot.sessionID {
+                guard observedSessionID == nil || observedSessionID == sessionID else {
+                    throw AudioImportError.transcriptionFailed("处理流程意外切换了项目。")
+                }
+                observedSessionID = sessionID
+                continue
+            }
+            guard let observedSessionID else { continue }
+            try AudioImportCompletionValidator.validate(
+                snapshot,
+                savedSessionID: observedSessionID
+            )
             return
         }
+        try Task.checkCancellation()
         throw AudioImportError.transcriptionFailed("处理流程意外结束。")
     }
 }
