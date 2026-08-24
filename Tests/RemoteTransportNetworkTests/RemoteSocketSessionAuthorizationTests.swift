@@ -8,7 +8,7 @@ import Testing
 struct RemoteSocketSessionAuthorizationTests {
     @Test("Revocation blocks the next drain and disconnects exactly once")
     func revokedGrantFailsClosed() async throws {
-        let fixture = makeFixture()
+        let fixture = try makeFixture()
         _ = try await fixture.session.outgoing()
         #expect(await fixture.projection.drainCalls() == 1)
 
@@ -24,8 +24,8 @@ struct RemoteSocketSessionAuthorizationTests {
     }
 
     @Test("Expiry blocks an inbound frame before it is handled")
-    func expiredGrantFailsClosed() async {
-        let fixture = makeFixture()
+    func expiredGrantFailsClosed() async throws {
+        let fixture = try makeFixture()
         await fixture.pairing.setMode(.expired)
 
         await #expect(throws: RemoteTransportError.unauthorized) {
@@ -37,8 +37,8 @@ struct RemoteSocketSessionAuthorizationTests {
     }
 
     @Test(arguments: [true, false])
-    func changedGrantIdentityFailsClosed(wrongPeer: Bool) async {
-        let fixture = makeFixture()
+    func changedGrantIdentityFailsClosed(wrongPeer: Bool) async throws {
+        let fixture = try makeFixture()
         await fixture.pairing.setMode(wrongPeer ? .wrongPeer : .wrongGrant)
 
         await #expect(throws: RemoteTransportError.unauthorized) {
@@ -49,16 +49,18 @@ struct RemoteSocketSessionAuthorizationTests {
         #expect(await fixture.projection.disconnectCalls() == 1)
     }
 
-    private func makeFixture() -> SessionAuthorizationFixture {
+    private func makeFixture() throws -> SessionAuthorizationFixture {
         let peerID = RemotePeerID()
         let grantID = RemoteGrantID()
         let credential = String(repeating: "S", count: 43)
+        let clientBinding = try #require(RemotePairingClientBinding(rawValue: "192.168.10.20"))
         let pairing = SessionPairingFake(peerID: peerID, grantID: grantID, credential: credential)
         let projection = SessionProjectionSpy()
         let session = RemoteSocketSession(
             peerID: peerID,
             grantID: grantID,
             bearerCredential: credential,
+            clientBinding: clientBinding,
             pairing: pairing,
             projection: projection
         )
@@ -93,12 +95,17 @@ private actor SessionPairingFake: RemotePairingServing {
         self.credential = credential
     }
 
-    func redeem(_ redemption: PairingRedemption, now: Date) throws -> PairingGrant {
+    func redeem(
+        _ redemption: PairingRedemption,
+        clientBinding: RemotePairingClientBinding,
+        now: Date
+    ) throws -> PairingGrant {
         throw PairingError.invalidInvitation
     }
 
     func authorize(
         bearerCredential: String,
+        clientBinding: RemotePairingClientBinding,
         requiresMutation: Bool,
         now: Date
     ) throws -> RemotePairingAuthorization {

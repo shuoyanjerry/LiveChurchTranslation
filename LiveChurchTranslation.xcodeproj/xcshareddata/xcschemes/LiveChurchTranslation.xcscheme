@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5C195D363A782BE15146EDF3"
-               BuildableName = "QuietLiturgyReader.app"
-               BlueprintName = "QuietLiturgyReader"
-               ReferencedContainer = "container:QuietLiturgyReader.xcodeproj">
+               BlueprintIdentifier = "DB801A70B4A1DB376A3ABA2E"
+               BuildableName = "Live Church Translation.app"
+               BlueprintName = "Live Church Translation"
+               ReferencedContainer = "container:LiveChurchTranslation.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +32,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5C195D363A782BE15146EDF3"
-            BuildableName = "QuietLiturgyReader.app"
-            BlueprintName = "QuietLiturgyReader"
-            ReferencedContainer = "container:QuietLiturgyReader.xcodeproj">
+            BlueprintIdentifier = "DB801A70B4A1DB376A3ABA2E"
+            BuildableName = "Live Church Translation.app"
+            BlueprintName = "Live Church Translation"
+            ReferencedContainer = "container:LiveChurchTranslation.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -55,10 +55,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5C195D363A782BE15146EDF3"
-            BuildableName = "QuietLiturgyReader.app"
-            BlueprintName = "QuietLiturgyReader"
-            ReferencedContainer = "container:QuietLiturgyReader.xcodeproj">
+            BlueprintIdentifier = "DB801A70B4A1DB376A3ABA2E"
+            BuildableName = "Live Church Translation.app"
+            BlueprintName = "Live Church Translation"
+            ReferencedContainer = "container:LiveChurchTranslation.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -74,10 +74,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5C195D363A782BE15146EDF3"
-            BuildableName = "QuietLiturgyReader.app"
-            BlueprintName = "QuietLiturgyReader"
-            ReferencedContainer = "container:QuietLiturgyReader.xcodeproj">
+            BlueprintIdentifier = "DB801A70B4A1DB376A3ABA2E"
+            BuildableName = "Live Church Translation.app"
+            BlueprintName = "Live Church Translation"
+            ReferencedContainer = "container:LiveChurchTranslation.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -88,7 +88,7 @@
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"
-      customArchiveName = "Quiet Liturgy Reader"
+      customArchiveName = "Live Church Translation"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

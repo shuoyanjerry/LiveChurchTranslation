@@ -1,4 +1,4 @@
-# Design QA — Quiet Liturgy Reader
+# Design QA — Live Church Translation
 
 ## Artifacts and normalization
 
@@ -45,9 +45,8 @@ native app rather than simulated in the comparison image.
   live edge.
 - `[P2 fixed]` Jump to Live initially reused the gold primary-button treatment. It now uses
   the white bordered secondary treatment visible in the selected source.
-- `[P2 fixed]` The window and product title previously exposed the old Live Church
-  Translation name. App chrome, bundle display name, and packaging now use Quiet Liturgy
-  Reader.
+- `[P2 fixed]` An exploratory product label briefly diverged from the approved name. App
+  chrome, bundle display name, and packaging now consistently use Live Church Translation.
 - `[P2 accepted]` Share and reader options add controls absent from the source. They are
   required by the product scope and remain visually secondary.
 - `[P2 accepted]` The official Northville logo, church name, schedule, and photography are

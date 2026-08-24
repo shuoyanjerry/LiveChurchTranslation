@@ -1,24 +1,5 @@
-import Foundation
+import AudioImportAPI
 import SessionManagementAPI
-
-public protocol AudioImporting: Sendable {
-    func importAudio(from url: URL) async throws
-    func cancelImport() async
-}
-
-public enum AudioImportError: LocalizedError, Sendable {
-    case liveSessionRunning
-    case transcriptionFailed(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .liveSessionRunning:
-            "请先停止实时翻译，再导入音频文件。"
-        case .transcriptionFailed(let message):
-            "音频听抄失败：\(message)"
-        }
-    }
-}
 
 public enum AudioImportCompletionValidator {
     public static func validate(_ snapshot: LiveSessionSnapshot) throws {
@@ -34,13 +15,13 @@ public enum AudioImportCompletionValidator {
             )
         case .savedWithIncompleteTranscript(let rejected, let recoverable):
             throw AudioImportError.transcriptionFailed(
-                "听抄稿不完整：\(rejected) 句未通过质量校验，"
+                "听抄稿不完整：\(rejected) 句未生成译文，"
                     + "\(recoverable) 句等待自动恢复。完整录音已保留。"
             )
         case .saveFailed(let message, _):
             throw AudioImportError.transcriptionFailed(message)
         case .cancelledBeforeCapture:
-            throw AudioImportError.transcriptionFailed("音频尚未开始解码，处理已取消。")
+            throw AudioImportError.cancelled
         case .failedBeforeCapture:
             throw AudioImportError.transcriptionFailed(snapshot.statusMessage)
         case nil:

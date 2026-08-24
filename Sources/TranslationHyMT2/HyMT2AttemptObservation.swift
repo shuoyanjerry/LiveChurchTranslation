@@ -3,12 +3,14 @@ import Foundation
 enum HyMT2AttemptPhase: String, Equatable, Sendable {
     case initial
     case strictRetry
+    case safetyFallback
 }
 
 enum HyMT2AttemptOutcome: String, Equatable, Sendable {
     case accepted
     case validationRejected
     case transportFailed
+    case cancelled
 }
 
 struct HyMT2AttemptObservation: Equatable, Sendable {

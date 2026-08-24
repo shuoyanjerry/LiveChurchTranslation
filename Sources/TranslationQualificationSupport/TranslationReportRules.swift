@@ -27,5 +27,9 @@ extension TranslationQualificationReportBuilder {
         "Human references are review-only and are never prompt or context input.",
         "No BLEU, exact string match, or reference overlap alone determines semantic quality.",
         "Automated checks are preservation and pronoun-policy guards, not adequacy scores.",
+        "Safe nonempty provider completions with quality warnings remain successes "
+            + "and record backendReviewIssueCodes.",
+        "Backend-reviewed completions never enter rolling translation context or pass release-ready gates.",
+        "Pronoun safety-fallback completions are always backend-reviewed and never enter context.",
     ]
 }

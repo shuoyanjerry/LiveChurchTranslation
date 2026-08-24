@@ -68,6 +68,7 @@ import TranslationAPI
             let harness = try await makeTranslationHarness(responses: [
                 .success("\(base) \(fragment)"),
                 .success("\(base) \(fragment)"),
+                .success("She continued. \(fragment)"),
             ])
             defer { harness.model.remove() }
 
@@ -79,7 +80,8 @@ import TranslationAPI
                     sourceText: source,
                     glossary: [],
                     pronounGuidance: guidance
-                )
+                ),
+                expectedRequestCount: 3
             )
         }
     }

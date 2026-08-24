@@ -74,6 +74,7 @@ let package = Package(
         target("TranscriptAPI", dependencies: ["ASRAPI", "TranslationAPI"]),
         target("PersistenceAPI", dependencies: ["TranscriptAPI"]),
         target("SettingsAPI"),
+        target("AudioImportAPI", dependencies: ["SettingsAPI"]),
         target("LoggingAPI"),
         target("DiagnosticsAPI"),
         target("RemoteSharingAPI"),
@@ -198,11 +199,17 @@ let package = Package(
                 "UtteranceRecoveryAPI",
             ]
         ),
+        target(
+            "AudioImportSessionAdapter",
+            dependencies: [
+                "AudioCaptureAPI", "AudioImportAPI", "SessionManagementAPI", "SettingsAPI",
+            ]
+        ),
         target("UIDesignSystem"),
         target(
             "LiveReader",
             dependencies: [
-                "AudioCaptureAPI", "GlossaryAPI", "ModelRuntimeAPI",
+                "AudioCaptureAPI", "AudioImportAPI", "GlossaryAPI", "ModelRuntimeAPI",
                 "PersistenceAPI", "RemoteSharingFeatureAPI", "SessionManagementAPI", "SettingsAPI",
                 "ScriptureAPI", "TranscriptAPI", "UIDesignSystem", "UtteranceRecoveryAPI",
             ]
@@ -210,8 +217,9 @@ let package = Package(
         target(
             "ChurchTranslatorApp",
             dependencies: [
-                "ASRNormalizationCore", "ASRQwen3", "AudioCaptureAVFoundation",
-                "AudioFileAVFoundation", "AudioProcessingCore", "DiagnosticsCore", "GlossaryCore",
+                "ASRNormalizationCore", "ASRQwen3", "AudioCaptureAVFoundation", "AudioImportAPI",
+                "AudioFileAVFoundation", "AudioImportSessionAdapter", "AudioProcessingCore",
+                "DiagnosticsCore", "GlossaryCore",
                 "GlossaryFileSystem", "LiveReader", "LoggingOSLog", "ModelDownloadAPI",
                 "ModelDownloadHTTP",
                 "ModelRuntimeAPI", "ModelRuntimeCore", "PersistenceFileSystem",
@@ -309,6 +317,17 @@ let package = Package(
         test("PersistenceFileSystemTests", dependencies: ["PersistenceFileSystem", "TranscriptAPI"]),
         test("LoggingOSLogTests", dependencies: ["LoggingAPI", "LoggingOSLog"]),
         test(
+            "DiagnosticsCoreTests",
+            dependencies: ["DiagnosticsAPI", "DiagnosticsCore", "LoggingAPI"]
+        ),
+        test(
+            "AudioImportSessionAdapterTests",
+            dependencies: [
+                "AudioCaptureAPI", "AudioImportAPI", "AudioImportSessionAdapter",
+                "SessionManagementAPI", "SettingsAPI",
+            ]
+        ),
+        test(
             "ModelDownloadHTTPTests",
             dependencies: ["ModelDownloadAPI", "ModelDownloadHTTP", "ModelRuntimeAPI"]
         ),
@@ -327,7 +346,7 @@ let package = Package(
         ),
         test(
             "LiveReaderTests",
-            dependencies: ["LiveReader", "RemoteSharingFeatureAPI", "ScriptureAPI"]
+            dependencies: ["LiveReader", "RemoteSharingFeatureAPI", "ScriptureAPI", "SettingsAPI"]
         ),
         test(
             "UtteranceRecoveryFileSystemTests",
@@ -351,7 +370,7 @@ let package = Package(
         test(
             "RemoteSharingFeatureTests",
             dependencies: [
-                "RemoteDiscoveryAPI", "RemotePairingAPI", "RemoteSharingAPI",
+                "RemoteDiscoveryAPI", "RemotePairingAPI", "RemotePairingCore", "RemoteSharingAPI",
                 "RemoteSharingFeature", "RemoteSharingFeatureAPI", "RemoteTransportAPI",
             ]
         ),

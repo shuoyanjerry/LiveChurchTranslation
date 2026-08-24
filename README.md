@@ -1,6 +1,6 @@
-# Quiet Liturgy Reader
+# Live Church Translation
 
-Quiet Liturgy Reader is a focused macOS tool for live church translation and listening
+Live Church Translation is a focused macOS tool for live church translation and listening
 notes. It supports Mandarin-to-English and English-to-Simplified-Chinese modes, preserves
 the complete meeting recording and transcript, and serves the live reader to paired
 phones, tablets, and computers on the local network.
@@ -77,11 +77,13 @@ viewer-only. Remote APIs cannot start or stop capture, accept the recording noti
 the microphone, glossary, model, settings, history, export, or app lifecycle. The Mac remains
 the sole inference host, recording-consent surface, and transcript writer.
 
-Pairing uses single-use, expiring invitations, high-entropy credentials, role checks,
-revocation, bounded connections, strict Host/Origin policy, and hardened no-cache web
-responses. The current LAN transport is HTTP/WebSocket without TLS. Pairing provides
-authorization, not confidentiality against a hostile network observer; enable sharing
-only on a trusted local network and disable or revoke it after the service.
+The viewer link uses a high-entropy, reusable session credential held only in memory. It remains
+valid while the app and sharing session stay open, including across transient listener retries, and
+is rotated only when sharing is explicitly stopped or the app exits. Browser grants use session
+cookies. Pairing also enforces role checks, revocation, bounded connections, strict Host/Origin
+policy, and hardened no-cache responses. The current LAN transport is HTTP/WebSocket without TLS.
+Pairing provides authorization, not confidentiality against a hostile network observer; enable
+sharing only on a trusted local network and stop or revoke it after the service.
 
 See [Architecture](Docs/Architecture.md) for the complete trust boundary and dependency
 graph.
@@ -139,7 +141,7 @@ formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
 
 ## Use
 
-1. Launch Quiet Liturgy Reader. Bundled-model verification and loading begin
+1. Launch Live Church Translation. Bundled-model verification and loading begin
    automatically. If microphone access is not already authorized, follow the in-app explanation;
    returning from System Settings refreshes permission state automatically.
 2. Select the language direction, desired input, and glossary if needed.

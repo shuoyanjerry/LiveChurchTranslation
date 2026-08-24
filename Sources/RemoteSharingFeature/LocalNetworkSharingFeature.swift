@@ -12,11 +12,15 @@ public actor LocalNetworkSharingFeature: LocalSharingFeature {
     var currentState = LocalSharingViewState.off
     var endpoint: RemoteEndpoint?
     var connectionCount = 0
+    var sessionPort: UInt16?
     var invitation: LocalSharingInvitation?
+    var invitationRequestInFlight = false
     var peers: [LocalSharingPeer] = []
     var continuations: [UUID: AsyncStream<LocalSharingViewState>.Continuation] = [:]
     var observationTasks: [Task<Void, Never>] = []
     var operationRevision = 0
+    var invitationRevision = 0
+    var isStopping = false
 
     public init(
         sharing: any RemoteSharingControlling,
@@ -39,7 +43,7 @@ public actor LocalNetworkSharingFeature: LocalSharingFeature {
             continuations[id] = continuation
             continuation.yield(currentState)
             continuation.onTermination = { [weak self] _ in
-                Task { await self?.removeContinuation(id) }
+                Task { [weak self] in await self?.removeContinuation(id) }
             }
         }
     }
@@ -54,6 +58,9 @@ public actor LocalNetworkSharingFeature: LocalSharingFeature {
         case .revoke(let peerID):
             await revoke(peerID)
         case .revokeAll:
+            invitationRevision += 1
+            invitation = nil
+            publishOnState()
             await pairing.revokeAll(now: Date())
             await refreshPeers()
         }

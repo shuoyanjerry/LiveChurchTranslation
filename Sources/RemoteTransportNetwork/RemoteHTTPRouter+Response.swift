@@ -3,7 +3,7 @@ import RemoteSharingAPI
 
 struct PairingResponse: Codable, Sendable {
     let role: RemoteRole
-    let expiresAt: Date
+    let expiresAt: Date?
 }
 
 extension RemoteHTTPRouter {

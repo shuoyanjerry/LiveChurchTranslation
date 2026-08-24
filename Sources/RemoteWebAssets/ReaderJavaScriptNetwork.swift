@@ -33,7 +33,7 @@ enum ReaderJavaScriptNetwork {
             const pattern = /^#invite=([0-9a-f-]{36})\.([A-Za-z0-9_-]{43})$/i;
             const match = location.hash.match(pattern);
             if (!match) return;
-            history.replaceState(null, "", location.pathname);
+            history.replaceState(null, "", location.pathname + location.search);
             const body = {
               invitationID: match[1],
               fragmentCredential: match[2],
@@ -47,11 +47,18 @@ enum ReaderJavaScriptNetwork {
               headers: {"Content-Type": "application/json"},
               body: JSON.stringify(body)
             });
-            if (!response.ok) {
-              throw new Error("邀请无效或已过期");
+            if (response.status === 429) {
+              throw new Error("连接人数已满");
             }
+            if (!response.ok) {
+              throw new Error("当前无法加入，请确认 Mac 上已开启听众共享");
+            }
+            pairing.textContent = "";
+            pairing.hidden = true;
           };
           const stopOnMac = async () => {
+            pairing.textContent = "";
+            pairing.hidden = true;
             const response = await fetch("/api/control", {
               method: "POST",
               headers: {"Content-Type": "application/json"},
@@ -62,7 +69,7 @@ enum ReaderJavaScriptNetwork {
               })
             });
             if (!response.ok) {
-              pairing.textContent = "Mac 未接受结束请求，请稍后重试。";
+              pairing.textContent = "暂时无法停止，请重试。";
               pairing.hidden = false;
             }
             await fetchSnapshot();
@@ -93,7 +100,7 @@ enum ReaderJavaScriptNetwork {
             .catch(error => {
               pairing.textContent = error.message;
               pairing.hidden = false;
-              setConnection("尚未配对", "error");
+              setConnection("当前无法加入", "error");
             });
         })();
         """#

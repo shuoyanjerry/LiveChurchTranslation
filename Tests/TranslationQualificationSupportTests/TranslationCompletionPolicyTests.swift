@@ -69,6 +69,41 @@ import TranslationQualificationSupport
         }
     }
 
+    @Test func reviewedCompletionIsAProviderSuccessButNeverContext() throws {
+        let values = try fixtureValues()
+        let reviewed = SyntheticTranslationAttemptCopy.make(
+            values.attempt,
+            segment: values.segment,
+            outcomes: ["initial.validationRejected", "strictRetry.validationRejected"],
+            backendReviewIssueCodes: ["quality.missing_required_term"]
+        )
+
+        try TranslationQualificationCompletionPolicy.validate(reviewed)
+        #expect(reviewed.status == .success)
+        #expect(reviewed.hypothesisEnglish != nil)
+        #expect(!TranslationQualificationCompletionPolicy.approvesContext(reviewed))
+    }
+
+    @Test func rejectsReviewDispositionThatContradictsCompletionTransition() throws {
+        let values = try fixtureValues()
+        let missingCodes = SyntheticTranslationAttemptCopy.make(
+            values.attempt,
+            segment: values.segment,
+            outcomes: ["initial.validationRejected", "strictRetry.validationRejected"]
+        )
+        let codesOnApproved = SyntheticTranslationAttemptCopy.make(
+            values.attempt,
+            segment: values.segment,
+            backendReviewIssueCodes: ["quality.validation_failed"]
+        )
+
+        for attempt in [missingCodes, codesOnApproved] {
+            #expect(throws: TranslationQualificationError.self) {
+                try TranslationQualificationCompletionPolicy.validate(attempt)
+            }
+        }
+    }
+
     private func fixtureValues() throws -> (
         segment: TranslationQualificationSegment,
         attempt: TranslationQualificationAttempt

@@ -9,6 +9,9 @@ extension HyMT2TranslationExecutor {
     ) async throws -> String {
         do {
             return try await completion(prompt, endpoint: endpoint)
+        } catch is CancellationError {
+            await record(requestID, phase: phase, outcome: .cancelled)
+            throw CancellationError()
         } catch {
             await record(requestID, phase: phase, outcome: .transportFailed)
             throw error

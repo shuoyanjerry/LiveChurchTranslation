@@ -133,6 +133,29 @@ import TranscriptAPI
 }
 
 extension ImportedAudioCompletenessTests {
+    @Test func reviewedFallbackCompletesImportButStaysOutOfTranslationContext() async throws {
+        let frames = Self.frames(count: 2)
+        let harness = SessionTestHarness(
+            recognizedTexts: ["第一句。", "第二句。"],
+            translationReviewedRequestIndices: [0],
+            emitsEveryFrame: true,
+            audioFrames: frames,
+            sessionKind: .importedAudio
+        )
+
+        _ = try await harness.run()
+
+        let requests = await harness.translator.receivedRequests()
+        #expect(requests.count == 2)
+        #expect(requests[1].context.isEmpty)
+        let entries = await harness.store.persistedEntries()
+        #expect(entries.count == 2)
+        #expect(entries[0].translationReview?.issueCodes == ["quality.pronoun_alignment"])
+        #expect(entries[1].translationReview == nil)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        #expect(await harness.coordinator.currentSnapshot().finalizationOutcome == .saved)
+    }
+
     fileprivate static func frames(count: Int) -> [AudioFrame] {
         (0..<count).map { index in
             AudioFrame(

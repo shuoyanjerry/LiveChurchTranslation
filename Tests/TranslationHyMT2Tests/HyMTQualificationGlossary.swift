@@ -22,16 +22,25 @@ enum HyMTQualificationGlossary {
     static func promptExpectations(
         source: String,
         matchedTerms: [TranslationTerm],
-        limit: Int
+        limit: Int,
+        preferredSources: Set<String> = []
     ) -> [TranslationQualificationTermExpectation] {
-        TranslationTermMatcher.matched(in: source, from: matchedTerms, limit: limit).map { term in
-            TranslationQualificationTermExpectation(
-                source: term.source,
-                preferredTarget: term.target,
-                acceptedTargets: term.acceptedTargets,
-                required: term.requirement == .required
-            )
-        }
+        TranslationTermMatcher.matched(in: source, from: matchedTerms, limit: limit)
+            .compactMap { term in
+                guard
+                    let matchedSource = matchedSource(
+                        for: term,
+                        in: source,
+                        preferredSources: preferredSources
+                    )
+                else { return nil }
+                return TranslationQualificationTermExpectation(
+                    source: matchedSource,
+                    preferredTarget: term.target,
+                    acceptedTargets: term.acceptedTargets,
+                    required: term.requirement == .required
+                )
+            }
     }
 
     static func evidenceExpectations(
@@ -46,7 +55,8 @@ enum HyMTQualificationGlossary {
         var expectations = promptExpectations(
             source: source,
             matchedTerms: matchedTerms,
-            limit: limit
+            limit: limit,
+            preferredSources: Set(manifestTerms)
         )
         var indices = Dictionary(
             uniqueKeysWithValues: expectations.enumerated().map { ($0.element.source, $0.offset) }
@@ -103,6 +113,20 @@ enum HyMTQualificationGlossary {
             acceptedTargets: entry.targetVariants,
             requirement: entry.enforcement == .required ? .required : .preferred
         )
+    }
+
+    private static func matchedSource(
+        for term: TranslationTerm,
+        in source: String,
+        preferredSources: Set<String>
+    ) -> String? {
+        let matches = ([term.source] + term.sourceAliases).filter {
+            source.localizedStandardContains($0)
+        }
+        let preferred = matches.filter(preferredSources.contains)
+        return (preferred.isEmpty ? matches : preferred).sorted {
+            $0.count == $1.count ? $0 < $1 : $0.count > $1.count
+        }.first
     }
 
     private static let coverageError = TranslationQualificationError.invalidManifest(

@@ -63,7 +63,7 @@ public enum TranslationQualificationReportBuilder {
             try validate(attempt, segment: segment)
             let expectedContext = Array(persistedBySource[segment.sourceID, default: []].suffix(2))
             try require(attempt.contextSegmentIDs == expectedContext, "context is not last two successes")
-            if attempt.status == .success {
+            if TranslationQualificationCompletionPolicy.approvesContext(attempt) {
                 persistedBySource[segment.sourceID, default: []].append(segment.id)
             }
         }
@@ -125,12 +125,27 @@ extension TranslationQualificationReportBuilder {
         if attempt.status == .success {
             try require(!(attempt.hypothesisEnglish ?? "").isEmpty, "success lacks hypothesis")
             try require(attempt.failureCode == nil, "success has failure code")
-            try require((1...2).contains(attempt.completionAttemptCount), "invalid success attempts")
+            try require((1...3).contains(attempt.completionAttemptCount), "invalid success attempts")
         } else {
             try require(attempt.hypothesisEnglish == nil, "failure has hypothesis")
             try require(isFailureCode(attempt.failureCode), "failure code is absent or unsafe")
-            try require((0...2).contains(attempt.completionAttemptCount), "invalid failure attempts")
+            try require(
+                (attempt.backendReviewIssueCodes ?? []).isEmpty,
+                "provider failure has backend review codes"
+            )
+            try require((0...3).contains(attempt.completionAttemptCount), "invalid failure attempts")
         }
+        try validateBackendReview(attempt.backendReviewIssueCodes ?? [])
         try TranslationQualificationCompletionPolicy.validate(attempt)
+    }
+
+    private static func validateBackendReview(_ issueCodes: [String]) throws {
+        try require(issueCodes == Array(Set(issueCodes)).sorted(), "backend review codes drifted")
+        try require(
+            issueCodes.allSatisfy {
+                $0.hasPrefix("quality.") && isFailureCode($0)
+            },
+            "backend review code is absent or unsafe"
+        )
     }
 }

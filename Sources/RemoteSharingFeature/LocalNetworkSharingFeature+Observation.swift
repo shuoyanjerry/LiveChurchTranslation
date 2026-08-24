@@ -29,32 +29,40 @@ extension LocalNetworkSharingFeature {
         }
     }
 
-    func receive(_ event: RemoteTransportEvent) {
+    func receive(_ event: RemoteTransportEvent) async {
         switch event {
         case .connectionCountChanged(let count):
             connectionCount = count
             publishOnState()
         case .statusChanged(let status):
-            receive(status)
+            await receive(status)
         }
     }
 
-    private func receive(_ status: RemoteTransportStatus) {
+    private func receive(_ status: RemoteTransportStatus) async {
         switch status {
         case .stopped:
-            break
+            guard endpoint != nil || invitation != nil || isStopping else { return }
+            await sharing.setEnabled(false)
+            guard !isStopping else {
+                setState(.off)
+                return
+            }
+            suspendLocalEndpoint()
+            setState(.failed(message: "局域网共享已中断，请重试"))
         case .starting:
             setState(.starting)
         case .running(let activeEndpoint):
+            if sessionPort == nil { sessionPort = activeEndpoint.port }
             endpoint = activeEndpoint
             publishOnState()
         case .localNetworkPermissionDenied:
-            endpoint = nil
-            invitation = nil
+            await sharing.setEnabled(false)
+            suspendLocalEndpoint()
             setState(.localNetworkPermissionDenied)
         case .failed(let message):
-            endpoint = nil
-            invitation = nil
+            await sharing.setEnabled(false)
+            suspendLocalEndpoint()
             setState(.failed(message: String(message.prefix(180))))
         }
     }

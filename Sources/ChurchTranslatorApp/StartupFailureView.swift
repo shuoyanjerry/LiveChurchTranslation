@@ -1,19 +1,16 @@
 import SwiftUI
 
 struct StartupFailureView: View {
-    let message: String
-
     var body: some View {
         VStack(spacing: 18) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.orange)
-            Text("教会实时翻译无法启动")
+            Text("Live Church Translation 无法启动")
                 .font(.title2.weight(.semibold))
-            Text(message)
+            Text("请重新安装应用后再试。")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .textSelection(.enabled)
         }
         .padding(40)
         .frame(minWidth: 720, minHeight: 480)

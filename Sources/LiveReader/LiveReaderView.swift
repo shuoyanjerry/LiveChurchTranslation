@@ -53,7 +53,7 @@ public struct LiveReaderView: View {
             SettingsView(viewModel: viewModel)
         }
         .alert(
-            "实时翻译",
+            "操作未完成",
             isPresented: Binding(
                 get: { viewModel.presentedError != nil },
                 set: { if !$0 { viewModel.presentedError = nil } }
@@ -61,18 +61,15 @@ public struct LiveReaderView: View {
         ) {
             Button("好") { viewModel.presentedError = nil }
         } message: {
-            Text(viewModel.presentedError ?? "发生未知错误")
+            Text(viewModel.presentedError ?? "请重试。")
         }
-        .alert("开始录音和翻译？", isPresented: $viewModel.presentsRecordingNotice) {
+        .alert("开始翻译并录音？", isPresented: $viewModel.presentsRecordingNotice) {
             Button("取消", role: .cancel) {}
-            Button("开始并录音") {
+            Button("开始") {
                 Task { await viewModel.startRecordingAndTranslation() }
             }
         } message: {
-            Text(
-                "本次会议的完整音频、听抄稿和翻译会保存在此 Mac。"
-                    + "开始前，请确认现场参与者已经知悉录音。"
-            )
+            Text("录音与字幕会保存在这台 Mac。请确认现场人员已知情。")
         }
     }
 

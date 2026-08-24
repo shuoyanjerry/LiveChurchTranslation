@@ -8,7 +8,7 @@ fail() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ARCHIVE="${APP_STORE_ARCHIVE_PATH:-$REPOSITORY_ROOT/dist/AppStore/QuietLiturgyReader.xcarchive}"
+ARCHIVE="${APP_STORE_ARCHIVE_PATH:-$REPOSITORY_ROOT/dist/AppStore/LiveChurchTranslation.xcarchive}"
 TEAM_ID="${APP_STORE_TEAM_ID:-}"
 SIGNING_STYLE="${APP_STORE_SIGNING_STYLE:-automatic}"
 TEMPLATE="$REPOSITORY_ROOT/Packaging/AppStoreExportOptions.plist"
@@ -43,7 +43,7 @@ if [[ "$EXPORT_DIR" != /* ]]; then
 fi
 [[ ! -e "$EXPORT_DIR" ]] || fail "refusing to overwrite existing export: $EXPORT_DIR"
 
-TEMP_DIR="$(mktemp -d /tmp/quiet-liturgy-store-export.XXXXXX)"
+TEMP_DIR="$(mktemp -d /tmp/live-church-translation-store-export.XXXXXX)"
 OPTIONS="$TEMP_DIR/ExportOptions.plist"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 ditto "$TEMPLATE" "$OPTIONS"

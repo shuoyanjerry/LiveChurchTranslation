@@ -24,7 +24,7 @@ extension HyMT2TranslationExecutor {
         do {
             return try input.prepared(requestID: requestID)
         } catch let failure as OutputValidationFailure {
-            throw HyMT2Error.invalidOutput(failure.issues.map(\.description))
+            throw HyMT2Error.invalidOutput(failure.safeDescriptions)
         }
     }
 

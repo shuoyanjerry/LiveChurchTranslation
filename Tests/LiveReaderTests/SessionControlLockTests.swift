@@ -20,7 +20,7 @@ import Testing
         await viewModel.load()
         viewModel.setExternalSessionControlLock(true)
 
-        await viewModel.selectTranslationMode(.englishToSimplifiedChinese)
+        #expect(!(await viewModel.selectTranslationMode(.englishToSimplifiedChinese)))
         await viewModel.selectAudioInput(AudioInputID(rawValue: "import-race-mic"))
         #expect(viewModel.settings.translationMode == .mandarinToEnglish)
         #expect(viewModel.selectedInputID == nil)
@@ -55,7 +55,7 @@ import Testing
         viewModel.setExternalSessionControlLock(true)
         viewModel.setExternalSessionControlLock(false)
 
-        await viewModel.selectTranslationMode(.englishToSimplifiedChinese)
+        #expect(await viewModel.selectTranslationMode(.englishToSimplifiedChinese))
         await viewModel.selectAudioInput(AudioInputID(rawValue: "sanctuary-mic"))
 
         let persisted = await settings.current()

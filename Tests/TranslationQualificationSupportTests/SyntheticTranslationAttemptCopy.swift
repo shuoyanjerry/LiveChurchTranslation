@@ -9,6 +9,8 @@ enum SyntheticTranslationAttemptCopy {
         outcomes: [String]? = nil,
         attemptCount: Int? = nil,
         strictRetryUsed: Bool? = nil,
+        safetyFallbackUsed: Bool? = nil,
+        backendReviewIssueCodes: [String]? = nil,
         glossaryTerms: [TranslationQualificationTermResult]? = nil,
         preservationChecks: [TranslationQualificationCheck]? = nil,
         pronounResults: [TranslationQualificationPronounResult]? = nil
@@ -22,11 +24,15 @@ enum SyntheticTranslationAttemptCopy {
                 ? (base.hypothesisEnglish ?? "Synthetic translation") : nil,
             translationSourceText: translationSource ?? base.translationSourceText,
             contextSegmentIDs: base.contextSegmentIDs,
-            strictRetryUsed: strictRetryUsed ?? (finalOutcomes.count == 2),
+            strictRetryUsed: strictRetryUsed
+                ?? finalOutcomes.contains { $0.hasPrefix("strictRetry.") },
+            safetyFallbackUsed: safetyFallbackUsed
+                ?? finalOutcomes.contains { $0.hasPrefix("safetyFallback.") },
             completionAttemptCount: attemptCount ?? finalOutcomes.count,
             completionOutcomes: finalOutcomes,
             latencySeconds: base.latencySeconds,
             failureCode: finalStatus == .failure ? "synthetic.failure" : nil,
+            backendReviewIssueCodes: backendReviewIssueCodes ?? base.backendReviewIssueCodes,
             glossaryTerms: glossaryTerms ?? base.glossaryTerms,
             preservationChecks: preservationChecks ?? base.preservationChecks,
             pronounResults: pronounResults ?? base.pronounResults

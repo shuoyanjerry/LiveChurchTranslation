@@ -30,6 +30,7 @@ extension HyMTQualificationRunner {
             traceIntegrityCheck: mapping.integrityCheck,
             termExpectations: evaluation.termExpectations,
             hypothesis: evaluation.outcome.hypothesis,
+            backendReviewIssueCodes: evaluation.outcome.backendReviewIssueCodes,
             summary: summary,
             latencySeconds: evaluation.outcome.latencySeconds,
             error: evaluation.outcome.error

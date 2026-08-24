@@ -1,4 +1,5 @@
-import LiveReader
+import AudioImportAPI
+@testable import AudioImportSessionAdapter
 import SessionManagementAPI
 import Testing
 
@@ -23,8 +24,8 @@ import Testing
         }
     }
 
-    @Test func cancellationIsRejected() {
-        #expect(throws: AudioImportError.self) {
+    @Test func cancellationIsNotReportedAsAProcessingFailure() {
+        #expect(throws: AudioImportError.cancelled) {
             try AudioImportCompletionValidator.validate(
                 snapshot(outcome: .cancelledBeforeCapture)
             )

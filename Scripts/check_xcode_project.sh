@@ -8,16 +8,16 @@ fail() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT="${1:-$REPOSITORY_ROOT/QuietLiturgyReader.xcodeproj}"
+PROJECT="${1:-$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj}"
 PBXPROJ="$PROJECT/project.pbxproj"
-SCHEME="$PROJECT/xcshareddata/xcschemes/QuietLiturgyReader.xcscheme"
+SCHEME="$PROJECT/xcshareddata/xcschemes/LiveChurchTranslation.xcscheme"
 RESOLVED="$PROJECT/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 
 [[ -d "$PROJECT" && -f "$PBXPROJ" ]] || fail "generated .xcodeproj is missing"
 [[ -f "$SCHEME" ]] || fail "shared Archive scheme is missing"
 [[ -f "$RESOLVED" ]] || fail "workspace Package.resolved is missing"
 if git -C "$REPOSITORY_ROOT" ls-files \
-  | rg -q '(^|/)QuietLiturgyReader[.]xcodeproj/xcuserdata/'; then
+  | rg -q '(^|/)LiveChurchTranslation[.]xcodeproj/xcuserdata/'; then
   fail "repository tracks Xcode user-specific data"
 fi
 plutil -lint "$PBXPROJ" >/dev/null || fail "project.pbxproj is invalid"
@@ -29,7 +29,7 @@ PBX_PATTERNS=(
   'productType = "com.apple.product-type.application";'
   'productName = ChurchTranslatorApp;'
   'relativePath = .;'
-  'QuietLiturgyReaderMain.swift'
+  'LiveChurchTranslationMain.swift'
   'Packaging/Info.plist'
   'Packaging/LiveChurchTranslation.entitlements'
   'PrivacyInfo.xcprivacy'
@@ -37,6 +37,7 @@ PBX_PATTERNS=(
   'ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;'
   '$(SRCROOT)/Package.swift'
   'Scripts/embed_app_store_runtime.sh'
+  'ditto --clone'
   'Packaging/ProductionModels.sha256'
   'Packaging/LicenseFiles.sha256'
   'ENABLE_APP_SANDBOX = YES;'
@@ -103,8 +104,8 @@ if rg -q 'XCRemoteSwiftPackageReference' "$PBXPROJ"; then
 fi
 
 SCHEME_PATTERNS=(
-  'BlueprintName = "QuietLiturgyReader"'
-  'BuildableName = "QuietLiturgyReader.app"'
+  'BlueprintName = "Live Church Translation"'
+  'BuildableName = "Live Church Translation.app"'
   'buildConfiguration = "Debug"'
   'buildConfiguration = "Release"'
   '<ArchiveAction'
@@ -118,7 +119,7 @@ done
 if xcodebuild -version >/dev/null 2>&1; then
   LISTING="$(xcodebuild -project "$PROJECT" -list -json)" \
     || fail "Xcode could not load the generated project"
-  [[ "$LISTING" == *'"QuietLiturgyReader"'* ]] \
+  [[ "$LISTING" == *'"LiveChurchTranslation"'* ]] \
     || fail "Xcode cannot discover the app target and scheme"
   echo "Full-Xcode project discovery: PASS"
 else

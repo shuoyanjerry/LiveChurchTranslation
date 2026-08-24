@@ -50,10 +50,25 @@ enum HyMT2PronounProtocolResidualValidator {
         }
         guard let plan else { return false }
         if value.contains("QLR") { return true }
+        if containsReservedOrdinal(in: normalized) { return true }
         if identifiers(in: plan).contains(where: { containsToken($0, in: normalized) }) {
             return true
         }
         return namespaces(in: plan).contains(where: value.contains)
+    }
+
+    static func containsReservedOrdinal(in value: String) -> Bool {
+        let inspected = HyMT2ReservedProtocolText.inspectionForm(value)
+        guard
+            let expression = try? NSRegularExpression(
+                pattern: #"(?<![A-Z0-9])P\s*[0-9]\s*[0-9]\s*[0-9]\s*[0-9](?![A-Z0-9])"#,
+                options: .caseInsensitive
+            )
+        else { return true }
+        return expression.firstMatch(
+            in: inspected,
+            range: NSRange(inspected.startIndex..., in: inspected)
+        ) != nil
     }
 
     private static func containsToken(_ token: String, in value: String) -> Bool {

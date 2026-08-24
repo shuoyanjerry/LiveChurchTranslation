@@ -68,19 +68,14 @@ public actor Qwen3ASRProvider: ASRProvider, ModelRuntimeHealthChecking {
                 hotwords: selection.outputGuardHotwords
             )
         else { throw ASRError.promptOnlyHallucination }
-        let text = ASRInputGuard.removingPromptEchoPrefix(
-            rawText,
-            hotwords: selection.outputGuardHotwords
-        )
-        guard !text.isEmpty else { throw ASRError.promptOnlyHallucination }
-        guard !ASRInputGuard.isKnownNonspeechHallucination(text) else {
+        guard !ASRInputGuard.isKnownNonspeechHallucination(rawText) else {
             throw ASRError.filteredNonspeech
         }
 
         return RecognizedUtterance(
             sourceSegmentID: request.segment.id,
             rawText: rawText,
-            text: text,
+            text: rawText,
             confidence: nil,
             startedAt: request.segment.startedAt,
             endedAt: request.segment.endedAt
@@ -101,12 +96,11 @@ public actor Qwen3ASRProvider: ASRProvider, ModelRuntimeHealthChecking {
         else {
             return Qwen3DecodeSelection(rawText: first, outputGuardHotwords: hotwords)
         }
-        return Qwen3DecodeSelection(
-            rawText: decode(request, hotwords: "", recognizer: recognizer),
-            outputGuardHotwords: Qwen3DecodeRetryPolicy.outputGuardHotwords(
-                after: retryReason,
-                originalHotwords: hotwords
-            )
+        return Qwen3DecodeRetryPolicy.selection(
+            firstOutput: first,
+            fallbackOutput: decode(request, hotwords: "", recognizer: recognizer),
+            hotwords: hotwords,
+            reason: retryReason
         )
     }
 

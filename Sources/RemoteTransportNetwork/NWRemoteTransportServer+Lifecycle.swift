@@ -1,14 +1,33 @@
 import Foundation
 @preconcurrency import Network
+import RemotePairingAPI
 import RemoteTransportAPI
 
 extension NWRemoteTransportServer {
+    func makeIPv4Listener(preferredPort: UInt16) throws -> NWListener {
+        let parameters = NWParameters.tcp
+        guard
+            let internetProtocol = parameters.defaultProtocolStack.internetProtocol
+                as? NWProtocolIP.Options
+        else {
+            throw RemoteTransportLifecycleError.invalidConfiguration
+        }
+        internetProtocol.version = .v4
+        guard preferredPort != 0 else { return try NWListener(using: parameters) }
+        guard let port = NWEndpoint.Port(rawValue: preferredPort) else {
+            throw RemoteTransportLifecycleError.invalidConfiguration
+        }
+        return try NWListener(using: parameters, on: port)
+    }
+
     func installHandlers(on listener: NWListener, listenerID: UUID) {
         listener.stateUpdateHandler = { [weak self] state in
-            Task { await self?.listenerStateChanged(state, listenerID: listenerID) }
+            Task { [weak self] in
+                await self?.listenerStateChanged(state, listenerID: listenerID)
+            }
         }
         listener.newConnectionHandler = { [weak self] connection in
-            Task { await self?.accept(connection, listenerID: listenerID) }
+            Task { [weak self] in await self?.accept(connection, listenerID: listenerID) }
         }
     }
 
@@ -56,7 +75,9 @@ extension NWRemoteTransportServer {
             connections.count < configuration.maximumConnections,
             let components,
             let peer = NWEndpointPeer.address(for: connection),
-            peer.isPrivateLinkLocalOrLoopback
+            peer.isPrivateLinkLocalOrLoopback,
+            let clientBinding = peer.pairingClientBinding,
+            connectionCount(for: clientBinding) < configuration.maximumConnectionsPerPeer
         else {
             connection.cancel()
             return
@@ -69,16 +90,22 @@ extension NWRemoteTransportServer {
             components: components,
             limits: limits
         ) { [weak self] closedID in
-            Task { await self?.removeConnection(closedID) }
+            Task { [weak self] in await self?.removeConnection(closedID) }
         }
         connections[id] = handler
+        connectionBindings[id] = clientBinding
         emit(.connectionCountChanged(connections.count))
         Task { await handler.start() }
     }
 
     func removeConnection(_ id: UUID) {
         connections.removeValue(forKey: id)
+        connectionBindings.removeValue(forKey: id)
         emit(.connectionCountChanged(connections.count))
+    }
+
+    func connectionCount(for clientBinding: RemotePairingClientBinding) -> Int {
+        connectionBindings.values.lazy.filter { $0 == clientBinding }.count
     }
 
     func startHeartbeat() {

@@ -1,9 +1,10 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct SessionLibraryView: View {
     @ObservedObject var viewModel: SessionLibraryViewModel
-    let onImport: () -> Void
+    let onImport: (TranslationMode) -> Void
     let onCancelImport: () -> Void
     @State private var confirmsDeletion = false
 
@@ -17,7 +18,7 @@ struct SessionLibraryView: View {
         .background(ChurchTheme.background)
         .task { await viewModel.load() }
         .alert(
-            "资料库",
+            "操作未完成",
             isPresented: Binding(
                 get: { viewModel.presentedError != nil },
                 set: { if !$0 { viewModel.presentedError = nil } }
@@ -25,7 +26,7 @@ struct SessionLibraryView: View {
         ) {
             Button("好") { viewModel.presentedError = nil }
         } message: {
-            Text(viewModel.presentedError ?? "发生未知错误")
+            Text(viewModel.presentedError ?? "请重试。")
         }
         .confirmationDialog(
             "删除这场会议？",
@@ -52,18 +53,28 @@ struct SessionLibraryView: View {
                         .foregroundStyle(ChurchTheme.muted)
                 }
                 Spacer()
-                Button(action: viewModel.isImporting ? onCancelImport : onImport) {
-                    if viewModel.isImporting {
-                        Image(systemName: "stop.fill")
+                if viewModel.isImporting {
+                    Button(action: onCancelImport) {
+                        Label("正在处理", systemImage: "stop.fill")
                             .foregroundStyle(ChurchTheme.danger)
-                            .frame(width: 32, height: 32)
-                    } else {
-                        Image(systemName: "plus")
-                            .frame(width: 32, height: 32)
                     }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("停止导入音频")
+                    .help("停止导入")
+                } else {
+                    Menu {
+                        ForEach(TranslationMode.allCases) { mode in
+                            Button(mode.displayName) { onImport(mode) }
+                        }
+                    } label: {
+                        InlineMenuLabel(title: "导入音频", systemImage: "plus")
+                    }
+                    .menuIndicator(.hidden)
+                    .menuStyle(.borderlessButton)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .accessibilityLabel("导入音频文件")
+                    .help("选择语言方向并导入音频")
                 }
-                .buttonStyle(.borderless)
-                .help(viewModel.isImporting ? "停止导入" : "导入音频文件")
             }
             .padding(20)
 

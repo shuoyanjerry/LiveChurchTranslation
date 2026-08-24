@@ -23,8 +23,9 @@ MODEL_SIZE_MANIFEST="$REPOSITORY_ROOT/Packaging/ProductionModels.sizes"
 LICENSE_MANIFEST="$REPOSITORY_ROOT/Packaging/LicenseFiles.sha256"
 LICENSE_ROOT="$REPOSITORY_ROOT/Packaging/Licenses"
 ZH_INFO="$REPOSITORY_ROOT/Packaging/zh-Hans.lproj/InfoPlist.strings"
-ICON="$REPOSITORY_ROOT/Assets/AppIconQuiet.icns"
-ICON_SOURCE="$REPOSITORY_ROOT/Assets/AppIconQuiet-1024.png"
+ICON="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation.icns"
+ICON_SOURCE="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation-1024.png"
+ICON_MASTER="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation-master.png"
 ICON_CATALOG="$REPOSITORY_ROOT/Assets/AppIcon.xcassets"
 ICON_SET="$ICON_CATALOG/AppIcon.appiconset"
 ICON_CONTENTS="$ICON_SET/Contents.json"
@@ -34,11 +35,16 @@ python3 -m json.tool "$ICON_CATALOG/Contents.json" >/dev/null
 python3 -m json.tool "$ICON_CONTENTS" >/dev/null
 [[ -f "$ICON" ]] || fail "release app icon is missing"
 [[ -f "$ICON_SOURCE" ]] || fail "1024 px app icon source is missing"
+[[ -f "$ICON_MASTER" ]] || fail "app icon master source is missing"
 [[ "$(file -b "$ICON")" == *"Mac OS X icon"* ]] || fail "release app icon is invalid"
 [[ "$(sips -g pixelWidth "$ICON_SOURCE" | awk '/pixelWidth/ { print $2 }')" == "1024" ]] \
   || fail "app icon source width must be 1024 px"
 [[ "$(sips -g pixelHeight "$ICON_SOURCE" | awk '/pixelHeight/ { print $2 }')" == "1024" ]] \
   || fail "app icon source height must be 1024 px"
+[[ "$(sips -g pixelWidth "$ICON_MASTER" | awk '/pixelWidth/ { print $2 }')" == "1254" ]] \
+  || fail "app icon master width must be 1254 px"
+[[ "$(sips -g pixelHeight "$ICON_MASTER" | awk '/pixelHeight/ { print $2 }')" == "1254" ]] \
+  || fail "app icon master height must be 1254 px"
 ICON_VARIANTS=(
   AppIcon-16.png:16
   AppIcon-16@2x.png:32
@@ -87,19 +93,46 @@ bash -n \
   "$SCRIPT_DIR/generate_xcode_project.sh" \
   "$SCRIPT_DIR/notarize_release.sh" \
   "$SCRIPT_DIR/package_release.sh"
+rg -Fq 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' \
+  "$SCRIPT_DIR/audit_app_store_archive.sh" \
+  || fail "App Store archive audit does not resolve its script directory"
 
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
+[[ "$(plist_value "$INFO" "CFBundleName")" == "Live Church Translation" ]] \
+  || fail "CFBundleName must be Live Church Translation"
+[[ "$(plist_value "$INFO" "CFBundleDisplayName")" == "Live Church Translation" ]] \
+  || fail "CFBundleDisplayName must be Live Church Translation"
 [[ "$(plist_value "$INFO" "CFBundleDevelopmentRegion")" == "zh-Hans" ]] \
   || fail "Simplified Chinese must be the development language"
 [[ -f "$ZH_INFO" ]] || fail "Simplified Chinese InfoPlist localization is missing"
 plutil -lint "$ZH_INFO" >/dev/null || fail "Simplified Chinese InfoPlist localization is invalid"
+[[ "$(plist_value "$ZH_INFO" "CFBundleName")" == "Live Church Translation" ]] \
+  || fail "localized CFBundleName must preserve the product name"
+[[ "$(plist_value "$ZH_INFO" "CFBundleDisplayName")" == "Live Church Translation" ]] \
+  || fail "localized CFBundleDisplayName must preserve the product name"
 [[ -n "$(plist_value "$INFO" "NSMicrophoneUsageDescription")" ]] \
   || fail "microphone usage description is missing"
 [[ -n "$(plist_value "$INFO" "NSLocalNetworkUsageDescription")" ]] \
   || fail "local-network usage description is missing"
-[[ "$(plist_value "$INFO" "NSBonjourServices:0")" == "_churchtranslate._tcp" ]] \
-  || fail "Bonjour service is missing"
+[[ "$(plist_value "$INFO" "NSMicrophoneUsageDescription")" \
+  == "用于实时语音识别、翻译和录音。" ]] \
+  || fail "microphone usage description must match the reviewed concise copy"
+[[ "$(plist_value "$INFO" "NSLocalNetworkUsageDescription")" \
+  == "用于向同一网络的听众显示实时字幕。" ]] \
+  || fail "local-network usage description must match the reviewed concise copy"
+[[ "$(plist_value "$ZH_INFO" "NSMicrophoneUsageDescription")" \
+  == "用于实时语音识别、翻译和录音。" ]] \
+  || fail "localized microphone usage description differs from the reviewed copy"
+[[ "$(plist_value "$ZH_INFO" "NSLocalNetworkUsageDescription")" \
+  == "用于向同一网络的听众显示实时字幕。" ]] \
+  || fail "localized local-network usage description differs from the reviewed copy"
+[[ "$(plutil -extract NSAppTransportSecurity json -o - "$INFO")" \
+  == '{"NSAllowsLocalNetworking":true}' ]] \
+  || fail "ATS must allow only local networking without broad cleartext exceptions"
+[[ "$(plutil -extract NSBonjourServices json -o - "$INFO")" \
+  == '["_churchtranslate._tcp"]' ]] \
+  || fail "Bonjour must declare only the reviewed reader service"
 [[ "$(plist_value "$INFO" "ITSAppUsesNonExemptEncryption")" == "false" ]] \
   || fail "export-compliance declaration is missing"
 [[ "$(plist_value "$INFO" "CFBundleIconName")" == "AppIcon" ]] \
@@ -252,5 +285,34 @@ done
 if rg -q 'Contents/Helpers' "$REPOSITORY_ROOT/Sources/TranslationHyMT2/README.md"; then
   fail "translation helper documentation still references Contents/Helpers"
 fi
+
+LEGACY_BRAND_REGEX='quiet[ _-]?(lit''urgy|reader)|quiet(lit''urgy|reader)|lit''urgy reader|AppIconQ''uiet'
+BRANDING_PATHS=(
+  "$REPOSITORY_ROOT/Packaging"
+  "$REPOSITORY_ROOT/Assets"
+  "$REPOSITORY_ROOT/Scripts"
+  "$REPOSITORY_ROOT/.github/workflows/release.yml"
+  "$REPOSITORY_ROOT/Docs"
+  "$REPOSITORY_ROOT/README.md"
+  "$REPOSITORY_ROOT/PRIVACY.md"
+  "$REPOSITORY_ROOT/design-qa.md"
+  "$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj"
+)
+if rg -ni --hidden --glob '!*.png' --glob '!*.icns' \
+  "$LEGACY_BRAND_REGEX" "${BRANDING_PATHS[@]}" >/dev/null; then
+  fail "packaging and release surfaces contain a legacy product name"
+fi
+if find "${BRANDING_PATHS[@]}" -print | rg -qi "$LEGACY_BRAND_REGEX"; then
+  fail "packaging and release paths contain a legacy product name"
+fi
+LEGACY_PRODUCT_NAME='Quiet Lit''urgy Reader'
+LEGACY_PROJECT_NAME='QuietLit''urgyReader.xcodeproj'
+[[ ! -e "$REPOSITORY_ROOT/$LEGACY_PROJECT_NAME" ]] \
+  || fail "legacy Xcode project must not remain in the repository"
+[[ ! -e "$REPOSITORY_ROOT/dist/$LEGACY_PRODUCT_NAME.app" \
+  && ! -e "$REPOSITORY_ROOT/dist/$LEGACY_PRODUCT_NAME.dmg" \
+  && ! -e "$REPOSITORY_ROOT/dist/$LEGACY_PRODUCT_NAME.zip" ]] \
+  || fail "legacy release artifacts must be removed before packaging"
+"$SCRIPT_DIR/check_xcode_project.sh"
 
 echo "App Store packaging source check: PASS"

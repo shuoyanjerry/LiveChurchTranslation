@@ -76,7 +76,7 @@ struct NWRemoteTransportServerTests {
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
         let assetText = try #require(String(bytes: assetData, encoding: .utf8))
         #expect(assetText.contains(#"<html lang="zh-CN">"#), "Chinese locale marker is missing")
-        #expect(assetText.contains("<title>教会实时翻译</title>"), "Chinese title is missing")
+        #expect(assetText.contains("<title>Live Church Translation</title>"))
     }
 
     private func verifyWebSocket(_ fixture: ServerFixture) async throws {

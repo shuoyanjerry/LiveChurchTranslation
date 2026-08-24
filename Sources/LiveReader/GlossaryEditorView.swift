@@ -23,11 +23,7 @@ struct GlossaryEditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                VStack(alignment: .leading) {
-                    Text("属灵术语表").font(.title2.bold())
-                    Text("较长短语优先；识别别名可纠正常见误听。")
-                        .foregroundStyle(.secondary)
-                }
+                Text("属灵术语表").font(.title2.bold())
                 Spacer()
                 Button("恢复默认") {
                     restoreDefaults()
@@ -50,7 +46,7 @@ struct GlossaryEditorView: View {
             Divider()
             HStack {
                 if operationFailed {
-                    Text("无法保存。请检查标出的问题后重试。")
+                    Text("请检查词条后重试。")
                         .font(.caption)
                         .foregroundStyle(ChurchTheme.danger)
                 }

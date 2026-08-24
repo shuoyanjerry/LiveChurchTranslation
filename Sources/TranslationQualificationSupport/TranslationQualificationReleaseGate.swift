@@ -3,6 +3,8 @@ public struct TranslationQualificationGateResult: Equatable, Sendable {
     public let hardCheckFailureCount: Int
     public let releaseCheckFailureCount: Int
     public let humanReviewRequiredCount: Int
+    public let backendReviewAttemptCount: Int
+    public let backendReviewIssueCount: Int
     public let provenanceBindingFailureCount: Int
 
     public var passesHardGates: Bool {
@@ -13,6 +15,8 @@ public struct TranslationQualificationGateResult: Equatable, Sendable {
         providerFailureCount == 0
             && releaseCheckFailureCount == 0
             && humanReviewRequiredCount == 0
+            && backendReviewAttemptCount == 0
+            && backendReviewIssueCount == 0
             && provenanceBindingFailureCount == 0
     }
 }
@@ -28,6 +32,12 @@ public enum TranslationQualificationReleaseGate {
             hardCheckFailureCount: attempts.reduce(0) { $0 + hardFailures(in: $1) },
             releaseCheckFailureCount: attempts.reduce(0) { $0 + allFailures(in: $1) },
             humanReviewRequiredCount: attempts.reduce(0) { $0 + reviews(in: $1) },
+            backendReviewAttemptCount: attempts.filter {
+                !($0.backendReviewIssueCodes ?? []).isEmpty
+            }.count,
+            backendReviewIssueCount: attempts.reduce(0) {
+                $0 + ($1.backendReviewIssueCodes ?? []).count
+            },
             provenanceBindingFailureCount:
                 expectation.map {
                     TranslationProvenanceValidator.isReleaseBound(report, expectation: $0)

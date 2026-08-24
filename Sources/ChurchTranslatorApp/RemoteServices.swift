@@ -15,6 +15,6 @@ enum LocalNetworkHostName {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-"))
         let filtered = raw.unicodeScalars.map { allowed.contains($0) ? Character(String($0)) : "-" }
         let label = String(filtered).trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-        return "\(String((label.isEmpty ? "quiet-liturgy-reader" : label).prefix(48))).local"
+        return "\(String((label.isEmpty ? "live-church-translation" : label).prefix(48))).local"
     }
 }

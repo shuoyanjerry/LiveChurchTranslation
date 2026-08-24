@@ -11,12 +11,17 @@ actor EnabledSharing: RemoteSharingControlling {
 }
 
 struct ViewerPairing: RemotePairingServing {
-    func redeem(_ redemption: PairingRedemption, now: Date) async throws -> PairingGrant {
+    func redeem(
+        _ redemption: PairingRedemption,
+        clientBinding: RemotePairingClientBinding,
+        now: Date
+    ) async throws -> PairingGrant {
         throw PairingError.invalidInvitation
     }
 
     func authorize(
         bearerCredential: String,
+        clientBinding: RemotePairingClientBinding,
         requiresMutation: Bool,
         now: Date
     ) async throws -> RemotePairingAuthorization {

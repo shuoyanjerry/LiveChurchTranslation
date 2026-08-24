@@ -6,21 +6,22 @@ import Testing
 
 @Suite("Remote pairing registry")
 struct PairingRegistryTests {
-    @Test("A 256-bit invitation is single-use under a redemption race")
-    func invitationRace() async throws {
+    @Test("An operator invitation remains expiring and single-use under a redemption race")
+    func operatorInvitationRace() async throws {
         let registry = PairingRegistry()
         let now = Date(timeIntervalSince1970: 1_000)
-        let invitation = try await registry.issueMacApprovedInvitation(role: .viewer, now: now)
+        let invitation = try await registry.issueMacApprovedInvitation(role: .operator, now: now)
         #expect(invitation.fragmentCredential.count == 43)
-        let redemption = PairingRedemption(
-            invitationID: invitation.id,
-            fragmentCredential: invitation.fragmentCredential,
-            peerMetadata: .init(displayName: "iPad", userAgentSummary: "Safari")
-        )
+        #expect(invitation.expiresAt != nil)
+        let redemption = pairingTestRedemption(invitation)
         let successes = await withTaskGroup(of: Bool.self, returning: Int.self) { group in
-            for _ in 0..<2 {
+            for index in 0..<2 {
                 group.addTask {
-                    (try? await registry.redeem(redemption, now: now.addingTimeInterval(1))) != nil
+                    (try? await registry.redeem(
+                        redemption,
+                        clientBinding: try pairingTestBinding("192.168.10.\(20 + index)"),
+                        now: now.addingTimeInterval(1)
+                    )) != nil
                 }
             }
             var count = 0
@@ -28,25 +29,45 @@ struct PairingRegistryTests {
             return count
         }
         #expect(successes == 1)
+        await #expect(throws: PairingError.invitationAlreadyUsed) {
+            _ = try await registry.redeem(
+                redemption,
+                clientBinding: pairingTestBinding("192.168.10.30"),
+                now: now.addingTimeInterval(2)
+            )
+        }
     }
 
     @Test("A viewer cannot mutate and a revoked operator cannot authorize")
     func roleAndRevocation() async throws {
         let registry = PairingRegistry()
         let now = Date(timeIntervalSince1970: 2_000)
-        let viewer = try await pair(role: .viewer, registry: registry, now: now)
+        let client = try pairingTestBinding()
+        let viewer = try await pairForTest(
+            role: .viewer,
+            registry: registry,
+            clientBinding: client,
+            now: now
+        )
         await #expect(throws: PairingError.viewerIsReadOnly) {
             _ = try await registry.authorize(
                 bearerCredential: viewer.bearerCredential,
+                clientBinding: client,
                 requiresMutation: true,
                 now: now.addingTimeInterval(2)
             )
         }
-        let operatorGrant = try await pair(role: .operator, registry: registry, now: now)
+        let operatorGrant = try await pairForTest(
+            role: .operator,
+            registry: registry,
+            clientBinding: client,
+            now: now
+        )
         await registry.revoke(grantID: operatorGrant.peer.grantID, now: now.addingTimeInterval(3))
         await #expect(throws: PairingError.grantRevoked) {
             _ = try await registry.authorize(
                 bearerCredential: operatorGrant.bearerCredential,
+                clientBinding: client,
                 requiresMutation: false,
                 now: now.addingTimeInterval(4)
             )
@@ -57,19 +78,29 @@ struct PairingRegistryTests {
     func expiryAndAuditRedaction() async throws {
         let registry = PairingRegistry(configuration: .init(invitationTTL: 15, grantTTL: 60))
         let now = Date(timeIntervalSince1970: 3_000)
-        let expiredInvitation = try await registry.issueMacApprovedInvitation(role: .viewer, now: now)
-        let redemption = PairingRedemption(
-            invitationID: expiredInvitation.id,
-            fragmentCredential: expiredInvitation.fragmentCredential,
-            peerMetadata: .init(displayName: "Phone", userAgentSummary: "Safari")
+        let client = try pairingTestBinding()
+        let expiredInvitation = try await registry.issueMacApprovedInvitation(
+            role: .operator,
+            now: now
         )
         await #expect(throws: PairingError.invitationExpired) {
-            _ = try await registry.redeem(redemption, now: now.addingTimeInterval(16))
+            _ = try await redeemForTest(
+                expiredInvitation,
+                registry: registry,
+                clientBinding: client,
+                now: now.addingTimeInterval(16)
+            )
         }
-        let grant = try await pair(role: .viewer, registry: registry, now: now)
+        let grant = try await pairForTest(
+            role: .operator,
+            registry: registry,
+            clientBinding: client,
+            now: now
+        )
         await #expect(throws: PairingError.grantExpired) {
             _ = try await registry.authorize(
                 bearerCredential: grant.bearerCredential,
+                clientBinding: client,
                 requiresMutation: false,
                 now: now.addingTimeInterval(61)
             )
@@ -79,20 +110,36 @@ struct PairingRegistryTests {
         #expect(!audit.contains(expiredInvitation.fragmentCredential))
         #expect(!audit.contains(grant.bearerCredential))
     }
+}
 
-    private func pair(
-        role: RemoteRole,
-        registry: PairingRegistry,
-        now: Date
-    ) async throws -> PairingGrant {
-        let invitation = try await registry.issueMacApprovedInvitation(role: role, now: now)
-        return try await registry.redeem(
-            .init(
-                invitationID: invitation.id,
-                fragmentCredential: invitation.fragmentCredential,
-                peerMetadata: .init(displayName: "Device", userAgentSummary: "Safari")
-            ),
-            now: now.addingTimeInterval(1)
+@Suite("Remote pairing client binding")
+struct PairingClientBindingTests {
+    @Test("A captured grant cannot be replayed by another LAN client")
+    func clientBindingRejectsReplay() async throws {
+        let registry = PairingRegistry()
+        let now = Date(timeIntervalSince1970: 4_000)
+        let redeemer = try pairingTestBinding("192.168.10.20")
+        let attacker = try pairingTestBinding("192.168.10.21")
+        let grant = try await pairForTest(
+            role: .viewer,
+            registry: registry,
+            clientBinding: redeemer,
+            now: now
         )
+
+        _ = try await registry.authorize(
+            bearerCredential: grant.bearerCredential,
+            clientBinding: redeemer,
+            requiresMutation: false,
+            now: now.addingTimeInterval(2)
+        )
+        await #expect(throws: PairingError.invalidGrant) {
+            _ = try await registry.authorize(
+                bearerCredential: grant.bearerCredential,
+                clientBinding: attacker,
+                requiresMutation: false,
+                now: now.addingTimeInterval(2)
+            )
+        }
     }
 }

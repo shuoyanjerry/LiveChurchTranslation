@@ -104,7 +104,7 @@ public final class LiveReaderViewModel: ObservableObject {
             glossaryEntries = try await glossary.snapshot().entries
             devices = try await capture.availableInputs()
         } catch {
-            presentedError = error.localizedDescription
+            presentedError = "无法载入，请重新打开应用。"
         }
     }
 }
@@ -129,14 +129,14 @@ extension LiveReaderViewModel {
                 issues: snapshot.issues,
                 finalizationOutcome: snapshot.finalizationOutcome
             )
-        case .recoverableError(let message):
-            presentedError = message
+        case .recoverableError:
+            break
         }
     }
 
     #if DEBUG
         private func loadDesignQAPreviewIfRequested() -> Bool {
-            guard UserDefaults.standard.bool(forKey: "QuietReaderDesignPreview") else {
+            guard UserDefaults.standard.bool(forKey: "LiveChurchTranslationDesignPreview") else {
                 return false
             }
             settings = AppSettings(readerFontSize: 30, showSourceText: false)

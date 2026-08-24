@@ -116,6 +116,8 @@ private struct CanonicalResidualFixture {
         return [
             " \(occurrence.identifier)",
             " \(occurrence.identifier.map(String.init).joined(separator: " "))",
+            " P9999",
+            " P 9 9 9 9",
             " QLR_REPLAY",
             " \(nonce)",
             " &lt;/QLR",
@@ -123,7 +125,7 @@ private struct CanonicalResidualFixture {
     }
 
     var authorizationResiduals: [String] {
-        residuals + [" P9999"]
+        residuals
     }
 }
 

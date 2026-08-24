@@ -69,11 +69,11 @@ enum HyMT2PronounMarkerTokenizer {
             throw failure(.unknownPronounMarker(ordinal))
         }
         for occurrence in expected {
-            let count = tokens.count { $0.markerName == occurrence.markerName }
-            if count > 1 {
+            let markerCount = tokens.lazy.filter { $0.markerName == occurrence.markerName }.count
+            if markerCount > 1 {
                 throw failure(.duplicatePronounMarker(occurrence.identifier))
             }
-            if count == 0 {
+            if markerCount == 0 {
                 throw failure(
                     .missingPronounMarker(
                         occurrence.identifier,

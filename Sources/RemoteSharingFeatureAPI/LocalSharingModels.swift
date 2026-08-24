@@ -20,12 +20,10 @@ public struct LocalSharingPeer: Identifiable, Equatable, Sendable {
 public struct LocalSharingInvitation: Equatable, Sendable {
     public let role: LocalSharingPeerRole
     public let url: URL
-    public let expiresAt: Date
 
-    public init(role: LocalSharingPeerRole, url: URL, expiresAt: Date) {
+    public init(role: LocalSharingPeerRole, url: URL) {
         self.role = role
         self.url = url
-        self.expiresAt = expiresAt
     }
 }
 

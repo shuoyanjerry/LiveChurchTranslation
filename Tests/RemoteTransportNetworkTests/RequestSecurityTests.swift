@@ -37,12 +37,32 @@ struct RequestSecurityTests {
         #expect(try RemoteCredentialExtractor.credential(from: bearer) == token)
     }
 
+    @Test("Client bindings use only normalized, server-observed IP addresses")
+    func clientBindingNormalization() throws {
+        let ipv4 = try #require(RemotePeerAddress(host: "192.168.1.20").pairingClientBinding)
+        let ipv6 = try #require(RemotePeerAddress(host: "[fe80::1234%en0]").pairingClientBinding)
+        let mapped = try #require(
+            RemotePeerAddress(host: "::ffff:192.168.1.20").pairingClientBinding
+        )
+
+        #expect(ipv4.rawValue == "192.168.1.20")
+        #expect(ipv6.rawValue == "fe80::1234")
+        #expect(mapped == ipv4)
+        #expect(ipv4.description == "<redacted>")
+        #expect(RemotePeerAddress(host: "reader.example").pairingClientBinding == nil)
+    }
+
     @Test("Every response receives browser hardening headers")
     func responseHeaders() {
         let headers = SecureResponseHeaders.applying()
         #expect(headers["Cache-Control"]?.contains("no-store") == true)
+        #expect(headers["Pragma"] == "no-cache")
+        #expect(headers["Expires"] == "0")
         #expect(headers["Content-Security-Policy"]?.contains("frame-ancestors 'none'") == true)
         #expect(headers["X-Content-Type-Options"] == "nosniff")
+        #expect(headers["Cross-Origin-Opener-Policy"] == "same-origin")
+        #expect(headers["Cross-Origin-Resource-Policy"] == "same-origin")
+        #expect(headers["X-Permitted-Cross-Domain-Policies"] == "none")
     }
 
     private func makeRequest(headers: [String: [String]]) -> RemoteHTTPRequest {

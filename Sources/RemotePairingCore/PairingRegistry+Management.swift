@@ -3,6 +3,12 @@ import RemotePairingAPI
 import RemoteSharingAPI
 
 extension PairingRegistry {
+    public func revokeInvitation(id: UUID, now: Date = Date()) {
+        guard let invitation = invitations.removeValue(forKey: id) else { return }
+        appendAudit(.init(timestamp: now, action: .invitationRevoked, role: invitation.role))
+        emitSnapshot(now: now)
+    }
+
     public func revoke(grantID: RemoteGrantID, now: Date = Date()) {
         guard var state = grants[grantID], !state.revoked else { return }
         state.revoked = true
@@ -38,7 +44,7 @@ extension PairingRegistry {
             eventContinuations[id] = continuation
             continuation.yield(.snapshotChanged(makeSnapshot(now: Date())))
             continuation.onTermination = { [weak self] _ in
-                Task { await self?.removeEventContinuation(id) }
+                Task { [weak self] in await self?.removeEventContinuation(id) }
             }
         }
     }

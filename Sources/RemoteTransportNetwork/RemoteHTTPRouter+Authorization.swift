@@ -5,12 +5,17 @@ import RemotePairingAPI
 extension RemoteHTTPRouter {
     func authorize(
         _ request: RemoteHTTPRequest,
+        peer: RemotePeerAddress,
         mutation: Bool
     ) async throws -> RemoteControlAuthorization {
+        guard let clientBinding = peer.pairingClientBinding else {
+            throw RemoteTransportError.unauthorized
+        }
         let credential = try RemoteCredentialExtractor.credential(from: request)
         do {
             let paired = try await pairing.authorize(
                 bearerCredential: credential,
+                clientBinding: clientBinding,
                 requiresMutation: mutation,
                 now: Date()
             )

@@ -9,7 +9,8 @@ func expectRetryableWithoutLeak(
     request: TranslationRequest = TranslationRequest(
         sourceText: "恩典够用。",
         glossary: []
-    )
+    ),
+    expectedRequestCount: Int = 2
 ) async {
     do {
         _ = try await harness.provider.translate(request)
@@ -26,5 +27,5 @@ func expectRetryableWithoutLeak(
     } catch {
         Issue.record("Unexpected error: \(error)")
     }
-    #expect(await harness.transport.completionRequests().count == 2)
+    #expect(await harness.transport.completionRequests().count == expectedRequestCount)
 }

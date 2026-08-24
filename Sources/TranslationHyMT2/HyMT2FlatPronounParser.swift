@@ -7,6 +7,11 @@ enum HyMT2FlatPronounParser {
         tokens: [HyMT2FlatPronounToken]
     ) throws -> HyMT2ParsedPronounOutput {
         try HyMT2FlatPronounTokenizer.validateSurface(output, tokens: tokens)
+        try HyMT2PronounProtocolResidualValidator.validate(
+            output,
+            excluding: tokens.map(\.range),
+            plan: plan
+        )
         try validateUniquePronounRanges(tokens)
         try validateCounts(tokens, occurrences: plan.occurrences)
         let realizations = try validateRealizations(

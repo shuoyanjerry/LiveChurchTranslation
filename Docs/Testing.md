@@ -44,11 +44,13 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `TranscriptCoreTests` | Ordered lifecycle, raw/normalized source audit, append events, and compatibility decoding |
 | `PersistenceFileSystemTests` | JSONL/Markdown sessions, synchronized append, loading, source audit persistence, and non-bypassable active-recording deletion guards |
 | `LoggingOSLogTests` | Deterministic payload formatting plus a source policy that keeps all dynamic message and metadata text private |
+| `DiagnosticsCoreTests` | Bounded in-memory retention, privacy-preserving export permissions, and atomic replacement |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
 | `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, shared disk-space preflight/reservations, atomic install, cancellation, and deduplication |
+| `AudioImportSessionAdapterTests` | Completion outcomes, imported-session direction isolation, concurrent-import rejection, and cancellation races before events, during start, and after capture begins |
 | `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
 | `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
-| `RemotePairingCoreTests` | Entropy shape, expiry, races, role enforcement, hashing, revocation, and audit redaction |
+| `RemotePairingCoreTests` | Session-lived reusable viewer links and grants, bounded operator expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, closed command authorization, stale revisions, concurrent races, replay, and target failure |
 | `RemoteControlSessionAdapterTests` | Remote Start fail-closed policy and authorized stop-only forwarding |
 | `RemoteProjectionCoreTests` | Snapshot/live barrier, revisions, late entries, bounds, slow-peer resync, and default-off switch |
@@ -211,6 +213,17 @@ but does not satisfy the 12-sermon/8-hour release corpus contract. Its private m
 SHA-256 `2b5e75d3e497b08a946b64a44c7a364e98225c75fc59147ae5e31c81737548a6`;
 conversion alone provides no VAD, ASR, translation, or model-quality result.
 
+The 2026-08-23 v4 extension preserves that frozen v3 baseline and adds four official,
+long-form Mandarin church sermons. Its private replay contains 18 logical items, 132
+independent tracks, and 834,285,196 exact 16 kHz PCM frames (14.484117986 hours). The genuine
+stratum now contains 12 sermons from 11 named speakers and 600,391,798 frames
+(10.423468715 hours). All source hashes and byte sizes passed before conversion and were
+revalidated afterward; the repeated FFmpeg conversion smoke was byte-identical. This meets
+the structural 12-sermon, eight-hour, and six-speaker floor only. With no human endpoint
+labels, blinded sermon transcript references, or v4 model replay yet, the v4 manifest keeps
+its release gate false and cannot replace any semantic, accuracy, latency, soak, device, or
+clean-Mac gate.
+
 The selected-WebRTC baseline has now replayed all normalized v3 media. The authoritative
 A/B reports are
 `.artifacts/v3-selected-vad/v3-selected-webrtc-exact-tree-{a,b}-2026-08-22.json`;
@@ -234,9 +247,10 @@ the exact-tree pair because package provenance changed; its behavioral payload i
 byte-identical to the current pair.
 
 The v3 baseline is shadow-only with `decisionAuthority=none`, 0 human labels, and
-`accuracyEligible=false`. Integrity is **GO**; release is **NO-GO** because 8 < 12 genuine
-sermons and 7.379809253 < 8 genuine hours. No semantic endpoint model is scheduled for this
-corpus until a model-neutral human-labelled gate exists.
+`accuracyEligible=false`. Its integrity is **GO**, but its release result remains historical
+**NO-GO** because 8 < 12 genuine sermons and 7.379809253 < 8 genuine hours. V4 removes that
+structural shortage without manufacturing labels; no semantic endpoint model is scheduled
+until a model-neutral human-labelled gate exists.
 
 The most recent frozen private Hy-MT schema-v2 run contains 144 attempts: 114 validator-accepted, 30
 typed fail-closed, and 41 strict retries. It recorded 252 hard-check failures, 346 total
@@ -277,8 +291,9 @@ helper binary, macOS build, and Apple Silicon hardware class. Record:
   replay, idempotence, and malformed recovery quarantine.
 - Long upward reading and **Jump to Live** while entries arrive, glossary save/restore
   failure, selectable complete text, and transcript reopening.
-- Viewer/operator invitation expiry, one-time redemption race, revocation, listener
-  disable/re-enable, interface changes, slow clients, reconnect/resync, and unauthorized
+- Viewer-link reuse and lifetime until explicit stop/app exit, operator expiry and one-time
+  redemption race, revocation, transient listener retry with the same URL, interface changes, slow
+  clients, reconnect/resync, and unauthorized
   Host/Origin/query/frame/request cases on actual iPhone/iPad/Mac Safari devices.
 - Eight-hour operation with latency percentiles measured from sentence end, peak and
   steady-state resident memory, thermal state, dropped frames, recovery-directory growth,

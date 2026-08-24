@@ -16,7 +16,8 @@ public struct RemotePeer: Identifiable, Equatable, Codable, Sendable {
     public let metadata: RemotePeerMetadata
     public let role: RemoteRole
     public let pairedAt: Date
-    public let expiresAt: Date
+    /// `nil` for a viewer grant that lives until the sharing session is revoked.
+    public let expiresAt: Date?
 
     public init(
         id: RemotePeerID,
@@ -24,7 +25,7 @@ public struct RemotePeer: Identifiable, Equatable, Codable, Sendable {
         metadata: RemotePeerMetadata,
         role: RemoteRole,
         pairedAt: Date,
-        expiresAt: Date
+        expiresAt: Date?
     ) {
         self.id = id
         self.grantID = grantID

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Northville-inspired semantic colors for the quiet reader experience.
+/// Semantic colors for the live church translation experience.
 ///
 /// The palette is original to this application and does not embed church artwork.
 public enum ChurchTheme {

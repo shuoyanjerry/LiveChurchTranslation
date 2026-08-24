@@ -71,7 +71,8 @@ never trusted without these checks.
 1. Validate tag shape and credential presence.
 2. Restore, fetch, and cryptographically verify the seven model files and llama.cpp runtime.
 3. Resolve exact Swift dependencies and run `Scripts/check.sh` through the packaging command.
-4. Copy models to `Contents/Resources/Models` and helper code to `Contents/MacOS`.
+4. Clone models into `Contents/Resources/Models` on APFS when available and copy helper code to
+   `Contents/MacOS`; the resulting app contains ordinary self-contained files.
 5. Sign nested dylibs, sign `llama-server`, then sign the outer app with Developer ID, hardened
    runtime, a secure timestamp, and the reviewed entitlements.
 6. Submit the app ZIP to `notarytool`, require `Accepted`, staple and validate the app, create and
@@ -81,6 +82,15 @@ never trusted without these checks.
 8. Generate evidence, upload it as an Actions artifact, download and re-verify it in the
    least-privilege draft job, attest the DMG, and create a draft prerelease.
 
+The standard Apple Silicon `macos-15` runner has a 14 GB SSD. The workflow records free space,
+requires at least 6 GiB before the release build, removes transient Swift build products after the
+app passes its audit, deletes the app-notarization ZIP before creating the DMG, and removes the
+expanded app before artifact upload. Packaging uses APFS clone copies for the model bundle and DMG
+staging. These are correctness guards against a partially written candidate, not optional speed
+optimizations. See GitHub's current
+[hosted-runner specification](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
+before changing the thresholds or runner label.
+
 Apple notarization and GitHub asset limits are external requirements; consult the current
 [Apple notarization documentation](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 and [GitHub Releases documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
@@ -88,16 +98,18 @@ before changing this workflow.
 
 ## Evidence assets
 
-Every candidate includes:
+Every candidate stores its evidence under `dist/Live Church Translation.release-evidence/`
+and includes:
 
-- `Quiet Liturgy Reader.dmg`;
+- `Live Church Translation.dmg`;
 - `SHA256SUMS` for the DMG and evidence files;
 - `MODEL-MANIFEST.tsv` generated from the files actually sealed into the app;
 - `RUNTIME-MANIFEST.sha256`;
 - `LICENSE-MANIFEST.sha256`;
 - `APP-CONTENTS.sha256`;
 - `RELEASE-REPORT.md` with commit, version/build, toolchain, sizes, signing team, and notarization
-  submission IDs/statuses; and
+  submission IDs/statuses. Dry runs record whether local sources were dirty, while formal
+  notarization refuses a dirty Git worktree before building and evidence generation rechecks it; and
 - raw successful `notarytool` JSON on formal runs.
 
 The automated report intentionally says that it is packaging evidence only. Human release notes

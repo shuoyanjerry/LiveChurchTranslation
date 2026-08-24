@@ -83,7 +83,7 @@ import Testing
         #expect(translations[1].context.isEmpty)
         let entries = await harness.store.persistedEntries()
         #expect(entries.map(\.sourceText) == ["第一句。", "第二句。"])
-        #expect(entries[0].translationReview?.issueCodes == ["quality.missing_required_term"])
+        #expect(entries[0].translationReview?.issueCodes == ["quality.pronoun_alignment"])
         #expect(entries[1].translationReview == nil)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect((await harness.recoveryStore.terminalRejections()).isEmpty)

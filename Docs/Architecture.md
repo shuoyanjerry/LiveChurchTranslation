@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-Quiet Liturgy Reader has one primary pipeline:
+Live Church Translation has one primary pipeline:
 
 ```text
 selected Chinese audio input
@@ -60,6 +60,7 @@ files over 200 lines.
 | `TranslationAPI` | `TranslationHyMT2`, optional `TranslationApple` | Translation requests/results, two-entry context values, Hy-MT2 runtime and integrity guards |
 | `TranscriptAPI` | `TranscriptCore` | Immutable raw/normalized/audited bilingual entries and actor-owned live buffer |
 | `PersistenceAPI` | `PersistenceFileSystem` | Replaceable store and append-only JSONL/Markdown session adapter |
+| `AudioImportAPI` | `AudioImportSessionAdapter` | File-import lifecycle, direction-scoped settings, completion validation, and cancellation |
 
 ### Models, settings, and operations
 
@@ -77,7 +78,7 @@ files over 200 lines.
 | Contract | Implementation | Responsibility |
 | --- | --- | --- |
 | `RemoteSharingAPI` | `RemoteProjectionCore` | Wire-safe projection values, authoritative revisions, bounded peer queues, and default-off switch |
-| `RemotePairingAPI` | `RemotePairingCore` | Single-use invitations, hashed grants, roles, expiry, revocation, and redacted audit |
+| `RemotePairingAPI` | `RemotePairingCore` | Session-lived reusable viewer links, bounded operator expiry, hashed grants, roles, revocation, and redacted audit |
 | `RemoteControlAPI` | `RemoteControlCore` | Closed control vocabulary, operator authorization, expected-revision checks, and replay-safe requests |
 | — | `RemoteControlSessionAdapter` | Rejects remote Start without local recording consent and maps authorized Stop only |
 | — | `RemoteProjectionSessionAdapter` | Maps session state and transcript deltas into a redacted remote projection |
@@ -166,8 +167,8 @@ saved session, unresolved sentences, cancellation before capture, and save failu
 ```text
 Mac user enables Share
   → Network.framework listener + Bonjour advertisement
-  → Mac issues one expiring viewer invitation
-  → Safari redeems it and receives an HttpOnly role grant
+  → Mac issues one session-lived reusable viewer invitation
+  → Safari presents it and receives an HttpOnly session grant
   → snapshot barrier → bounded WebSocket deltas / resync
 ```
 
@@ -175,9 +176,12 @@ Security assumptions and limits are explicit:
 
 - Sharing is disabled until the local Mac user enables it. Being on a private IP range is
   necessary for admission but never sufficient for authorization.
-- Invitations are single-use and expire within five minutes. Grant credentials are
-  high-entropy, stored as SHA-256 hashes, expire within 24 hours, and can be revoked
-  individually or all at once. Disabling the listener revokes all grants.
+- Viewer invitations and grants are high-entropy, stored only as SHA-256 hashes, reusable by
+  multiple listeners, and have the same in-memory lifetime as the active sharing session. The URL
+  therefore remains valid until sharing is explicitly stopped or the app exits. Transient listener
+  failure preserves the same invitation and grants. Disabling sharing or revoking everyone clears
+  them atomically. The lower-level operator boundary retains single-use, five-minute invitations
+  and 24-hour grants, but this release exposes no operator invitation route.
 - The invitation token is carried in a URL fragment, removed by the browser before normal
   requests, then exchanged for an HttpOnly, SameSite cookie. Tokens and transcript text
   are excluded from the bounded pairing audit.

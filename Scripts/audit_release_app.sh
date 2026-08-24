@@ -6,6 +6,10 @@ fail() {
   exit 1
 }
 
+plist_value() {
+  /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP="${1:-}"
@@ -14,18 +18,34 @@ RUNTIME_MANIFEST="$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256"
 
 [[ -n "$APP" ]] || fail "usage: $0 /path/to/Application.app [signing-identity-or--]"
 [[ -d "$APP" && ! -L "$APP" && "$APP" == *.app ]] || fail "app bundle is missing or unsafe"
+[[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
+  || fail "app artifact must be named Live Church Translation.app"
 CONTENTS="$APP/Contents"
 MAIN="$CONTENTS/MacOS/LiveChurchTranslation"
 HELPER="$CONTENTS/MacOS/llama-server"
 MODELS="$CONTENTS/Resources/Models"
 INFO="$CONTENTS/Info.plist"
 PRIVACY="$CONTENTS/Resources/PrivacyInfo.xcprivacy"
+ENTITLEMENTS="$(mktemp "${TMPDIR:-/tmp}/church-release-entitlements.XXXXXX")"
+trap 'rm -f "$ENTITLEMENTS"' EXIT
 
 [[ -x "$MAIN" && ! -L "$MAIN" ]] || fail "main executable is missing"
 [[ -x "$HELPER" && ! -L "$HELPER" ]] || fail "llama-server is missing"
 [[ ! -e "$CONTENTS/Helpers/llama-server" ]] || fail "legacy helper path is present"
 [[ -f "$INFO" && -f "$PRIVACY" ]] || fail "required bundle metadata is missing"
 plutil -lint "$INFO" "$PRIVACY" >/dev/null || fail "bundle metadata is invalid"
+[[ "$(plist_value "$INFO" "CFBundleName" || true)" == "Live Church Translation" ]] \
+  || fail "CFBundleName must be Live Church Translation"
+[[ "$(plist_value "$INFO" "CFBundleDisplayName" || true)" == "Live Church Translation" ]] \
+  || fail "CFBundleDisplayName must be Live Church Translation"
+[[ -n "$(plist_value "$INFO" "NSLocalNetworkUsageDescription" || true)" ]] \
+  || fail "local-network usage description is missing"
+[[ "$(plutil -extract NSAppTransportSecurity json -o - "$INFO")" \
+  == '{"NSAllowsLocalNetworking":true}' ]] \
+  || fail "ATS must allow only local networking without broad cleartext exceptions"
+[[ "$(plutil -extract NSBonjourServices json -o - "$INFO")" \
+  == '["_churchtranslate._tcp"]' ]] \
+  || fail "Bonjour must declare only the reviewed reader service"
 [[ "$(lipo -archs "$MAIN")" == "arm64" ]] || fail "main executable must be arm64-only"
 [[ "$(lipo -archs "$HELPER")" == "arm64" ]] || fail "llama-server must be arm64-only"
 
@@ -61,6 +81,24 @@ actual_dylibs="$(find "$CONTENTS/MacOS" -maxdepth 1 -type f -name '*.dylib' \
   || fail "unexpected llama.cpp dylib inventory"
 codesign --verify --strict --verbose=2 "$HELPER" || fail "helper signature is invalid"
 codesign --verify --deep --strict --verbose=2 "$APP" || fail "app signature is invalid"
+codesign -d --entitlements :- "$APP" >"$ENTITLEMENTS" 2>/dev/null \
+  || fail "cannot read app entitlements"
+plutil -lint "$ENTITLEMENTS" >/dev/null || fail "signed app entitlements are invalid"
+REQUIRED_ENTITLEMENTS=(
+  com.apple.security.app-sandbox
+  com.apple.security.device.microphone
+  com.apple.security.device.audio-input
+  com.apple.security.network.client
+  com.apple.security.network.server
+  com.apple.security.files.user-selected.read-only
+)
+for key in "${REQUIRED_ENTITLEMENTS[@]}"; do
+  [[ "$(plist_value "$ENTITLEMENTS" "$key" || true)" == "true" ]] \
+    || fail "signed app entitlement $key is missing"
+done
+ENTITLEMENT_KEY_COUNT="$(grep -o '<key>' "$ENTITLEMENTS" | wc -l | tr -d ' ')"
+[[ "$ENTITLEMENT_KEY_COUNT" == "${#REQUIRED_ENTITLEMENTS[@]}" ]] \
+  || fail "signed app contains an unreviewed entitlement"
 
 APP_SIGNATURE="$(codesign -dv --verbose=4 "$APP" 2>&1)"
 HELPER_SIGNATURE="$(codesign -dv --verbose=4 "$HELPER" 2>&1)"

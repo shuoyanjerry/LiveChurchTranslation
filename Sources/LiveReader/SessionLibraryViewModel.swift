@@ -1,4 +1,5 @@
 import AppKit
+import AudioImportAPI
 import Combine
 import Foundation
 import PersistenceAPI
@@ -46,7 +47,7 @@ public final class SessionLibraryViewModel: ObservableObject {
             if selectedSessionID == nil { selectedSessionID = sessions.first?.id }
             await loadSelection()
         } catch {
-            presentedError = error.localizedDescription
+            presentedError = "资料库无法打开，请重试。"
         }
     }
 
@@ -60,7 +61,8 @@ public final class SessionLibraryViewModel: ObservableObject {
         do {
             guard !(await store.isSessionActive(sessionID: id)) else {
                 selectedSessionIsActive = true
-                throw TranscriptStoreError.sessionActive
+                presentedError = "请先停止当前会议。"
+                return
             }
             try await recoveryArtifacts.deleteArtifacts(for: id)
             try await store.delete(sessionID: id)
@@ -69,27 +71,32 @@ public final class SessionLibraryViewModel: ObservableObject {
             selectedSessionIsActive = false
             await load()
         } catch {
-            presentedError = error.localizedDescription
+            presentedError = "删除未完成，请重试。"
         }
     }
 
     public func importAudio(
         from url: URL,
+        mode: TranslationMode,
         using importer: any AudioImporting,
         liveSessionIsRunning: Bool
     ) async {
         guard !liveSessionIsRunning else {
-            presentedError = AudioImportError.liveSessionRunning.localizedDescription
+            presentedError = "请先停止实时翻译。"
             return
         }
         isImporting = true
         defer { isImporting = false }
         do {
-            try await importer.importAudio(from: url)
+            try await importer.importAudio(from: url, mode: mode)
             selectedSessionID = nil
             await load()
+        } catch AudioImportError.cancelled {
+            await load()
+        } catch is CancellationError {
+            await load()
         } catch {
-            presentedError = error.localizedDescription
+            presentedError = "音频处理未完成，请重试。"
         }
     }
 
@@ -121,7 +128,7 @@ public final class SessionLibraryViewModel: ObservableObject {
         } catch {
             selectedSession = nil
             selectedSessionIsActive = false
-            presentedError = error.localizedDescription
+            presentedError = "无法打开这个项目。"
         }
     }
 

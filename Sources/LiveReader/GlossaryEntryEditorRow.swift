@@ -28,10 +28,10 @@ struct GlossaryEntryEditorRow: View {
                 .buttonStyle(.borderless)
             }
             HStack(spacing: 8) {
-                Text("识别别名")
+                Text("常见说法")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("常见误听；用逗号分隔，例如：休恩", text: $aliasesText)
+                TextField("用逗号分隔", text: $aliasesText)
                     .textFieldStyle(.roundedBorder)
                     .onChange(of: aliasesText) { _, value in
                         entry.recognitionAliases = Self.parseAliases(value)

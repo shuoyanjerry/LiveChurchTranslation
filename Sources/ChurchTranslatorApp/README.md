@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Acts only as the macOS entry point and composition root for Quiet Liturgy Reader.
+Acts only as the macOS entry point and composition root for Live Church Translation.
 
 ## Public API
 

@@ -1,7 +1,7 @@
 import ChurchTranslatorApp
 
 @main
-enum QuietLiturgyReaderMain {
+enum LiveChurchTranslationMain {
     @MainActor
     static func main() {
         LiveChurchTranslationApp.main()

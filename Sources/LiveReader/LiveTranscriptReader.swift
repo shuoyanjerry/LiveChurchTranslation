@@ -61,9 +61,9 @@ struct LiveTranscriptReader: View {
             }
             Color.clear.frame(height: 44).id("live-edge")
         }
-        .frame(maxWidth: 1_180, alignment: .leading)
         .padding(.horizontal, 36)
         .padding(.top, 28)
+        .frame(maxWidth: 1_180, alignment: .leading)
         .frame(maxWidth: .infinity)
     }
 

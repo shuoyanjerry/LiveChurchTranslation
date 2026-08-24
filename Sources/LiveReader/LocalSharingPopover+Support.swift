@@ -4,10 +4,8 @@ import SwiftUI
 import UIDesignSystem
 
 enum LocalSharingPresentation {
-    static let subtitle = "附近设备可查看实时听抄与翻译。"
-    static let transportWarning = "仅限可信局域网 · 传输尚未加密"
-    static let localNetworkPermissionMessage =
-        "本地网络访问已被 macOS 阻止。请在“系统设置 > 隐私与安全性 > 本地网络”中允许本应用。"
+    static let subtitle = "听众需连接同一网络。"
+    static let localNetworkPermissionMessage = "请在系统设置中允许本地网络访问。"
     static let invitationRole = LocalSharingInvitationRole.viewer
 
     static func visibleInvitation(

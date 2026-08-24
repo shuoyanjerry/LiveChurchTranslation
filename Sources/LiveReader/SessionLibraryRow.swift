@@ -19,10 +19,18 @@ struct SessionLibraryRow: View {
             }
             .font(.caption)
             .foregroundStyle(ChurchTheme.muted)
-            if let integrity = summary.integrityLabel {
-                Label(integrity, systemImage: "exclamationmark.triangle.fill")
+            if summary.integrity == .active {
+                Label("处理中", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(ChurchTheme.muted)
+            } else if summary.integrity == .incomplete {
+                Label("内容不完整", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.warning)
+            } else if summary.integrity == .recoveredAfterInterruption {
+                Label("已恢复", systemImage: "arrow.clockwise")
+                    .font(.caption)
+                    .foregroundStyle(ChurchTheme.muted)
             }
         }
         .padding(.vertical, 7)

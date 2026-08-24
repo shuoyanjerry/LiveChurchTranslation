@@ -62,22 +62,38 @@ struct SessionLibraryDetail: View {
     }
 
     private func detailHeader(_ summary: StoredSessionSummary) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(summary.displayTitle)
-                    .font(.system(size: 23, weight: .semibold))
-                    .lineLimit(1)
-                Text(summary.languagePair)
-                    .font(.callout)
-                    .foregroundStyle(ChurchTheme.muted)
-                if let detail = summary.integrityDetail {
-                    Label(detail, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(ChurchTheme.warning)
-                }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) {
+                summaryTitle(summary)
+                Spacer()
+                detailActions
             }
-            Spacer()
-            Button("在 Finder 中显示", systemImage: "folder") {
+            VStack(alignment: .leading, spacing: 10) {
+                summaryTitle(summary)
+                detailActions
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 14)
+        .frame(minHeight: 76, alignment: .leading)
+        .background(ChurchTheme.surface)
+    }
+
+    private func summaryTitle(_ summary: StoredSessionSummary) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(summary.displayTitle)
+                .font(.system(size: 23, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(summary.languagePair)
+                .font(.callout)
+                .foregroundStyle(ChurchTheme.muted)
+        }
+    }
+
+    private var detailActions: some View {
+        HStack(spacing: 12) {
+            Button("在访达中显示", systemImage: "folder") {
                 viewModel.revealSelected()
             }
             Button("删除", systemImage: "trash", role: .destructive) {
@@ -90,8 +106,5 @@ struct SessionLibraryDetail: View {
                     : "删除这场会议"
             )
         }
-        .padding(.horizontal, 28)
-        .frame(minHeight: 76)
-        .background(ChurchTheme.surface)
     }
 }

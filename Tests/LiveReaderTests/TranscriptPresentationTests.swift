@@ -19,12 +19,10 @@ import Testing
             name: "Sanctuary iPad",
             role: .viewer
         )
-        let expiry = Date(timeIntervalSince1970: 1_800)
-        let endpoint = URL(string: "http://quiet-reader.local:8123")!
+        let endpoint = URL(string: "http://live-church-translation.local:8123")!
         let invitation = LocalSharingInvitation(
             role: .viewer,
-            url: URL(string: "http://quiet-reader.local:8123/#invite=redacted")!,
-            expiresAt: expiry
+            url: URL(string: "http://live-church-translation.local:8123/#invite=redacted")!
         )
         let state = LocalSharingViewState.on(
             endpoint: endpoint,
@@ -44,16 +42,12 @@ import Testing
         )
     }
 
-    @Test func localSharingCopyDisclosesScopeAndTransportRisk() {
+    @Test func localSharingCopyIsConciseAndChineseFirst() {
         #expect(
             LocalSharingPresentation.subtitle
-                == "附近设备可查看实时听抄与翻译。"
+                == "听众需连接同一网络。"
         )
-        #expect(
-            LocalSharingPresentation.transportWarning
-                == "仅限可信局域网 · 传输尚未加密"
-        )
-        #expect(LocalSharingPresentation.localNetworkPermissionMessage.contains("本地网络"))
+        #expect(LocalSharingPresentation.localNetworkPermissionMessage == "请在系统设置中允许本地网络访问。")
     }
 
     @Test func localSharingOffersOnlyViewerInvitations() {
@@ -61,13 +55,11 @@ import Testing
 
         let viewerInvitation = LocalSharingInvitation(
             role: .viewer,
-            url: URL(string: "http://quiet-reader.local:8123/#invite=viewer")!,
-            expiresAt: Date(timeIntervalSince1970: 1_800)
+            url: URL(string: "http://live-church-translation.local:8123/#invite=viewer")!
         )
         let operatorInvitation = LocalSharingInvitation(
             role: .operator,
-            url: URL(string: "http://quiet-reader.local:8123/#invite=operator")!,
-            expiresAt: Date(timeIntervalSince1970: 1_800)
+            url: URL(string: "http://live-church-translation.local:8123/#invite=operator")!
         )
 
         #expect(LocalSharingPresentation.visibleInvitation(viewerInvitation) == viewerInvitation)

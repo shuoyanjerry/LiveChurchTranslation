@@ -23,7 +23,7 @@ extension FileTranscriptStore {
     }
 
     func markdownHeader(for session: TranscriptSession) -> String {
-        "# 教会实时翻译\n\n开始时间：\(session.startedAt.formatted())\n\n"
+        "# Live Church Translation\n\n开始时间：\(session.startedAt.formatted())\n\n"
     }
 
     func markdown(for entry: TranscriptEntry) -> String {
