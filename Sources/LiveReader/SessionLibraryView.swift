@@ -1,3 +1,4 @@
+import PersistenceAPI
 import SettingsAPI
 import SwiftUI
 import UIDesignSystem
@@ -5,6 +6,7 @@ import UIDesignSystem
 struct SessionLibraryView: View {
     @ObservedObject var viewModel: SessionLibraryViewModel
     let onImport: (TranslationMode) -> Void
+    let onRetranscribe: (StoredSessionSummary) -> Void
     let onCancelImport: () -> Void
     @State private var confirmsDeletion = false
 
@@ -13,7 +15,11 @@ struct SessionLibraryView: View {
             sessionList
                 .frame(minWidth: 270, idealWidth: 310, maxWidth: 360)
             Divider().overlay(ChurchTheme.stone)
-            SessionLibraryDetail(viewModel: viewModel, confirmsDeletion: $confirmsDeletion)
+            SessionLibraryDetail(
+                viewModel: viewModel,
+                confirmsDeletion: $confirmsDeletion,
+                onRetranscribe: onRetranscribe
+            )
         }
         .background(ChurchTheme.background)
         .task { await viewModel.load() }

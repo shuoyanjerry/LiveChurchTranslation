@@ -6,6 +6,7 @@ import UIDesignSystem
 struct SessionLibraryDetail: View {
     @ObservedObject var viewModel: SessionLibraryViewModel
     @Binding var confirmsDeletion: Bool
+    let onRetranscribe: (StoredSessionSummary) -> Void
     @StateObject private var player = AudioPlayerViewModel()
 
     var body: some View {
@@ -34,29 +35,50 @@ struct SessionLibraryDetail: View {
         VStack(spacing: 0) {
             detailHeader(summary)
             Divider().overlay(ChurchTheme.stone)
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    if let audioURL = viewModel.recordingURL(for: summary) {
-                        LibraryAudioPlayer(viewModel: player, url: audioURL)
-                        Divider().overlay(ChurchTheme.stone)
-                    }
-                    if session.entries.isEmpty {
-                        ContentUnavailableView(
-                            "尚无听抄内容",
-                            systemImage: "quote.bubble",
-                            description: Text("处理完成的文字会显示在这里。")
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 320)
-                    } else {
-                        ForEach(session.entries) { entry in
-                            LibraryTranscriptEntry(entry: entry)
-                        }
-                    }
+            detailBody(summary: summary, session: session)
+        }
+    }
+
+    private func detailBody(
+        summary: StoredSessionSummary,
+        session: TranscriptSession
+    ) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if let presentation = IncompleteTranscriptPresentation(summary: summary) {
+                    IncompleteTranscriptNotice(
+                        presentation: presentation,
+                        canRetranscribe: viewModel.recordingURL(for: summary) != nil
+                            && summary.storedTranslationMode != nil,
+                        isDisabled: viewModel.isImporting || viewModel.selectedSessionIsActive,
+                        action: { onRetranscribe(summary) }
+                    )
+                    Divider().overlay(ChurchTheme.stone)
                 }
-                .frame(maxWidth: 920, alignment: .leading)
-                .padding(.horizontal, 42)
-                .padding(.bottom, 44)
-                .frame(maxWidth: .infinity)
+                if let audioURL = viewModel.recordingURL(for: summary) {
+                    LibraryAudioPlayer(viewModel: player, url: audioURL)
+                    Divider().overlay(ChurchTheme.stone)
+                }
+                transcriptEntries(session)
+            }
+            .frame(maxWidth: 920, alignment: .leading)
+            .padding(.horizontal, 42)
+            .padding(.bottom, 44)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder private func transcriptEntries(_ session: TranscriptSession) -> some View {
+        if session.entries.isEmpty {
+            ContentUnavailableView(
+                "尚无听抄内容",
+                systemImage: "quote.bubble",
+                description: Text("处理完成的文字会显示在这里。")
+            )
+            .frame(maxWidth: .infinity, minHeight: 320)
+        } else {
+            ForEach(session.entries) { entry in
+                LibraryTranscriptEntry(entry: entry)
             }
         }
     }
@@ -99,11 +121,10 @@ struct SessionLibraryDetail: View {
             Button("删除", systemImage: "trash", role: .destructive) {
                 confirmsDeletion = true
             }
-            .disabled(viewModel.selectedSessionIsActive)
+            .disabled(viewModel.selectedSessionIsActive || viewModel.isImporting)
             .help(
-                viewModel.selectedSessionIsActive
-                    ? "请先停止当前会议，再删除。"
-                    : "删除这场会议"
+                viewModel.selectedSessionIsActive || viewModel.isImporting
+                    ? "请先等待当前处理完成。" : "删除这场会议"
             )
         }
     }

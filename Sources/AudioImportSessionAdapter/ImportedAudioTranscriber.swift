@@ -7,7 +7,7 @@ import SettingsAPI
 @MainActor
 public final class ImportedAudioTranscriber: AudioImporting {
     public typealias ControllerFactory =
-        (URL, TranslationMode) throws -> any LiveSessionController
+        (URL, TranslationMode, String?) throws -> any LiveSessionController
 
     private let inputDeviceID: AudioInputID
     private let makeController: ControllerFactory
@@ -23,12 +23,16 @@ public final class ImportedAudioTranscriber: AudioImporting {
         self.makeController = makeController
     }
 
-    public func importAudio(from url: URL, mode: TranslationMode) async throws {
+    public func importAudio(
+        from url: URL,
+        mode: TranslationMode,
+        sessionTitle: String?
+    ) async throws {
         guard activeController == nil else {
             throw AudioImportError.transcriptionFailed("另一个音频文件正在处理中。")
         }
         cancellationRequested = false
-        let controller = try makeController(url, mode)
+        let controller = try makeController(url, mode, sessionTitle)
         activeController = controller
         defer {
             activeController = nil

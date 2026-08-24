@@ -1,5 +1,6 @@
 import AudioImportAPI
 import Foundation
+import PersistenceAPI
 import RemoteSharingFeatureAPI
 import SettingsAPI
 import SwiftUI
@@ -55,6 +56,7 @@ public struct AppWorkspaceView: View {
                 SessionLibraryView(
                     viewModel: libraryViewModel,
                     onImport: beginAudioImport,
+                    onRetranscribe: beginRetranscription,
                     onCancelImport: { Task { await audioImporter.cancelImport() } }
                 )
             }
@@ -114,6 +116,21 @@ extension AppWorkspaceView {
         showsAudioImporter = true
     }
 
+    fileprivate func beginRetranscription(_ summary: StoredSessionSummary) {
+        guard !liveViewModel.isRunning else {
+            libraryViewModel.presentedError = "请先停止实时翻译。"
+            return
+        }
+        guard !libraryViewModel.isImporting else { return }
+        Task {
+            await libraryViewModel.retranscribeRetainedRecording(
+                for: summary,
+                using: audioImporter,
+                liveSessionIsRunning: liveViewModel.isRunning
+            )
+        }
+    }
+
     fileprivate func isUserCancellation(_ error: any Error) -> Bool {
         let cocoaError = error as NSError
         return cocoaError.domain == NSCocoaErrorDomain
@@ -144,26 +161,5 @@ extension AppWorkspaceView {
         .padding(.horizontal, 14)
         .padding(.top, 14)
         .padding(.bottom, 8)
-    }
-}
-
-private enum WorkspaceSection: String, CaseIterable, Identifiable {
-    case live
-    case library
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .live: "实时"
-        case .library: "资料库"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .live: "waveform.and.mic"
-        case .library: "books.vertical"
-        }
     }
 }
