@@ -71,7 +71,7 @@ import Testing
     ) -> ImportedAudioTranscriber {
         ImportedAudioTranscriber(
             inputDeviceID: AudioInputID(rawValue: "import-test")
-        ) { _, _ in controller }
+        ) { _, _, _ in controller }
     }
 
     private func startImport(

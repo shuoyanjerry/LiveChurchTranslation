@@ -7,18 +7,71 @@ extension SessionLibraryViewModel {
     public func importAudio(
         from url: URL,
         mode: TranslationMode,
+        sessionTitle: String? = nil,
         using importer: any AudioImporting,
         liveSessionIsRunning: Bool
     ) async {
+        guard !isImporting else { return }
         guard !liveSessionIsRunning else {
             presentedError = "请先停止实时翻译。"
             return
         }
         beginAudioImportPresentation()
         defer { endAudioImportPresentation() }
+        await processImport(
+            from: url,
+            mode: mode,
+            sessionTitle: sessionTitle,
+            using: importer
+        )
+    }
+
+    public func retranscribeRetainedRecording(
+        for summary: StoredSessionSummary,
+        using importer: any AudioImporting,
+        liveSessionIsRunning: Bool
+    ) async {
+        guard summary.hasIncompleteSpeechSegments, !isImporting else { return }
+        guard !liveSessionIsRunning else {
+            presentedError = "请先停止实时翻译。"
+            return
+        }
+        guard let recordingURL = recordingURL(for: summary) else {
+            presentedError = "完整录音暂时无法打开。现有资料没有受到影响。"
+            return
+        }
+        guard let mode = summary.storedTranslationMode else {
+            presentedError = "无法确定这份录音的语言方向。现有资料没有受到影响。"
+            return
+        }
+        beginAudioImportPresentation()
+        defer { endAudioImportPresentation() }
+        guard !(await sessionIsActive(summary.id)) else {
+            presentedError = "请先停止当前会议。"
+            return
+        }
+        await processImport(
+            from: recordingURL,
+            mode: mode,
+            sessionTitle: summary.retranscriptionTitle,
+            using: importer
+        )
+    }
+
+    private func processImport(
+        from url: URL,
+        mode: TranslationMode,
+        sessionTitle: String?,
+        using importer: any AudioImporting
+    ) async {
         let baselineSessionIDs = try? await recentSessionSummaries().map(\.id)
         let knownSessionIDs = Set(baselineSessionIDs ?? sessions.map(\.id))
-        let terminalState = await runImport(from: url, mode: mode, using: importer)
+        let terminalState = await runImport(
+            from: url,
+            mode: mode,
+            sessionTitle: sessionTitle,
+            using: importer
+        )
         let refreshed = await refreshAfterImport(
             knownSessionIDs: knownSessionIDs,
             savedSessionID: terminalState.savedSessionID,
@@ -38,10 +91,15 @@ extension SessionLibraryViewModel {
     private func runImport(
         from url: URL,
         mode: TranslationMode,
+        sessionTitle: String?,
         using importer: any AudioImporting
     ) async -> AudioImportTerminalState {
         do {
-            try await importer.importAudio(from: url, mode: mode)
+            try await importer.importAudio(
+                from: url,
+                mode: mode,
+                sessionTitle: sessionTitle
+            )
             return .saved
         } catch AudioImportError.cancelled {
             return .cancelled

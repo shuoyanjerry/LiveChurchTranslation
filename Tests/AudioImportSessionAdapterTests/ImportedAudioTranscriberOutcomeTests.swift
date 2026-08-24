@@ -72,7 +72,7 @@ import Testing
         let controller = TerminalImportController(events: [active, terminal])
         return ImportedAudioTranscriber(
             inputDeviceID: AudioInputID(rawValue: "outcome-test")
-        ) { _, _ in controller }
+        ) { _, _, _ in controller }
     }
 
     private func terminalSnapshot(

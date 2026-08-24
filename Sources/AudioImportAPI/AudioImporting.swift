@@ -2,8 +2,18 @@ import Foundation
 import SettingsAPI
 
 public protocol AudioImporting: Sendable {
-    func importAudio(from url: URL, mode: TranslationMode) async throws
+    func importAudio(
+        from url: URL,
+        mode: TranslationMode,
+        sessionTitle: String?
+    ) async throws
     func cancelImport() async
+}
+
+extension AudioImporting {
+    public func importAudio(from url: URL, mode: TranslationMode) async throws {
+        try await importAudio(from: url, mode: mode, sessionTitle: nil)
+    }
 }
 
 public enum AudioImportError: LocalizedError, Equatable, Sendable {

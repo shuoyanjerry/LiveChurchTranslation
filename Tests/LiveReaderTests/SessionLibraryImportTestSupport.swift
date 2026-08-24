@@ -10,6 +10,8 @@ actor SessionLibraryStoreFake: TranscriptStore {
     private var storedSessions: [UUID: TranscriptSession]
     private var recentCalls = 0
     private var failsNextRecent = false
+    private var activeSessionIDs = Set<UUID>()
+    private var deletedSessionIDs: [UUID] = []
 
     init(summaries: [StoredSessionSummary] = []) {
         storedSummaries = summaries
@@ -28,7 +30,16 @@ actor SessionLibraryStoreFake: TranscriptStore {
         failsNextRecent = true
     }
 
+    func setActive(_ active: Bool, sessionID: UUID) {
+        if active {
+            activeSessionIDs.insert(sessionID)
+        } else {
+            activeSessionIDs.remove(sessionID)
+        }
+    }
+
     func recentCallCount() -> Int { recentCalls }
+    func deletedIDs() -> [UUID] { deletedSessionIDs }
 
     func begin(_ session: TranscriptSession) {}
     func append(_ entry: TranscriptEntry, to sessionID: UUID) {}
@@ -51,8 +62,15 @@ actor SessionLibraryStoreFake: TranscriptStore {
         return Array(storedSummaries.prefix(limit))
     }
 
-    func isSessionActive(sessionID: UUID) -> Bool { false }
-    func delete(sessionID: UUID) {}
+    func isSessionActive(sessionID: UUID) -> Bool {
+        activeSessionIDs.contains(sessionID)
+    }
+
+    func delete(sessionID: UUID) {
+        deletedSessionIDs.append(sessionID)
+        storedSummaries.removeAll { $0.id == sessionID }
+        storedSessions[sessionID] = nil
+    }
 
     private static func session(for summary: StoredSessionSummary) -> TranscriptSession {
         TranscriptSession(
@@ -71,7 +89,11 @@ actor SessionLibraryStoreFake: TranscriptStore {
 struct SessionLibraryImporterFake: AudioImporting {
     let operation: @Sendable () async throws -> Void
 
-    func importAudio(from _: URL, mode _: TranslationMode) async throws {
+    func importAudio(
+        from _: URL,
+        mode _: TranslationMode,
+        sessionTitle _: String?
+    ) async throws {
         try await operation()
     }
 
@@ -88,16 +110,26 @@ enum SessionLibraryTestError: Error {
 
 func librarySummary(
     id: UUID = UUID(),
-    integrity: StoredTranscriptIntegrity = .complete
+    integrity: StoredTranscriptIntegrity = .complete,
+    location: URL? = nil,
+    title: String = "导入音频",
+    sourceLanguage: String = "zh-Hans",
+    targetLanguage: String = "en",
+    pendingRecordCount: Int = 0,
+    rejectedSentenceCount: Int = 0
 ) -> StoredSessionSummary {
     StoredSessionSummary(
         id: id,
         startedAt: Date(),
         endedAt: Date(),
         entryCount: 0,
-        location: URL(fileURLWithPath: "/tmp/\(id.uuidString)"),
-        title: "导入音频",
+        location: location ?? URL(fileURLWithPath: "/tmp/\(id.uuidString)"),
+        title: title,
         kind: .importedAudio,
-        integrity: integrity
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+        integrity: integrity,
+        pendingRecordCount: pendingRecordCount,
+        rejectedSentenceCount: rejectedSentenceCount
     )
 }

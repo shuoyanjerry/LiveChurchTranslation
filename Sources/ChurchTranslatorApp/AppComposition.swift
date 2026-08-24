@@ -1,6 +1,4 @@
 import AudioImportAPI
-import AudioImportSessionAdapter
-import AudioFileAVFoundation
 import LiveReader
 import RemoteControlCore
 import RemoteControlSessionAdapter
@@ -75,25 +73,6 @@ enum AppComposition {
             models: productionModels,
             modelPreparation: services.modelPreparation
         )
-    }
-
-    private static func makeAudioImporter(
-        services: AppServiceGraph,
-        directories: AppDirectories
-    ) -> any AudioImporting {
-        ImportedAudioTranscriber(inputDeviceID: FileAudioCaptureProvider.inputID) { url, mode in
-            LiveSessionCoordinator(
-                dependencies: try services.makeSessionDependencies(
-                    directories: directories,
-                    capture: FileAudioCaptureProvider(url: url),
-                    settings: ImportedAudioSettingsStore(base: services.settings, mode: mode)
-                ),
-                models: productionModels,
-                modelPreparation: services.modelPreparation,
-                sessionKind: .importedAudio,
-                sessionTitle: url.deletingPathExtension().lastPathComponent
-            )
-        }
     }
 
     private static func makeRemoteServices(

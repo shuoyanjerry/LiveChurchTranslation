@@ -56,6 +56,10 @@ public final class SessionLibraryViewModel: ObservableObject {
 
     public func deleteSelected() async {
         guard let id = selectedSessionID else { return }
+        guard !isImporting else {
+            presentedError = "请等待当前音频处理完成。"
+            return
+        }
         do {
             guard !(await store.isSessionActive(sessionID: id)) else {
                 selectedSessionIsActive = true
@@ -98,6 +102,10 @@ public final class SessionLibraryViewModel: ObservableObject {
 
     func recentSessionSummaries() async throws -> [StoredSessionSummary] {
         try await store.recentSessions(limit: 500)
+    }
+
+    func sessionIsActive(_ id: UUID) async -> Bool {
+        await store.isSessionActive(sessionID: id)
     }
 
     func applyImportRefresh(

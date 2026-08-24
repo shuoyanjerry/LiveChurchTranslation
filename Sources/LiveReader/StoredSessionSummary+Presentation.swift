@@ -9,15 +9,27 @@ extension StoredSessionSummary {
     }
 
     var languagePair: String {
-        if let mode = TranslationMode(
-            sourceLanguageTag: sourceLanguage,
-            targetLanguageTag: targetLanguage
-        ) {
+        if let mode = storedTranslationMode {
             return mode.displayName
         }
         return "\(sourceLanguage.localizedLanguageName) → \(targetLanguage.localizedLanguageName)"
     }
 
+    var storedTranslationMode: TranslationMode? {
+        TranslationMode(
+            sourceLanguageTag: sourceLanguage,
+            targetLanguageTag: targetLanguage
+        )
+    }
+
+    var hasIncompleteSpeechSegments: Bool {
+        pendingRecordCount > 0 || rejectedSentenceCount > 0
+    }
+
+    var retranscriptionTitle: String {
+        let suffix = "（重新听抄）"
+        return displayTitle.hasSuffix(suffix) ? displayTitle : displayTitle + suffix
+    }
 }
 
 extension String {
