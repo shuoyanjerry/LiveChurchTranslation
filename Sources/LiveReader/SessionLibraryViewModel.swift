@@ -57,7 +57,7 @@ public final class SessionLibraryViewModel: ObservableObject {
     public func deleteSelected() async {
         guard let id = selectedSessionID else { return }
         guard !isImporting else {
-            presentedError = "请等待当前音频处理完成。"
+            presentedError = "请等待当前音频听抄完成。"
             return
         }
         do {

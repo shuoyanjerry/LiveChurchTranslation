@@ -6,10 +6,11 @@ Live Church Translation is a macOS host application for Chinese-speaking churche
 capture, local inference, recording, transcript persistence, and LAN sharing. Listeners use a
 phone, tablet, or computer browser to read the same live transcript and translation.
 
-The supported directions are:
+The supported live directions and import workflow are:
 
 - Mandarin speech → Simplified Chinese transcript → faithful English translation;
-- English speech → English transcript → faithful Simplified Chinese translation.
+- English speech → English transcript → faithful Simplified Chinese translation;
+- imported Mandarin or English audio → source-language transcript only, with no translation.
 
 GitHub Releases is the only planned distribution channel for now. The code and packaging retain
 App Store-grade sandbox, privacy, signing, and notarization discipline, but no App Store submission
@@ -21,8 +22,9 @@ is authorized. A green build is not permission to publish a Release.
    recordings and sermon text do not leave the Mac.
 2. Capture truth precedes inference. The complete lossless recording and a durable segment ledger
    are the recovery authority when ASR or translation fails.
-3. No silent omission is allowed. A persisted speech segment must end as translated, pending, or
-   explicitly incomplete; it must never disappear as an apparent success.
+3. No silent omission is allowed. A persisted live speech segment must end as translated, pending,
+   or explicitly incomplete; a successfully imported segment must end as source-transcribed. A
+   segment must never disappear as an apparent success.
 4. “Spiritual” translation means faithful church register, not doctrinal invention. Negation,
    names, numbers, Scripture references, and reviewed terminology must be preserved. Ambiguous
    gender is not guessed.
@@ -39,11 +41,11 @@ The repository already provides continuous PCM16 CAF recording, crash-safe pre-i
 source-only JSONL and Markdown transcripts, a searchable session library, recording playback, bidirectional
 mode selection, multi-format AVFoundation import, and token-protected LAN Safari reading.
 
-The 2026-08-24 local quality run on commit `42db090` passed the 103-target architecture and
+The earlier 2026-08-24 local quality run on commit `42db090` passed the 103-target architecture and
 dependency checks, licensing, formatting, strict SwiftLint across 1,224 Swift files, a
 warnings-as-errors build, static dead-code analysis, 17 notarization tests, 4 endpoint packet
-tests, and 1,112 Swift tests. Full-Xcode-only project checks remain pending because this machine
-currently exposes Command Line Tools rather than Xcode.
+tests, and 1,112 Swift tests. At that point, Full-Xcode-only project checks were still pending. The
+current validation result below supersedes that tooling limitation.
 
 The real Hy-MT2 smoke lane on `42db090` passed four Mandarin-to-English theological fixtures,
 three Mandarin-to-English pronoun fixtures, and twenty-four English-to-Simplified-Chinese theological
@@ -136,12 +138,14 @@ Recording duration is separate from the processing phase. Passage
 timestamps remain recorded and visible by default but may be hidden independently in each reader;
 hiding them never changes persisted timing.
 
-The corrected tree passed the complete command-line gate on 2026-08-24, including non-zero `Data`
+The corrected tree passed the complete Xcode 26.6 quality gate on macOS 26.6.2 on 2026-08-24,
+including non-zero `Data`
 index, receive-split/coalesced frame, extended-length, malformed-frame, heartbeat, reconnect,
 revocation, sharing stop/restart, progress-presentation, and timestamp-persistence automation.
-Qualification remains **pending** for a full-Xcode build and repeated iPhone, iPad, and Mac Safari
-cycles on that built app. Until those results are recorded, this incident remains a release blocker;
-no previous packaging or loopback result transfers to the corrected tree.
+The run covered 1,164 Swift tests; Swift 6.1 compatibility additionally passed a complete
+`ChurchTranslatorApp` build and 45 focused tests. Qualification remains **pending** for repeated
+iPhone, iPad, and Mac Safari cycles on the built app. Until those results are recorded, this incident
+remains a release blocker; no previous packaging or loopback result transfers to the corrected tree.
 
 ## Release gates
 

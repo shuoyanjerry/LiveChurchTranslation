@@ -78,6 +78,7 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
     private let outputs: [String]?
     private var requests: [TranslationRequest] = []
     private var loads = 0
+    private var runtimeChecks = 0
     private var runtimeIsReady = false
 
     init(
@@ -123,8 +124,12 @@ actor FakeHyTranslationProvider: TranslationProvider, ModelRuntimeHealthChecking
     }
 
     func shutdown() { runtimeIsReady = false }
-    func isModelRuntimeReady() -> Bool { runtimeIsReady }
+    func isModelRuntimeReady() -> Bool {
+        runtimeChecks += 1
+        return runtimeIsReady
+    }
     func markRuntimeUnavailable() { runtimeIsReady = false }
     func loadCount() -> Int { loads }
+    func runtimeCheckCount() -> Int { runtimeChecks }
     func receivedRequests() -> [TranslationRequest] { requests }
 }

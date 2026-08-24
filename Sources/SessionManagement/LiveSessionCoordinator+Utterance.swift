@@ -16,7 +16,7 @@ struct SegmentProcessingOutcome: Sendable {
 }
 
 private enum LiveSentenceProcessingResult {
-    case translated(TranscriptEntry)
+    case committed(TranscriptEntry)
     case rejected(TerminalSentenceRejection)
     case deferred(UtteranceProcessingFailure)
 }
@@ -29,7 +29,7 @@ extension LiveSessionCoordinator {
         let segment = record.segment
         transitionWhileActive(to: .recognizing, message: "正在识别语音…")
         do {
-            let outcome = try await translate(record, sessionID: sessionID)
+            let outcome = try await process(record, sessionID: sessionID)
             try await completeRecovery(record, outcome: outcome)
         } catch let failure as UtteranceProcessingFailure {
             await handle(failure, for: record)
@@ -62,7 +62,7 @@ extension LiveSessionCoordinator {
         }
     }
 
-    private func translate(
+    private func process(
         _ record: PendingUtteranceRecord,
         sessionID: UUID
     ) async throws -> SegmentProcessingOutcome {
@@ -72,14 +72,14 @@ extension LiveSessionCoordinator {
         var rejections: [TerminalSentenceRejection] = []
         var deferredFailure: UtteranceProcessingFailure?
         for (ordinal, sentence) in sentences.enumerated() {
-            transitionWhileActive(to: .translating, message: "正在忠实翻译…")
+            transitionForRecognizedSource()
             switch try await processSentence(
                 sentence,
                 ordinal: ordinal,
                 sessionID: sessionID
             ) {
-            case .translated(let entry):
-                publishTranslated(entry, sentenceTail: sentence.utterance.endedAt)
+            case .committed(let entry):
+                publishCommitted(entry, sentenceTail: sentence.utterance.endedAt)
                 finalEntry = entry
             case .rejected(let rejection):
                 rejections.append(rejection)
@@ -113,9 +113,13 @@ extension LiveSessionCoordinator {
         sessionID: UUID
     ) async throws -> LiveSentenceProcessingResult {
         do {
-            return .translated(
-                try await utteranceProcessor.translate(sentence, sessionID: sessionID)
-            )
+            let entry =
+                if processingPolicy.transcribesOnly {
+                    try await utteranceProcessor.transcribe(sentence, sessionID: sessionID)
+                } else {
+                    try await utteranceProcessor.translate(sentence, sessionID: sessionID)
+                }
+            return .committed(entry)
         } catch let failure as UtteranceProcessingFailure {
             return try await sentenceFailureResult(failure, sentence: sentence, ordinal: ordinal)
         }
@@ -128,10 +132,10 @@ extension LiveSessionCoordinator {
     ) async throws -> LiveSentenceProcessingResult {
         switch failure.impact {
         case .retryableUtterance:
-            await utteranceProcessor.acceptSourceDiscourse(afterTerminalTranslation: sentence)
+            await utteranceProcessor.acceptSourceDiscourse(afterTerminalOutcome: sentence)
             return .deferred(failure)
         case .terminalUtterance:
-            await utteranceProcessor.acceptSourceDiscourse(afterTerminalTranslation: sentence)
+            await utteranceProcessor.acceptSourceDiscourse(afterTerminalOutcome: sentence)
             return .rejected(
                 TerminalSentenceRejection(
                     receipt: rejectionReceipt(
@@ -147,31 +151,4 @@ extension LiveSessionCoordinator {
         }
     }
 
-    private func publishTranslated(_ entry: TranscriptEntry, sentenceTail: Duration) {
-        state.append(entry)
-        publish(.transcriptAppended(entry))
-        recordVisibility(of: entry, sentenceTail: sentenceTail)
-    }
-
-    private func transitionWhileActive(to phase: LiveSessionPhase, message: String) {
-        guard isActive else { return }
-        state.transition(to: phase, message: message)
-        publishState()
-    }
-
-    private func recordVisibility(
-        of entry: TranscriptEntry,
-        sentenceTail: Duration
-    ) {
-        guard let anchor = sentenceAudioTimelineAnchor else { return }
-        let event = SentenceRealtimePolicy.diagnostic(
-            sourceSegmentSequence: entry.sourceSegmentSequence ?? 0,
-            presentationSequence: entry.sequence,
-            sentenceTail: sentenceTail,
-            tailObservedAt: anchor.monotonicTime(for: sentenceTail),
-            visibleAt: sentenceVisibilityClock.now()
-        )
-        let diagnostics = dependencies.diagnostics
-        Task { await diagnostics.record(event) }
-    }
 }

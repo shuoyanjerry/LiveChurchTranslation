@@ -1,3 +1,4 @@
+import AudioImportAPI
 import Foundation
 @testable import LiveReader
 import Testing
@@ -32,9 +33,9 @@ import TranscriptAPI
         #expect(english.recognitionLanguage == "识别语言：英语")
         #expect(unknown.recognitionLanguage == "识别语言：法语")
         #expect(unsupportedPair.recognitionLanguage == "识别语言：普通话")
-        #expect(mandarin.storedTranslationMode == .mandarinToEnglish)
-        #expect(english.storedTranslationMode == .englishToSimplifiedChinese)
-        #expect(unsupportedPair.storedTranslationMode == nil)
+        #expect(mandarin.storedRecognitionMode == .mandarinToEnglish)
+        #expect(english.storedRecognitionMode == .englishToSimplifiedChinese)
+        #expect(unsupportedPair.storedRecognitionMode == .mandarinToEnglish)
     }
 
     @Test func searchMatchesSourceLanguageButNotTargetLanguage() async {
@@ -59,5 +60,43 @@ import TranscriptAPI
     @Test func deletionCopyDoesNotClaimTranslationsAreStored() {
         #expect(SessionLibraryPresentation.deletionMessage == "听抄稿和完整录音将从此 Mac 删除，且无法恢复。")
         #expect(!SessionLibraryPresentation.deletionMessage.contains("翻译"))
+    }
+
+    @Test func audioImportCopyPromisesSourceTranscriptionOnly() {
+        #expect(
+            SessionLibraryPresentation.importLanguageLabel(for: .mandarinToEnglish)
+                == "普通话录音"
+        )
+        #expect(
+            SessionLibraryPresentation.importLanguageLabel(for: .englishToSimplifiedChinese)
+                == "英语录音"
+        )
+        #expect(SessionLibraryPresentation.importHelp == "选择录音语言，只生成听抄稿，不会翻译。")
+        #expect(!SessionLibraryPresentation.importHelp.contains("方向"))
+        #expect(
+            AudioImportError.liveSessionRunning.errorDescription
+                == "请先停止当前现场会话，再导入并听抄音频文件。"
+        )
+    }
+
+    @Test func liveSessionMustStopBeforeImport() async {
+        let unexpected = librarySummary()
+        let store = SessionLibraryStoreFake()
+        let viewModel = SessionLibraryViewModel(
+            store: store,
+            recoveryArtifacts: SessionLibraryRecoveryArtifactsFake()
+        )
+        let importer = SessionLibraryImporterFake { await store.add(unexpected) }
+
+        await viewModel.importAudio(
+            from: URL(fileURLWithPath: "/tmp/import.wav"),
+            mode: .mandarinToEnglish,
+            using: importer,
+            liveSessionIsRunning: true
+        )
+
+        #expect(viewModel.sessions.isEmpty)
+        #expect(viewModel.presentedError == "请先停止当前现场会话。")
+        #expect(await store.recentCallCount() == 0)
     }
 }

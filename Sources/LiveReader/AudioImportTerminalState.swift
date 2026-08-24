@@ -26,8 +26,8 @@ enum AudioImportTerminalState {
         case (.savedIncomplete, true): "录音已保存，听抄未完整。"
         case (.savedIncomplete, false):
             "录音已保存，听抄未完整。资料库暂未更新，请重试。"
-        case (.failed, true): "音频处理未完成，请重试。"
-        case (.failed, false): "音频处理未完成，资料库暂未更新，请重试。"
+        case (.failed, true): "音频听抄未完成，请重试。"
+        case (.failed, false): "音频听抄未完成，资料库暂未更新，请重试。"
         }
     }
 }

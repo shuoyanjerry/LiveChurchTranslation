@@ -18,8 +18,12 @@ import TranscriptAPI
         _ = try await harness.run(timeout: .seconds(15))
 
         #expect((await harness.asr.receivedRequests()).count == frames.count)
-        #expect((await harness.translator.receivedRequests()).count == frames.count)
-        #expect((await harness.store.appendedEntries()).count == frames.count)
+        #expect((await harness.translator.receivedRequests()).isEmpty)
+        #expect(await harness.translator.loadCount() == 0)
+        #expect(await harness.translator.runtimeCheckCount() == 0)
+        let entries = await harness.store.appendedEntries()
+        #expect(entries.count == frames.count)
+        #expect(entries.allSatisfy { $0.isSourceOnly })
         #expect((await harness.recoveryStore.completedIDs()).count == frames.count)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect((await harness.coordinator.currentSnapshot()).finalizationOutcome == .saved)
@@ -53,10 +57,10 @@ import TranscriptAPI
         #expect(finalization.pendingRecordCount == frames.count)
     }
 
-    @Test func missingSafeOutputContinuesWholeImportAndRemainsRecoverable() async throws {
+    @Test func unavailableTranslationRuntimeDoesNotAffectImport() async throws {
         let frames = Self.frames(count: 3)
         let harness = SessionTestHarness(
-            translationRejectsFirstOutput: true,
+            translationFails: true,
             emitsEveryFrame: true,
             audioFrames: frames,
             sessionKind: .importedAudio
@@ -65,26 +69,19 @@ import TranscriptAPI
         _ = try await harness.run()
 
         let snapshot = await harness.coordinator.currentSnapshot()
-        guard case .failed(let message) = snapshot.phase else {
-            Issue.record("Expected the recoverable import to be incomplete")
-            return
-        }
-        #expect(message == "音频听抄未完成。未完成的片段已保留，稍后可自动恢复。")
-        #expect(snapshot.statusMessage == message)
-        #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 1))
-        #expect(snapshot.issues.count == 1)
-        #expect(snapshot.issues.first?.stage == .translation)
-        #expect(snapshot.issues.first?.isRecoverable == true)
+        #expect(snapshot.finalizationOutcome == .saved)
         #expect((await harness.asr.receivedRequests()).count == frames.count)
-        #expect((await harness.translator.receivedRequests()).count == frames.count)
-        #expect((await harness.store.appendedEntries()).count == frames.count - 1)
-        #expect((await harness.recoveryStore.pendingRecords()).count == 1)
+        #expect((await harness.translator.receivedRequests()).isEmpty)
+        #expect(await harness.translator.loadCount() == 0)
+        #expect(await harness.translator.runtimeCheckCount() == 0)
+        #expect((await harness.store.appendedEntries()).allSatisfy { $0.isSourceOnly })
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect((await harness.recoveryStore.terminalRejections()).isEmpty)
         #expect((await harness.recordingStore.recordedFrames()) == frames)
         #expect(await harness.coordinator.diskRecoveryMode == nil)
         let finalization = try #require(await harness.store.transcriptFinalizations().last)
-        #expect(finalization.integrity == .incomplete)
-        #expect(finalization.pendingRecordCount == 1)
+        #expect(finalization.integrity == .complete)
+        #expect(finalization.pendingRecordCount == 0)
         #expect(finalization.rejections.isEmpty)
     }
 
@@ -133,11 +130,10 @@ import TranscriptAPI
 }
 
 extension ImportedAudioCompletenessTests {
-    @Test func reviewedFallbackCompletesImportButStaysOutOfTranslationContext() async throws {
+    @Test func everyImportedSegmentCommitsOnlyRecognizedSource() async throws {
         let frames = Self.frames(count: 2)
         let harness = SessionTestHarness(
             recognizedTexts: ["第一句。", "第二句。"],
-            translationReviewedRequestIndices: [0],
             emitsEveryFrame: true,
             audioFrames: frames,
             sessionKind: .importedAudio
@@ -145,13 +141,11 @@ extension ImportedAudioCompletenessTests {
 
         _ = try await harness.run()
 
-        let requests = await harness.translator.receivedRequests()
-        #expect(requests.count == 2)
-        #expect(requests[1].context.isEmpty)
+        #expect((await harness.translator.receivedRequests()).isEmpty)
         let entries = await harness.store.appendedEntries()
         #expect(entries.count == 2)
-        #expect(entries[0].translationReview?.issueCodes == ["quality.pronoun_alignment"])
-        #expect(entries[1].translationReview == nil)
+        #expect(entries.map(\.sourceText) == ["第一句。", "第二句。"])
+        #expect(entries.allSatisfy { $0.isSourceOnly })
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         #expect(await harness.coordinator.currentSnapshot().finalizationOutcome == .saved)
     }
@@ -165,5 +159,11 @@ extension ImportedAudioCompletenessTests {
                 timestamp: .milliseconds(Int64(index * 20))
             )
         }
+    }
+}
+
+extension TranscriptEntry {
+    fileprivate var isSourceOnly: Bool {
+        targetText.isEmpty && translationReview == nil && translationMilliseconds == 0
     }
 }

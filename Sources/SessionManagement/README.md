@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Orchestrates the live audio-to-transcript pipeline as an explicit session state
-machine. It prepares models, captures and segments audio, recognizes and
-translates with glossary context, persists entries, replays recoverable utterances, and drains work during
-stop. Mandarin source text additionally passes through literal normalization and conservative discourse
+Orchestrates bilingual live sessions and source-only imported-audio transcription as explicit session
+policies. It prepares the models required by each policy, captures and segments audio, persists entries,
+replays recoverable utterances, and drains work during stop. Live sessions additionally translate with
+glossary context. Mandarin source text passes through literal normalization and conservative discourse
 resolution; English source text bypasses those Mandarin-only correction stages.
 
 ## Public API
@@ -19,9 +19,10 @@ turns and pronoun/gender decisions never enter this channel. Finalized source/ta
 pairs are bounded translation background instead, while occurrence-level pronoun
 evidence travels as immutable typed guidance.
 
-One finalized VAD segment is one translation and presentation unit. Its complete
-recognized text is sent in one translation request, projected to a source-only durable
-entry, and published with its transient translation without punctuation-based splitting. FIFO processing preserves segment
+For live sessions, one finalized VAD segment is one translation and presentation unit. Its complete
+recognized text is sent in one translation request, projected to a source-only durable entry, and
+published with its transient translation without punctuation-based splitting. Imported audio keeps the
+same one-segment source presentation but skips translation entirely. FIFO processing preserves segment
 order. A legacy splitter remains isolated to recovery of records partially persisted
 by releases that created multiple sentence entries for one segment. Durable recovery
 schema v1 predates a topology marker, so replay resolves it from already persisted
@@ -47,7 +48,7 @@ download, and failed automatic preparation uses two bounded retries.
 For live sessions, private recording and capture start before model preparation;
 VAD segments are staged durably but inference workers remain closed until both
 models are ready. Recovery replay excludes the current session so newly staged
-speech is processed exactly once. Imported files retain model-first capture.
+speech is processed exactly once. Imported files retain model-first capture after ASR alone is ready.
 The live inference backlog is a constant-time ring buffer bounded to 32 staged
 speech segments and five minutes of 16 kHz PCM. If either limit is reached, or a
 downstream segment fails, the session switches to disk-recovery mode. Existing
@@ -60,8 +61,8 @@ loading the next, so a large disk backlog never reconstructs every PCM segment
 in memory at once.
 
 Imported files use a separate completeness policy. File decoding pauses at each
-speech boundary until recognition, translation, source-record persistence, and
-recovery acknowledgement finish. This keeps memory bounded without applying
+speech boundary until recognition, source-record persistence, and recovery acknowledgement finish.
+Translation is never prepared or invoked. This keeps memory bounded without applying
 the live backlog cutoff to an offline source. Any failed segment, non-durable
 segment, cancellation, or early source termination makes the import explicitly
 failed; it cannot be reported as a complete transcript.
@@ -104,5 +105,6 @@ remains recoverable on disk.
 Segment tests prove that punctuation-rich recognition is translated and published as
 one complete entry. Compatibility tests cover deterministic legacy identities and
 partial recovery without duplicate translation.
-Import tests cover fast sources, inference and recovery-store failures, complete
-recording retention, and early cancellation without false success.
+Import tests cover fast sources, zero translation calls, ASR-only model preparation, source-only recovery,
+inference and recovery-store failures, complete recording retention, and early cancellation without false
+success.

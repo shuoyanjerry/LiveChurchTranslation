@@ -49,7 +49,7 @@ struct SessionLibraryDetail: View {
                     IncompleteTranscriptNotice(
                         presentation: presentation,
                         canRetranscribe: viewModel.recordingURL(for: summary) != nil
-                            && summary.storedTranslationMode != nil,
+                            && summary.storedRecognitionMode != nil,
                         isDisabled: viewModel.isImporting || viewModel.selectedSessionIsActive,
                         action: { onRetranscribe(summary) }
                     )

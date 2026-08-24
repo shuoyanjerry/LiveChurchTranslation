@@ -5,14 +5,33 @@ import ModelRuntimeAPI
 import SessionManagementAPI
 import TranslationAPI
 
+public enum InferenceModelPreparationScope: Sendable {
+    case speechRecognition
+    case speechAndTranslation
+
+    var requiresTranslation: Bool { self == .speechAndTranslation }
+
+    var preparingMessage: String {
+        switch self {
+        case .speechRecognition: "正在准备本地语音识别模型…"
+        case .speechAndTranslation: "正在准备本地语音与翻译模型…"
+        }
+    }
+
+    var readyMessage: String {
+        switch self {
+        case .speechRecognition: "本地语音识别模型已就绪"
+        case .speechAndTranslation: "本地语音与翻译模型已就绪"
+        }
+    }
+}
+
 public actor InferenceModelPreparationCoordinator: ModelPreparationController {
     let pipeline: InferenceModelPreparationPipeline
     let descriptors: [ModelDescriptor]
+    let scope: InferenceModelPreparationScope
     private let retryDelays: [Duration]
-    var snapshot = ModelPreparationSnapshot(
-        phase: .idle,
-        message: "正在准备本地语音与翻译模型…"
-    )
+    var snapshot: ModelPreparationSnapshot
     var preparation: ActiveModelPreparation?
     private var automaticPreparation: AutomaticModelPreparation?
     var progressByModel: [ModelID: Double] = [:]
@@ -26,6 +45,7 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
         asr: any ASRProvider,
         translator: any TranslationProvider,
         models: SessionModelDescriptors,
+        scope: InferenceModelPreparationScope = .speechAndTranslation,
         retryDelays: [Duration] = [.seconds(2), .seconds(5)]
     ) {
         pipeline = InferenceModelPreparationPipeline(
@@ -33,9 +53,18 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
             modelReporter: modelReporter,
             asr: asr,
             translator: translator,
-            models: models
+            models: models,
+            scope: scope
         )
-        descriptors = [models.speechRecognition, models.translation]
+        descriptors =
+            scope.requiresTranslation
+            ? [models.speechRecognition, models.translation]
+            : [models.speechRecognition]
+        self.scope = scope
+        snapshot = ModelPreparationSnapshot(
+            phase: .idle,
+            message: scope.preparingMessage
+        )
         self.retryDelays = retryDelays
     }
 

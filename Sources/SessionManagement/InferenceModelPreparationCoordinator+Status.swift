@@ -42,7 +42,7 @@ extension InferenceModelPreparationCoordinator {
             publish(
                 ModelPreparationSnapshot(
                     phase: .ready,
-                    message: "本地语音与翻译模型已就绪"
+                    message: scope.readyMessage
                 )
             )
             pending.forEach { $0.resume() }

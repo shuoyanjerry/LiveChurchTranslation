@@ -2,14 +2,20 @@
 
 ## Product boundary
 
-Live Church Translation has one language-directed pipeline:
+Live Church Translation has separate live and imported-audio policies over shared speech
+recognition infrastructure:
 
 ```text
-selected microphone or imported audio
+selected microphone
   → language-scoped speech segmentation and ASR
   → Mandarin-only conservative source correction and discourse evidence, when applicable
   → faithful translation into English or Simplified Chinese
   → source-only durable transcript + bilingual continuous reader
+
+imported audio
+  → language-scoped speech segmentation and ASR
+  → Mandarin-only conservative source correction and discourse evidence, when applicable
+  → source-only durable transcript (no translation)
 ```
 
 It does not summarize, generate sermon content, mix audio, render worship slides, or
@@ -60,7 +66,7 @@ files over 200 lines.
 | `TranslationAPI` | `TranslationHyMT2`, optional `TranslationApple` | Translation requests/results, two-entry context values, Hy-MT2 runtime and integrity guards |
 | `TranscriptAPI` | `TranscriptCore` | Immutable raw/normalized/audited bilingual entries and actor-owned live buffer |
 | `PersistenceAPI` | `PersistenceFileSystem` | Replaceable source-only JSONL/Markdown session adapter with legacy-content migration |
-| `AudioImportAPI` | `AudioImportSessionAdapter` | File-import lifecycle, direction-scoped settings, completion validation, and cancellation |
+| `AudioImportAPI` | `AudioImportSessionAdapter` | Source-language transcription lifecycle, speech-only session policy, completion validation, and cancellation |
 
 ### Models, settings, and operations
 
@@ -145,7 +151,9 @@ The speech-segment path is ordered deliberately:
    correction. Stable VAD source-segment identity, rather than dense UI ordinals, orders the bounded
    context. Every path carries raw source text plus any accepted changes and their evidence into
    `TranscriptEntry`; ambiguity causes abstention, not a guess.
-4. Hy-MT2 receives the complete recognized text for the current VAD segment in one
+   The imported-audio policy proceeds directly from this recognition result to source persistence
+   in step 6. It never prepares or invokes translation and never publishes a target-language value.
+4. For live sessions, Hy-MT2 receives the complete recognized text for the current VAD segment in one
    request, matched glossary terms, and at most the latest two prior finalized,
    validator-approved pairs from the current process. Context is marked as non-output background;
    only the separately delimited current source may be translated. Occurrence-level,
@@ -155,7 +163,7 @@ The speech-segment path is ordered deliberately:
    stereotypes and permits singular `they` when evidence is absent. This mechanism reduces
    silent gender substitution; it does not make the still-failing translation corpus
    production-qualified.
-5. Output guards withhold only empty output, exact source echo, explicit model refusal, and
+5. Live-translation output guards withhold only empty output, exact source echo, explicit model refusal, and
    prompt/protocol leakage. Length, script, glossary, number, structurally detectable negation,
    Scripture-reference, and pronoun findings trigger one strict retry; a safe non-empty candidate
    is still returned in full with backend-only review codes. These checks are defect detectors,

@@ -2,13 +2,14 @@
 
 ## Purpose
 
-Adapts a selected audio file to the regular session controller while preserving the requested import
-direction, complete finalization checks, and cooperative cancellation.
+Adapts a selected audio file to a speech-only session while preserving its requested recognition
+language, complete finalization checks, and cooperative cancellation. Import never requests or
+publishes translation.
 
 ## Public API
 
 - `ImportedAudioTranscriber` drives one injected session controller at a time.
-- `ImportedAudioSettingsStore` scopes the chosen direction to the imported session.
+- `ImportedAudioSettingsStore` scopes the chosen recognition language to the imported session.
 - `AudioImportCompletionValidator` rejects incomplete finalization outcomes.
 
 ## Dependencies
@@ -28,5 +29,5 @@ session finalization is surfaced as `AudioImportError`.
 
 ## Tests
 
-`AudioImportSessionAdapterTests` covers completion outcomes, direction isolation, and cancellation
-races.
+`AudioImportSessionAdapterTests` covers speech-only processing, recognition-language isolation,
+completion outcomes, and cancellation races.

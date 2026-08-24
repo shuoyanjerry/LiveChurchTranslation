@@ -8,10 +8,15 @@ import UtteranceRecoveryAPI
 extension UtteranceRecoveryReplayer {
     func replayRecord(
         _ record: PendingUtteranceRecord,
-        entries: inout [TranscriptEntry]
+        entries: inout [TranscriptEntry],
+        processingStyle: RecoveredSessionProcessingStyle = .translated
     ) async -> RecoveryRecordReplayResult {
         do {
-            let rejections = try await replaySentences(record, entries: &entries)
+            let rejections = try await replaySentences(
+                record,
+                entries: &entries,
+                processingStyle: processingStyle
+            )
             return try await resolvedReplayResult(for: record, rejections: rejections)
         } catch is CancellationError {
             return .blockedWithoutIssue
@@ -29,19 +34,11 @@ extension UtteranceRecoveryReplayer {
 
     private func replaySentences(
         _ record: PendingUtteranceRecord,
-        entries: inout [TranscriptEntry]
+        entries: inout [TranscriptEntry],
+        processingStyle: RecoveredSessionProcessingStyle
     ) async throws -> [TerminalSentenceRejection] {
         let context = contextEntries(from: entries, before: record.id.sequenceNumber)
-        let recognizedInputs = try await processor.recognize(
-            record.segment,
-            discourseContext: context.discourse
-        )
-        let inputs = try await processor.recoveryInputs(
-            for: recognizedInputs,
-            record: record,
-            archivedEntries: entries
-        )
-        try requireProcessableInputs(inputs)
+        let inputs = try await recoveryInputs(for: record, entries: entries, context: context)
         var translationContext = context.translation
         var rejections: [TerminalSentenceRejection] = []
         for (ordinal, input) in inputs.enumerated() {
@@ -50,11 +47,14 @@ extension UtteranceRecoveryReplayer {
                 continue
             }
             let result = try await recoverSentence(
-                input,
+                RecoveredSentenceRequest(
+                    input: input,
+                    context: translationContext,
+                    presentationSequence: context.presentationSequence + ordinal,
+                    ordinal: ordinal,
+                    processingStyle: processingStyle
+                ),
                 record: record,
-                context: translationContext,
-                presentationSequence: context.presentationSequence + ordinal,
-                ordinal: ordinal
             )
             switch result {
             case .entry(let entry):
@@ -65,6 +65,24 @@ extension UtteranceRecoveryReplayer {
             }
         }
         return rejections
+    }
+
+    private func recoveryInputs(
+        for record: PendingUtteranceRecord,
+        entries: [TranscriptEntry],
+        context: RecoveryProcessingContext
+    ) async throws -> [UtteranceProcessor.RecognizedInput] {
+        let recognized = try await processor.recognize(
+            record.segment,
+            discourseContext: context.discourse
+        )
+        let inputs = try await processor.recoveryInputs(
+            for: recognized,
+            record: record,
+            archivedEntries: entries
+        )
+        try requireProcessableInputs(inputs)
+        return inputs
     }
 
     private func requireProcessableInputs(
@@ -115,37 +133,6 @@ extension UtteranceRecoveryReplayer {
         entries.first { $0.id == input.utterance.sourceSegmentID }
     }
 
-    private func recoverSentence(
-        _ input: UtteranceProcessor.RecognizedInput,
-        record: PendingUtteranceRecord,
-        context: [TranslationContextEntry],
-        presentationSequence: Int,
-        ordinal: Int
-    ) async throws -> RecoveredSentenceResult {
-        do {
-            return .entry(
-                try await processor.recoverEntry(
-                    record,
-                    input: input,
-                    translationContext: context,
-                    presentationSequence: presentationSequence
-                )
-            )
-        } catch let failure as UtteranceProcessingFailure {
-            guard failure.impact == .terminalUtterance else { throw failure }
-            return .rejection(
-                TerminalSentenceRejection(
-                    receipt: rejectionReceipt(
-                        sentenceID: input.utterance.sourceSegmentID,
-                        ordinal: ordinal,
-                        failure: failure
-                    ),
-                    failure: failure
-                )
-            )
-        }
-    }
-
     private func appendContext(
         _ entry: TranscriptEntry,
         to context: inout [TranslationContextEntry]
@@ -164,9 +151,4 @@ extension UtteranceRecoveryReplayer {
             context.removeFirst(context.count - 2)
         }
     }
-}
-
-private enum RecoveredSentenceResult {
-    case entry(TranscriptEntry)
-    case rejection(TerminalSentenceRejection)
 }

@@ -3,7 +3,7 @@ import SettingsAPI
 import Testing
 
 @Suite struct ImportedAudioSettingsStoreTests {
-    @Test func overridesOnlyTheImportedSessionDirection() async throws {
+    @Test func overridesOnlyTheImportedRecognitionLanguage() async throws {
         let base = ImportedSettingsStoreStub(
             AppSettings(
                 translationMode: .mandarinToEnglish,

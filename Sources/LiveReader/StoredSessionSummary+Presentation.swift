@@ -12,11 +12,8 @@ extension StoredSessionSummary {
         "识别语言：\(sourceLanguage.recognitionLanguageName)"
     }
 
-    var storedTranslationMode: TranslationMode? {
-        TranslationMode(
-            sourceLanguageTag: sourceLanguage,
-            targetLanguageTag: targetLanguage
-        )
+    var storedRecognitionMode: TranslationMode? {
+        sourceLanguage.recognitionMode
     }
 
     var hasIncompleteSpeechSegments: Bool {
@@ -32,15 +29,26 @@ extension StoredSessionSummary {
 extension String {
     fileprivate var nonEmpty: String? { isEmpty ? nil : self }
 
+    fileprivate var recognitionMode: TranslationMode? {
+        let tag = lowercased().replacingOccurrences(of: "_", with: "-")
+        let isMandarin =
+            tag == "zh" || tag == "zh-hans" || tag.hasPrefix("zh-hans-")
+            || tag == "zh-cn" || tag.hasPrefix("zh-cn-")
+        if isMandarin {
+            return .mandarinToEnglish
+        }
+        if tag == "en" || tag.hasPrefix("en-") {
+            return .englishToSimplifiedChinese
+        }
+        return nil
+    }
+
     fileprivate var recognitionLanguageName: String {
-        let normalized = lowercased().replacingOccurrences(of: "_", with: "-")
-        if normalized == "zh" || normalized == "zh-hans" || normalized.hasPrefix("zh-hans-") {
-            return "普通话"
+        switch recognitionMode {
+        case .mandarinToEnglish: "普通话"
+        case .englishToSimplifiedChinese: "英语"
+        case nil: localizedLanguageName
         }
-        if normalized == "en" || normalized.hasPrefix("en-") {
-            return "英语"
-        }
-        return localizedLanguageName
     }
 
     fileprivate var localizedLanguageName: String {

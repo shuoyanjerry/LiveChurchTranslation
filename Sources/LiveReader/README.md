@@ -16,7 +16,8 @@ The feature contains no audio processing, inference, translation, persistence, o
 Local sharing state and intent are injected from `RemoteSharingFeatureAPI`; this target does not define or
 implement networking contracts.
 Audio-file import intent is injected through `AudioImportAPI`; decoding and session orchestration remain
-outside the presentation target.
+outside the presentation target. The library asks only for the recording language and presents import as
+source-language transcription; it never offers a target language or claims imported translation.
 
 The initial reader task starts model preparation automatically, observes the
 combined ASR and translation progress, and exposes a retry only after bounded
@@ -45,6 +46,8 @@ state; the UI cannot bypass pairing or authorization. Transcript entries remain 
 deleted by this module. The live reader is bilingual; the library presents only recognized source text and
 its source language. It describes complete recordings in user terms and does not expose internal storage
 filenames.
+Audio import and retained-recording retranscription expose only source-language transcription controls.
+Historical target-language metadata is not consulted when restoring the recognition language.
 Language mode and microphone controls are disabled while a session is active, and the recording indicator
 appears only after the capture provider has actually started.
 

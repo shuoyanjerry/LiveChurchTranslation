@@ -53,7 +53,7 @@ enum ImportRefreshFailureScenario: CaseIterable, Equatable, Sendable {
         case .cancelled: "资料库暂未更新，请重试。"
         case .savedIncomplete:
             "录音已保存，听抄未完整。资料库暂未更新，请重试。"
-        case .failed: "音频处理未完成，资料库暂未更新，请重试。"
+        case .failed: "音频听抄未完成，资料库暂未更新，请重试。"
         }
     }
 

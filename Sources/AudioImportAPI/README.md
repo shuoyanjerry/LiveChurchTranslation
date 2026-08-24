@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Defines the app-facing contract for importing a local audio file into the same bilingual session
-pipeline used by live translation.
+Defines the app-facing contract for transcribing a local audio file in its selected source language.
+Imported audio never enters translation; bilingual processing remains exclusive to live sessions.
 
 ## Public API
 
@@ -12,8 +12,9 @@ pipeline used by live translation.
 
 ## Dependencies
 
-`SettingsAPI` supplies the selected translation direction. The contract does not import any capture,
-session, storage, or model implementation.
+`SettingsAPI` supplies the internal mode used to select the recognition language. Its target-language
+field is not an import behavior. The contract does not import any capture, session, storage, or model
+implementation.
 
 ## Threading Model
 

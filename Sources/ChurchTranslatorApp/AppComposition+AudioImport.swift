@@ -16,7 +16,7 @@ extension AppComposition {
                     settings: ImportedAudioSettingsStore(base: services.settings, mode: mode)
                 ),
                 models: productionModels,
-                modelPreparation: services.modelPreparation,
+                modelPreparation: services.transcriptionModelPreparation,
                 sessionKind: .importedAudio,
                 sessionTitle: sessionTitle ?? url.deletingPathExtension().lastPathComponent
             )

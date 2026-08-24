@@ -11,7 +11,8 @@ and can share a read-only live view with paired devices on a trusted local netwo
 - On-device speech recognition and translation with no cloud inference.
 - Selectable audio input, complete local recording, crash recovery, and a searchable
   source-transcript library.
-- Import of WAV, AIFF/AIFC, AAC/M4A, and CAF recordings.
+- Source-language transcription of imported WAV, AIFF/AIFC, AAC/M4A, and CAF recordings;
+  imported audio is never translated.
 - Editable terminology glossaries and automated output validation.
 - A continuous reader with quiet processing status, optional source text and timestamps, and
   **Jump to Live**.
@@ -37,7 +38,8 @@ Python, Node.js, Ollama, or another inference runtime.
 4. Read locally or enable **Share** for paired viewers on a trusted network.
 5. Choose **Stop** to finalize the recording and transcript in **Library**.
 
-Existing recordings can be imported from **Library** for transcription.
+Existing recordings can be imported from **Library** for source-language transcription only. Import
+does not run translation.
 
 ## Privacy and local sharing
 
@@ -54,7 +56,8 @@ See the [privacy policy](PRIVACY.md) for data-handling details.
 
 ## Build and verify
 
-Tested toolchain: Xcode 16.4 (Swift 6.1). The quality gate also requires Python 3 and ripgrep.
+Validated with Xcode 26.6 (Swift 6.3.3). A warnings-as-errors app build and 45 focused compatibility
+tests also pass with Swift 6.1. The quality gate requires Python 3 and ripgrep.
 
 ```sh
 ./Scripts/check.sh

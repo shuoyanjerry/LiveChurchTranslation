@@ -20,6 +20,7 @@ struct SessionPreparer: Sendable {
     let modelPreparation: InferenceModelPreparationCoordinator
     let utteranceProcessor: UtteranceProcessor
     let sessionKind: TranscriptSessionKind
+    let allowsTranslatedRecovery: Bool
     let sessionTitle: String?
 
     func loadMode() async throws -> TranslationMode {
@@ -35,8 +36,8 @@ struct SessionPreparer: Sendable {
         let recoveryIssues = await replayRecoverableUtterances(
             excludingSessionID: excludingSessionID
         )
-        // Replay exercises both inference runtimes. Revalidate them before the
-        // new session starts in case recovery exposed a crashed helper.
+        // Replay exercises every runtime in this session's preparation scope.
+        // Revalidate them before starting in case recovery exposed a failure.
         try await loadModels()
         try Task.checkCancellation()
         // Recovery can temporarily select a prior session's language pair.
@@ -77,7 +78,8 @@ struct SessionPreparer: Sendable {
         await UtteranceRecoveryReplayer(
             dependencies: dependencies,
             processor: utteranceProcessor,
-            excludedSessionID: excludingSessionID
+            excludedSessionID: excludingSessionID,
+            allowsTranslatedSessions: allowsTranslatedRecovery
         ).replay()
     }
 

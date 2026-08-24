@@ -41,7 +41,7 @@ import Testing
         await viewModel.toggleSession()
         #expect(await controller.startCount() == 0)
         #expect(!viewModel.presentsRecordingNotice)
-        #expect(viewModel.presentedError?.contains("音频导入") == true)
+        #expect(viewModel.presentedError?.contains("音频听抄") == true)
     }
 
     @Test func controlsUnlockAfterImportFinishes() async {

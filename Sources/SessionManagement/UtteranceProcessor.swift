@@ -124,7 +124,7 @@ actor UtteranceProcessor {
         }
     }
 
-    func acceptSourceDiscourse(afterTerminalTranslation input: RecognizedInput) {
+    func acceptSourceDiscourse(afterTerminalOutcome input: RecognizedInput) {
         guard input.isFinalInSourceSegment else { return }
         discourseContext.append(
             VerifiedDiscourseTurn(
@@ -152,7 +152,7 @@ extension UtteranceProcessor {
         return resolveDiscourse(normalized, sequence: sequence, context: context)
     }
 
-    private func persist(_ entry: TranscriptEntry, sessionID: UUID) async throws {
+    func persist(_ entry: TranscriptEntry, sessionID: UUID) async throws {
         do {
             try await dependencies.transcriptStore.append(entry, to: sessionID)
         } catch is CancellationError {

@@ -18,7 +18,7 @@ import Testing
         #expect(await harness.recordingStore.recordedFrames() == frames)
         #expect(await harness.processor.frames() == frames)
         #expect((await harness.asr.receivedRequests()).count == 1)
-        #expect((await harness.translator.receivedRequests()).count == 1)
+        #expect((await harness.translator.receivedRequests()).isEmpty)
         #expect((await harness.coordinator.currentSnapshot()).finalizationOutcome == .saved)
     }
 

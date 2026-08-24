@@ -13,7 +13,7 @@ extension SessionLibraryViewModel {
     ) async {
         guard !isImporting else { return }
         guard !liveSessionIsRunning else {
-            presentedError = "请先停止实时翻译。"
+            presentedError = "请先停止当前现场会话。"
             return
         }
         beginAudioImportPresentation()
@@ -33,15 +33,15 @@ extension SessionLibraryViewModel {
     ) async {
         guard summary.hasIncompleteSpeechSegments, !isImporting else { return }
         guard !liveSessionIsRunning else {
-            presentedError = "请先停止实时翻译。"
+            presentedError = "请先停止当前现场会话。"
             return
         }
         guard let recordingURL = recordingURL(for: summary) else {
             presentedError = "完整录音暂时无法打开。现有资料没有受到影响。"
             return
         }
-        guard let mode = summary.storedTranslationMode else {
-            presentedError = "无法确定这份录音的语言方向。现有资料没有受到影响。"
+        guard let mode = summary.storedRecognitionMode else {
+            presentedError = "无法确定这份录音的识别语言。现有资料没有受到影响。"
             return
         }
         beginAudioImportPresentation()

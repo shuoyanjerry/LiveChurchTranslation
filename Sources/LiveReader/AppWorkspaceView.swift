@@ -14,7 +14,7 @@ public struct AppWorkspaceView: View {
     @ObservedObject private var permissionCoordinator: MicrophonePermissionCoordinator
     @State private var selection = WorkspaceSection.live
     @State private var showsAudioImporter = false
-    @State private var pendingImportMode: TranslationMode?
+    @State private var pendingImportRecognitionMode: TranslationMode?
     private let sharingFeature: any LocalSharingFeature
     private let audioImporter: any AudioImporting
 
@@ -82,15 +82,15 @@ public struct AppWorkspaceView: View {
             guard
                 case .success(let urls) = result,
                 let url = urls.first,
-                let mode = pendingImportMode
+                let mode = pendingImportRecognitionMode
             else {
-                pendingImportMode = nil
+                pendingImportRecognitionMode = nil
                 if case .failure(let error) = result, !isUserCancellation(error) {
                     libraryViewModel.presentedError = "无法打开该音频文件。"
                 }
                 return
             }
-            pendingImportMode = nil
+            pendingImportRecognitionMode = nil
             selection = .library
             liveViewModel.setExternalSessionControlLock(true)
             Task {
@@ -109,16 +109,16 @@ public struct AppWorkspaceView: View {
 extension AppWorkspaceView {
     fileprivate func beginAudioImport(mode: TranslationMode) {
         guard !liveViewModel.isRunning else {
-            libraryViewModel.presentedError = "请先停止实时翻译。"
+            libraryViewModel.presentedError = "请先停止当前现场会话。"
             return
         }
-        pendingImportMode = mode
+        pendingImportRecognitionMode = mode
         showsAudioImporter = true
     }
 
     fileprivate func beginRetranscription(_ summary: StoredSessionSummary) {
         guard !liveViewModel.isRunning else {
-            libraryViewModel.presentedError = "请先停止实时翻译。"
+            libraryViewModel.presentedError = "请先停止当前现场会话。"
             return
         }
         guard !libraryViewModel.isImporting else { return }

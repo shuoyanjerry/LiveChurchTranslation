@@ -51,12 +51,14 @@ evidence manifest, and a final DMG smaller than GitHub's 2 GiB asset limit.
 
 Automation does not replace a download test. Before publication, download the exact GitHub asset so
 macOS applies quarantine, then test from a standard non-admin account on at least a base M1/8 GB Mac
-and a newer M-series Mac. Cover macOS 15.0 and the latest supported 15.x release. On each machine:
+and a newer M-series Mac. Cover the minimum macOS 15.0 and the latest supported macOS 26.x release.
+On each machine:
 
 - verify Gatekeeper acceptance, drag copy, eject, offline launch, and bundled-model readiness;
 - approve microphone access and record a saved meeting;
 - run one Mandarin-to-English and one English-to-Simplified-Chinese live segment;
-- import a supported audio file and reopen its transcript and recording;
+- import a supported audio file, confirm it produces source-language transcript text without a
+  translation, and reopen its transcript and recording;
 - quit, relaunch, and repeat model preparation without a download;
 - confirm the native quiet phases, separate recording duration, and visible-by-default timestamp toggle in
   both directions;

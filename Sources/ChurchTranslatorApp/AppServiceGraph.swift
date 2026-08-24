@@ -33,6 +33,7 @@ struct AppServiceGraph {
     let recordings: FileSessionRecordingStore
     let recovery: FileUtteranceRecoveryStore
     let modelPreparation: InferenceModelPreparationCoordinator
+    let transcriptionModelPreparation: InferenceModelPreparationCoordinator
     let diagnostics: InMemoryDiagnosticsRecorder
 
     private let logger: UnifiedLogger
@@ -67,9 +68,9 @@ struct AppServiceGraph {
         self.downloader = downloader
         self.asr = asr
         self.translator = translator
-        modelPreparation = InferenceModelPreparationCoordinator(
-            modelDownloader: downloader,
-            modelReporter: reporter,
+        (modelPreparation, transcriptionModelPreparation) = Self.makeModelPreparations(
+            downloader: downloader,
+            reporter: reporter,
             asr: asr,
             translator: translator,
             models: models

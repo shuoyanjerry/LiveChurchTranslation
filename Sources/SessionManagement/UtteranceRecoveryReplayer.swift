@@ -9,6 +9,19 @@ struct UtteranceRecoveryReplayer: Sendable {
     let dependencies: LiveSessionDependencies
     let processor: UtteranceProcessor
     let excludedSessionID: UUID?
+    let allowsTranslatedSessions: Bool
+
+    init(
+        dependencies: LiveSessionDependencies,
+        processor: UtteranceProcessor,
+        excludedSessionID: UUID?,
+        allowsTranslatedSessions: Bool = true
+    ) {
+        self.dependencies = dependencies
+        self.processor = processor
+        self.excludedSessionID = excludedSessionID
+        self.allowsTranslatedSessions = allowsTranslatedSessions
+    }
 
     func replay() async -> [LiveSessionIssue] {
         do {

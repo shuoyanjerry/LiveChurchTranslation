@@ -10,9 +10,15 @@ struct RecoverySessionCursor {
     let stored: TranscriptSession?
     var entries: [TranscriptEntry]
     let unavailableMessage: String?
+    let processingStyle: RecoveredSessionProcessingStyle?
     var issues = BoundedLiveSessionIssueBuffer()
     var isBlocked = false
     var terminalRejectionCount = 0
+}
+
+enum RecoveredSessionProcessingStyle: Sendable {
+    case sourceOnly
+    case translated
 }
 
 extension UtteranceRecoveryReplayer {
@@ -22,17 +28,16 @@ extension UtteranceRecoveryReplayer {
             else {
                 return unavailableCursor(id: sessionID, message: "找不到对应的听抄稿。")
             }
-            guard
-                let mode = TranslationMode(
-                    sourceLanguageTag: stored.sourceLanguage,
-                    targetLanguageTag: stored.targetLanguage
-                )
-            else {
+            guard let processingStyle = processingStyle(for: stored) else {
+                return skippedCursor(id: sessionID)
+            }
+            guard let mode = recoveryMode(for: stored) else {
                 return RecoverySessionCursor(
                     id: sessionID,
                     stored: stored,
                     entries: stored.entries,
-                    unavailableMessage: "不支持该听抄稿保存的翻译语言组合。"
+                    unavailableMessage: "不支持该听抄稿保存的语音识别语言。",
+                    processingStyle: nil
                 )
             }
             await processor.configure(mode: mode)
@@ -40,7 +45,8 @@ extension UtteranceRecoveryReplayer {
                 id: sessionID,
                 stored: stored,
                 entries: stored.entries,
-                unavailableMessage: nil
+                unavailableMessage: nil,
+                processingStyle: processingStyle
             )
         } catch {
             return unavailableCursor(id: sessionID, message: error.localizedDescription)
@@ -59,7 +65,12 @@ extension UtteranceRecoveryReplayer {
             }
             return
         }
-        let result = await replayRecord(record, entries: &cursor.entries)
+        guard let processingStyle = cursor.processingStyle else { return }
+        let result = await replayRecord(
+            record,
+            entries: &cursor.entries,
+            processingStyle: processingStyle
+        )
         cursor.issues.append(contentsOf: result.issues)
         cursor.isBlocked = result.isBlocked
         let updatedCount = cursor.terminalRejectionCount.addingReportingOverflow(
@@ -96,8 +107,44 @@ extension UtteranceRecoveryReplayer {
             id: id,
             stored: nil,
             entries: [],
-            unavailableMessage: message
+            unavailableMessage: message,
+            processingStyle: nil
         )
+    }
+
+    private func skippedCursor(id: UUID) -> RecoverySessionCursor {
+        RecoverySessionCursor(
+            id: id,
+            stored: nil,
+            entries: [],
+            unavailableMessage: nil,
+            processingStyle: nil
+        )
+    }
+
+    private func processingStyle(
+        for stored: TranscriptSession
+    ) -> RecoveredSessionProcessingStyle? {
+        switch stored.kind {
+        case .importedAudio: .sourceOnly
+        case .live: allowsTranslatedSessions ? .translated : nil
+        }
+    }
+
+    private func recoveryMode(for stored: TranscriptSession) -> TranslationMode? {
+        guard stored.kind == .importedAudio else {
+            return TranslationMode(
+                sourceLanguageTag: stored.sourceLanguage,
+                targetLanguageTag: stored.targetLanguage
+            )
+        }
+        let tag = stored.sourceLanguage.lowercased().replacingOccurrences(of: "_", with: "-")
+        let isMandarin =
+            tag == "zh" || tag == "zh-hans" || tag.hasPrefix("zh-hans-")
+            || tag == "zh-cn" || tag.hasPrefix("zh-cn-")
+        if isMandarin { return .mandarinToEnglish }
+        if tag == "en" || tag.hasPrefix("en-") { return .englishToSimplifiedChinese }
+        return nil
     }
 }
 

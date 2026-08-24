@@ -10,11 +10,13 @@ struct InferenceModelPreparationPipeline: Sendable {
     let asr: any ASRProvider
     let translator: any TranslationProvider
     let models: SessionModelDescriptors
+    let scope: InferenceModelPreparationScope
 
     func runtimesAreReady() async -> Bool {
         let asrIsReady =
             await (asr as? any ModelRuntimeHealthChecking)?
             .isModelRuntimeReady() ?? true
+        guard scope.requiresTranslation else { return asrIsReady }
         let translatorIsReady =
             await (translator as? any ModelRuntimeHealthChecking)?
             .isModelRuntimeReady() ?? true
@@ -42,11 +44,19 @@ struct InferenceModelPreparationPipeline: Sendable {
         }
         try Task.checkCancellation()
         try await loadASR(at: locations.asr, report: report)
-        try await loadTranslation(at: locations.translation, report: report)
+        if let translation = locations.translation {
+            try await loadTranslation(at: translation, report: report)
+        }
         return locations
     }
 
     private func downloadLocations() async throws -> InferenceModelLocations {
+        guard scope.requiresTranslation else {
+            return InferenceModelLocations(
+                asr: try await modelDownloader.ensureAvailable(models.speechRecognition),
+                translation: nil
+            )
+        }
         async let asr = modelDownloader.ensureAvailable(models.speechRecognition)
         async let translation = modelDownloader.ensureAvailable(models.translation)
         let locations = try await (asr, translation)
@@ -97,5 +107,5 @@ struct InferenceModelPreparationPipeline: Sendable {
 
 struct InferenceModelLocations: Sendable {
     let asr: URL
-    let translation: URL
+    let translation: URL?
 }

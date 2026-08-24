@@ -47,9 +47,9 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `DiagnosticsCoreTests` | Bounded in-memory retention, privacy-preserving export permissions, and atomic replacement |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
 | `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, shared disk-space preflight/reservations, atomic install, cancellation, and deduplication |
-| `AudioImportSessionAdapterTests` | Completion outcomes, imported-session direction isolation, concurrent-import rejection, and cancellation races before events, during start, and after capture begins |
+| `AudioImportSessionAdapterTests` | Speech-only import policy, recognition-language isolation, completion outcomes, concurrent-import rejection, and cancellation races before events, during start, and after capture begins |
 | `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
-| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, calm phase/status mapping, separate recording state, visible-by-default/legacy-compatible timestamp preference persistence, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
+| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, source-only import/retranscription presentation, calm phase/status mapping, separate recording state, visible-by-default/legacy-compatible timestamp preference persistence, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
 | `RemotePairingCoreTests` | Session-lived reusable viewer links and grants, bounded operator expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, closed command authorization, stale revisions, concurrent races, replay, and target failure |
 | `RemoteControlSessionAdapterTests` | Remote Start fail-closed policy and authorized stop-only forwarding |
@@ -101,21 +101,23 @@ can be called fixed:
 Automated success is still insufficient because the previous automated loopback path did not
 exercise Safari's frame sequence. On the built final application, repeat pairing, live updates,
 at least two heartbeat intervals, forced Wi-Fi interruption/reconnect, and sharing stop/restart with
-iPhone Safari, iPad Safari, and Mac Safari. Run repeated cycles on macOS 15.5 and the latest
-supported macOS 15.x available. Record app commit/version/build, OS and device versions, cycle
+iPhone Safari, iPad Safari, and Mac Safari. Run repeated cycles on the minimum macOS 15.0 and the
+latest supported macOS 26.x available. Record app commit/version/build, OS and device versions, cycle
 count, duration, crash/hang result, and relevant redacted diagnostics. A single successful
 connection is only a smoke test.
 
-Status for the corrected tree on 2026-08-24: **the complete command-line gate passed**. It covered
-103 architecture targets, strict formatting and 1,251 SwiftLint-clean Swift files, four endpoint
-packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,157 Swift tests, and the
-dead-code pass. Full-Xcode and physical-device results are not recorded yet. The repeated Safari
-matrix above remains mandatory before the LAN incident can be closed for release.
+Status for the corrected tree on 2026-08-24: **the complete Xcode 26.6 quality gate passed on macOS
+26.6.2**. It covered 103 architecture targets, strict formatting and 1,257 SwiftLint-clean Swift
+files, four endpoint packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,164
+Swift tests, and the dead-code pass. Swift 6.1 compatibility also passed a warnings-as-errors
+`ChurchTranslatorApp` build and 45 focused tests in an isolated build directory. Physical-device
+results are not recorded yet. The repeated Safari matrix above remains mandatory before the LAN
+incident can be closed for release.
 
 The audio-import format suite uses `/usr/bin/say` and `/usr/bin/afconvert` at test time with
 short, original phrases (`Grace and peace.` and `愿你平安。`). It commits no audio and validates
 container signatures before passing each file to the production AVFoundation stream decoder.
-The current macOS 15 qualification host can encode WAV, AIFF, AIFC, CAF, AAC/ADTS, and AAC/M4A,
+The current macOS 26.6.2 qualification host can encode WAV, AIFF, AIFC, CAF, AAC/ADTS, and AAC/M4A,
 so those formats are mandatory in the default gate. Its system converter has no MP3 encoder;
 the MP3 case is visibly skipped rather than synthesized under a false extension. To rerun the
 private MP3 qualification, provide a local, rights-safe file explicitly:
@@ -132,10 +134,11 @@ only; it does not grant permission to redistribute the fixture. The gate must pa
 the exact signed release candidate before App Store metadata or release notes claim MP3 support.
 Setting the variable to a missing or invalid file fails the test.
 
-That lane verifies container bytes and AVFoundation streaming only. Language routing is separately
-proved by `EnglishTranslationModeTests` (English ASR to Simplified Chinese) and the legacy/default
-Mandarin-to-English settings path; neither format decoding nor synthetic speech establishes ASR or
-translation quality.
+That lane verifies container bytes and AVFoundation streaming only. Import recognition-language
+routing and source-only recovery are separately proved by `ImportedAudioSettingsStoreTests` and
+`ImportedAudioRecoveryTests`. Live translation-direction routing remains covered by
+`EnglishTranslationModeTests` and the default Mandarin-to-English settings path. Neither format
+decoding nor synthetic speech establishes ASR or translation quality.
 
 ## Opt-in real-model smoke tests
 

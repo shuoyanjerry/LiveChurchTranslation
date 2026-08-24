@@ -1,10 +1,11 @@
 import Foundation
 
 /// Reports bytes written for the current artifact.
-public typealias ModelHTTPProgress = @Sendable (
-    _ receivedBytes: Int64,
-    _ expectedBytes: Int64?
-) -> Void
+public typealias ModelHTTPProgress =
+    @Sendable (
+        _ receivedBytes: Int64,
+        _ expectedBytes: Int64?
+    ) -> Void
 
 /// HTTP metadata required for post-download validation.
 public struct ModelHTTPTransferResult: Equatable, Sendable {

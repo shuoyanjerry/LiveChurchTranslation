@@ -15,6 +15,12 @@ enum SessionProcessingPolicy: Sendable {
     }
 
     var requiresCompleteCapture: Bool { self == .completeImport }
+    var transcribesOnly: Bool { self == .completeImport }
+    var allowsTranslatedRecovery: Bool { self == .boundedLive }
+
+    var modelPreparationScope: InferenceModelPreparationScope {
+        transcribesOnly ? .speechRecognition : .speechAndTranslation
+    }
 }
 
 public actor LiveSessionCoordinator: LiveSessionController {
@@ -74,7 +80,8 @@ public actor LiveSessionCoordinator: LiveSessionController {
     ) {
         self.dependencies = dependencies
         self.sentenceVisibilityClock = sentenceVisibilityClock
-        processingPolicy = SessionProcessingPolicy(sessionKind: sessionKind)
+        let processingPolicy = SessionProcessingPolicy(sessionKind: sessionKind)
+        self.processingPolicy = processingPolicy
         let processor = UtteranceProcessor(dependencies: dependencies)
         let modelPreparation =
             modelPreparation
@@ -83,7 +90,8 @@ public actor LiveSessionCoordinator: LiveSessionController {
                 modelReporter: dependencies.modelReporter,
                 asr: dependencies.asr,
                 translator: dependencies.translator,
-                models: models
+                models: models,
+                scope: processingPolicy.modelPreparationScope
             )
         utteranceProcessor = processor
         self.modelPreparation = modelPreparation
@@ -93,6 +101,7 @@ public actor LiveSessionCoordinator: LiveSessionController {
             modelPreparation: modelPreparation,
             utteranceProcessor: processor,
             sessionKind: sessionKind,
+            allowsTranslatedRecovery: processingPolicy.allowsTranslatedRecovery,
             sessionTitle: sessionTitle
         )
         sessionFinalizer = SessionFinalizer(dependencies: dependencies)

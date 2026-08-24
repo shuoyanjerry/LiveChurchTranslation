@@ -32,7 +32,7 @@ import Testing
         #expect(!summary.hasIncompleteSpeechSegments)
     }
 
-    @Test func presentationRestoresBothSupportedDirections() {
+    @Test func presentationRestoresRecognitionModeFromSourceLanguageOnly() {
         let mandarin = librarySummary()
         let english = librarySummary(
             sourceLanguage: "en",
@@ -43,9 +43,9 @@ import Testing
             targetLanguage: "en"
         )
 
-        #expect(mandarin.storedTranslationMode == .mandarinToEnglish)
-        #expect(english.storedTranslationMode == .englishToSimplifiedChinese)
-        #expect(unknown.storedTranslationMode == nil)
+        #expect(mandarin.storedRecognitionMode == .mandarinToEnglish)
+        #expect(english.storedRecognitionMode == .englishToSimplifiedChinese)
+        #expect(unknown.storedRecognitionMode == nil)
     }
 
     @Test func retranscriptionTitleAddsItsSuffixOnlyOnce() {

@@ -6,10 +6,12 @@ is not a Mac App Store build.
 
 ## Current delivery status
 
-As observed on 2026-08-22, this checkout cannot truthfully produce an uploadable
+As observed on 2026-08-24, this checkout cannot truthfully produce an uploadable
 archive:
 
-- `xcode-select` points to Command Line Tools, not a full Xcode installation.
+- Xcode 26.6 is installed and passes project discovery plus the complete warnings-as-errors
+  quality gate when selected through `DEVELOPER_DIR`; the global `xcode-select` setting still
+  points to Command Line Tools but does not block the validated commands;
 - the login keychain contains no valid code-signing identities;
 - no Apple Developer team, distribution profile, App Store Connect record, public
   privacy-policy URL, or App Store Connect credentials are available to this checkout.
@@ -18,9 +20,9 @@ The repository now contains a genuine macOS Application target in
 `LiveChurchTranslation.xcodeproj`, a shared `LiveChurchTranslation` Archive scheme, and a
 repository-local Swift package dependency on the production `ChurchTranslatorApp`
 library. Static structure, plist, scheme, dependency-lock, entitlement, privacy,
-runtime-manifest, and deterministic-generation checks pass. An actual Xcode build,
-Archive, export, Organizer validation, and upload remain unverified until the missing
-Apple tooling and account-controlled signing material are supplied.
+runtime-manifest, and deterministic-generation checks pass. The Xcode 26.6 toolchain build and
+tests are verified. A signed Archive, export, Organizer validation, and upload remain unverified
+until the account-controlled signing material is supplied.
 
 `Scripts/archive_app_store.sh` fails before archive creation when any of these build
 preconditions is absent. It does not manufacture an `.xcarchive` around an unsigned
@@ -185,10 +187,11 @@ separate:
 ## Privacy disclosure draft
 
 The current production architecture processes microphone audio, imported audio,
-speech recognition, translation, transcripts, glossary terms, diagnostics, and saved
-meeting recordings on the Mac. It has no account system, analytics SDK, advertising,
-tracking domain, or developer-operated content server. Opt-in LAN sharing sends live
-recognized source text and translation only to explicitly paired devices on the same network. The seven
+speech recognition, live translation, transcripts, glossary terms, diagnostics, and saved
+meeting recordings on the Mac. Imported audio uses speech recognition only and is not translated.
+It has no account system, analytics SDK, advertising, tracking domain, or developer-operated
+content server. Opt-in LAN sharing sends live recognized source text and translation only to
+explicitly paired devices on the same network. The seven
 revision-pinned model files are sealed into the signed app and load locally; the submitted
 release does not download model data on first use. Debug source builds may use the pinned
 Hugging Face installer, but that development behavior is not part of the submitted binary.
@@ -206,11 +209,12 @@ Publish `PRIVACY.md` at a stable public HTTPS URL and enter that URL in App Stor
 Connect. The bundled copy is useful in-app but does not replace the public privacy
 policy URL. Suggested short disclosure:
 
-> Live Church Translation processes speech, imported audio, translations, transcripts,
-> and saved meeting recordings locally on your Mac. It does not use ads, analytics,
-> or tracking. Live LAN sharing is off until you enable it and pair a device. The speech
-> and translation models are bundled with the app; your audio and transcript are not uploaded.
-> The Library retains recordings and recognized source text, not translations.
+> Live Church Translation processes speech, imported audio, live translations, transcripts,
+> and saved meeting recordings locally on your Mac. Imported audio is transcribed only and is not
+> translated. The app does not use ads, analytics, or tracking. Live LAN sharing is off until you
+> enable it and pair a device. The speech and translation models are bundled with the app; your audio
+> and transcript are not uploaded. The Library retains recordings and recognized source text, not
+> translations.
 
 The current `ITSAppUsesNonExemptEncryption=false` declaration is based on the app
 using Apple-provided HTTPS/network security and one-way hashes rather than shipping
@@ -231,8 +235,9 @@ Paste and adapt this text for the exact submitted build:
 > stops, while a separate small status shows Preparing, Listening, Recognizing, Translating,
 > Finishing, or Incomplete. Passage timestamps are visible by default and may be hidden without
 > deleting their stored offsets. The Library retains recognized source text, not translations.
-> It plays and deletes locally saved sessions and imports
-> system-readable audio through the macOS file picker with read-only access. Optional
+> It plays and deletes locally saved sessions and imports system-readable audio through the macOS
+> file picker with read-only access. Import asks for the recording language and creates source
+> transcript text without translation. Optional
 > LAN sharing is off by default; when enabled, Bonjour advertises
 > `_churchtranslate._tcp` and only explicitly paired devices receive the live reader.
 > The LAN reader uses authenticated HTTP/WebSocket on the trusted local network and

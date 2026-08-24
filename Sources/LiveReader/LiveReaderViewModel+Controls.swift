@@ -6,7 +6,7 @@ extension LiveReaderViewModel {
         if isRunning {
             await controller.stop()
         } else if externalSessionControlLock {
-            presentedError = "请先完成当前音频导入。"
+            presentedError = "请先完成当前音频听抄。"
         } else {
             presentsRecordingNotice = true
         }

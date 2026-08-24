@@ -27,7 +27,7 @@ public enum AudioImportError: LocalizedError, Equatable, Sendable {
         case .cancelled:
             nil
         case .liveSessionRunning:
-            "请先停止实时翻译，再导入音频文件。"
+            "请先停止当前现场会话，再导入并听抄音频文件。"
         case .savedWithIncompleteTranscript:
             "录音已保存，听抄未完整。"
         case .transcriptionFailed(let message):
@@ -36,7 +36,7 @@ public enum AudioImportError: LocalizedError, Equatable, Sendable {
     }
 
     public var description: String {
-        errorDescription ?? "音频导入已取消。"
+        errorDescription ?? "音频听抄已取消。"
     }
 
     public var debugDescription: String { description }

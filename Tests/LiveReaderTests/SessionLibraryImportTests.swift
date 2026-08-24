@@ -127,7 +127,7 @@ extension SessionLibraryImportTests {
 
         #expect(viewModel.sessions.first?.id == external.id)
         #expect(viewModel.selectedSessionID == existing.id)
-        #expect(viewModel.presentedError == "音频处理未完成，请重试。")
+        #expect(viewModel.presentedError == "音频听抄未完成，请重试。")
     }
 
     @Test func staleUIBaselineDoesNotMisidentifyAnExternalSessionAsTheImport() async {

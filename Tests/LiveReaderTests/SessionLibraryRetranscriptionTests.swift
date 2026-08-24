@@ -80,7 +80,7 @@ import Testing
 }
 
 extension SessionLibraryRetranscriptionTests {
-    @Test func activeSessionAndUnknownDirectionAreRejectedBeforeImport() async throws {
+    @Test func activeSessionAndUnknownRecognitionLanguageAreRejectedBeforeImport() async throws {
         let active = try RetranscriptionFixture()
         defer { active.remove() }
         await active.store.setActive(true, sessionID: active.summary.id)
@@ -104,8 +104,27 @@ extension SessionLibraryRetranscriptionTests {
         #expect(await recorder.calls().isEmpty)
         #expect(
             unknown.viewModel.presentedError
-                == "无法确定这份录音的语言方向。现有资料没有受到影响。"
+                == "无法确定这份录音的识别语言。现有资料没有受到影响。"
         )
+    }
+
+    @Test func retranscriptionUsesSourceLanguageWithoutDependingOnHistoricalTarget() async throws {
+        let fixture = try RetranscriptionFixture(
+            sourceLanguage: "en-US",
+            targetLanguage: "unsupported"
+        )
+        defer { fixture.remove() }
+        let recorder = RetranscriptionCallRecorder()
+
+        await fixture.viewModel.retranscribeRetainedRecording(
+            for: fixture.summary,
+            using: RetranscriptionImporterFake(record: recorder),
+            liveSessionIsRunning: false
+        )
+
+        let call = try #require(await recorder.calls().only)
+        #expect(call.mode == .englishToSimplifiedChinese)
+        #expect(fixture.viewModel.presentedError == nil)
     }
 
     @Test func concurrentRequestDoesNotStartASecondImportOrDeleteSource() async throws {
@@ -136,7 +155,7 @@ extension SessionLibraryRetranscriptionTests {
 
         #expect(await recorder.calls().count == 1)
         #expect(await fixture.store.deletedIDs().isEmpty)
-        #expect(fixture.viewModel.presentedError == "请等待当前音频处理完成。")
+        #expect(fixture.viewModel.presentedError == "请等待当前音频听抄完成。")
         await gate.release()
         await first.value
         #expect(!fixture.viewModel.isImporting)
