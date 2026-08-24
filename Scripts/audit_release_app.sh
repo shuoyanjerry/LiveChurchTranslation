@@ -17,6 +17,10 @@ audit_macho_dependencies() {
   local relative
   local rpath
 
+  if LC_ALL=C rg -a -q '/Users/[^/]+/' "$binary"; then
+    fail "Mach-O contains an absolute build-user path: $(basename "$binary")"
+  fi
+
   while IFS= read -r rpath; do
     case "$rpath" in
       @loader_path | @executable_path)

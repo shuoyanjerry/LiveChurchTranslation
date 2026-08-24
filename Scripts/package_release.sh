@@ -46,6 +46,7 @@ if [[ -e "$APP" ]]; then
 fi
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 ditto "$BIN_DIR/LiveChurchTranslation" "$APP/Contents/MacOS/LiveChurchTranslation"
+strip -S "$APP/Contents/MacOS/LiveChurchTranslation"
 while IFS= read -r rpath; do
   case "$rpath" in
     @loader_path | @executable_path)
