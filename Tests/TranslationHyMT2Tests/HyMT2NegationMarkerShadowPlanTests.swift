@@ -52,7 +52,7 @@ struct HyMT2NegationMarkerShadowPlanTests {
         let prompt = HyMT2NegationMarkerShadowPrompt.make(plan)
 
         #expect(prompt.contains("TEST-ONLY NEGATION ALIGNMENT"))
-        #expect(prompt.contains("Preserve negation, names, and all numbers."))
+        #expect(prompt.contains("保留所有数字、专名、明确否定和指定术语"))
         #expect(prompt.contains("not, no, never, cannot"))
         #expect(plan.occurrences.allSatisfy { prompt.contains($0.protectedBlock) })
         #expect(prompt.contains("<CURRENT_SOURCE>"))

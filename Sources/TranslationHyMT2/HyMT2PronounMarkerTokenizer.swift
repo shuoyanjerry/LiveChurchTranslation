@@ -2,7 +2,7 @@ import Foundation
 
 struct HyMT2PronounAnchorToken {
     let markerName: String
-    let resolutionToken: String
+    let resolutionCode: Character
     let range: Range<String.Index>
 }
 
@@ -14,14 +14,14 @@ enum HyMT2PronounMarkerTokenizer {
         let fullRange = NSRange(output.startIndex..., in: output)
         return expression.matches(in: output, range: fullRange).compactMap { match in
             guard let range = Range(match.range, in: output),
-                let nameRange = Range(match.range(at: 1), in: output),
-                let resolutionRange = Range(match.range(at: 2), in: output),
-                let closingNameRange = Range(match.range(at: 3), in: output),
-                output[nameRange] == output[closingNameRange]
+                let namespaceRange = Range(match.range(at: 1), in: output),
+                let ordinalRange = Range(match.range(at: 2), in: output),
+                let resolutionRange = Range(match.range(at: 3), in: output),
+                let resolutionCode = output[resolutionRange].first
             else { return nil }
             return HyMT2PronounAnchorToken(
-                markerName: String(output[nameRange]),
-                resolutionToken: String(output[resolutionRange]),
+                markerName: "\(output[namespaceRange])_\(output[ordinalRange])",
+                resolutionCode: resolutionCode,
                 range: range
             )
         }
@@ -36,10 +36,7 @@ enum HyMT2PronounMarkerTokenizer {
         try validateCounts(tokens, expected: expected)
     }
 
-    private static let protectedBlockPattern =
-        #"<QLR_([A-F0-9]{12}_P[0-9]{4})>"#
-        + #"(QLR_(?:UNRESOLVED|VERIFIED_FEMALE|VERIFIED_MALE|VERIFIED_DEITY))"#
-        + #"</QLR_([A-F0-9]{12}_P[0-9]{4})>"#
+    private static let protectedBlockPattern = #"<Q([A-F0-9]{12})(P[0-9]{4})([NFMD])>"#
 
     private static func validateSurface(
         _ output: String,
@@ -85,8 +82,8 @@ enum HyMT2PronounMarkerTokenizer {
             guard let token = tokens.first(where: { $0.markerName == occurrence.markerName }) else {
                 continue
             }
-            let expectedToken = HyMT2PronounResolutionToken.value(for: occurrence.resolution)
-            if token.resolutionToken != expectedToken {
+            let expectedCode = HyMT2PronounResolutionToken.compactCode(for: occurrence.resolution)
+            if token.resolutionCode != expectedCode {
                 throw failure(.pronounMarkerResolutionMismatch(occurrence.identifier))
             }
         }

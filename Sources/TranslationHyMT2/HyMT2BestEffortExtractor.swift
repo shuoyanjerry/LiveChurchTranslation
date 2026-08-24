@@ -5,8 +5,10 @@ enum HyMT2BestEffortExtractor {
     static func assess(
         _ output: String,
         failure: OutputValidationFailure,
-        input: HyMT2PreparedTranslationInput
+        input: HyMT2PreparedTranslationInput,
+        phase: HyMT2AttemptPhase? = nil
     ) -> HyMT2AssessedOutput? {
+        guard !failure.issues.contains(.contextReplay) else { return nil }
         guard
             let target = publishableTarget(
                 output,
@@ -23,7 +25,9 @@ enum HyMT2BestEffortExtractor {
         return HyMT2AssessedOutput(
             target: target,
             review: review,
-            validationIssueCount: issues.count
+            validationIssueCount: issues.count,
+            pronounRealizations: failure.pronounRealizations,
+            reviewedPhase: phase
         )
     }
 
@@ -37,13 +41,16 @@ enum HyMT2BestEffortExtractor {
             source: input.source,
             requiredTerms: input.terms,
             sourceLanguage: input.sourceLanguage,
-            targetLanguage: input.targetLanguage
+            targetLanguage: input.targetLanguage,
+            context: input.context
         )
         return fidelity.reduce(into: initial) { issues, issue in
             if !issues.contains(issue) { issues.append(issue) }
         }
     }
+}
 
+extension HyMT2BestEffortExtractor {
     private static func publishableTarget(
         _ output: String,
         input: HyMT2PreparedTranslationInput
@@ -69,6 +76,7 @@ enum HyMT2BestEffortExtractor {
             language: input.targetLanguage
         ).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalized.isEmpty,
+            !containsGuidedPronounAlternativeList(normalized, input: input),
             !HyMT2MetaText.isProbableSourceEcho(
                 target: normalized,
                 source: input.source,
@@ -77,6 +85,15 @@ enum HyMT2BestEffortExtractor {
             )
         else { return nil }
         return normalized
+    }
+
+    private static func containsGuidedPronounAlternativeList(
+        _ target: String,
+        input: HyMT2PreparedTranslationInput
+    ) -> Bool {
+        input.pronounPlan != nil
+            && input.targetLanguage.lowercased().hasPrefix("en")
+            && HyMT2PronounAlternativeListDetector.containsAlternativeList(in: target)
     }
 
     private static func removing(

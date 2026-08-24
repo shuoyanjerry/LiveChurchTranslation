@@ -26,7 +26,7 @@ import TranslationAPI
         )
 
         #expect(correction.section.contains("REPAIR P0002"))
-        #expect(correction.section.contains("he/him/his/himself"))
+        #expect(correction.section.contains("one sentence-appropriate he-family form"))
         #expect(!correction.section.contains("singleOtherToken"))
         #expect(!correction.section.contains(occurrence.markerName))
         #expect(!correction.section.contains(occurrence.protectedBlock))

@@ -75,7 +75,7 @@ struct HyMTQualificationConfiguration {
             "qualificationRunnerPolicy": "hymt-bilingual-sermon-v2",
             "buildConfiguration": "release",
             "translationContextEntries": "2", "discourseContextEntries": "2",
-            "temperature": "0.0", "topP": "0.6", "topK": "20",
+            "temperature": "0.7", "topP": "0.6", "topK": "20",
             "repetitionPenalty": "1.05", "seed": "42", "stream": "false",
         ]
     }

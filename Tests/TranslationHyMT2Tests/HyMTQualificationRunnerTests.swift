@@ -33,10 +33,8 @@ import TranslationQualificationSupport
             attempts.dropFirst().allSatisfy { attempt in
                 attempt.pronounResults.allSatisfy { $0.englishPolicyStatus == .pass }
             })
-        #expect(
-            attempts.allSatisfy { attempt in
-                attempt.preservationChecks.first { $0.kind == "pronounTraceIntegrity" }?.status == .pass
-            })
+        #expect(traceStatus(attempts[0]) == .notApplicable)
+        #expect(attempts.dropFirst().allSatisfy { traceStatus($0) == .pass })
         #expect(prompts.count == 4)
         #expect(prompts.allSatisfy { !$0.contains("Reference-only marker") })
         #expect(prompts.dropFirst(2).contains { $0.contains("They remain present.") })
@@ -134,4 +132,14 @@ import TranslationQualificationSupport
         await harness.provider.shutdown()
     }
 
+}
+
+extension HyMTQualificationRunnerTests {
+    fileprivate func traceStatus(
+        _ attempt: TranslationQualificationAttempt
+    ) -> TranslationQualificationCheckStatus? {
+        attempt.preservationChecks.first {
+            $0.kind == "pronounTraceIntegrity"
+        }?.status
+    }
 }

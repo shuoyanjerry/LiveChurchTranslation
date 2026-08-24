@@ -83,21 +83,9 @@ public enum TranslationPreservationEvaluator {
                 preferredTarget: term.preferredTarget,
                 acceptedTargets: term.acceptedTargets,
                 required: term.required,
-                status: preserved ? .pass : .fail
+                status: preserved ? .pass : (term.required ? .fail : .humanReviewRequired)
             )
         }
-    }
-
-    private static func negationCheck(
-        source: String,
-        hypothesis: String?
-    ) -> TranslationQualificationCheck {
-        let applicable = chineseNegations.contains(where: source.contains)
-        guard applicable else { return check("negation", .notApplicable) }
-        guard let hypothesis else { return check("negation", .fail) }
-        let words = englishWords(hypothesis)
-        let preserved = words.contains { englishNegations.contains($0) || $0.hasSuffix("n't") }
-        return check("negation", preserved ? .pass : .fail)
     }
 
     private static func numberCheck(

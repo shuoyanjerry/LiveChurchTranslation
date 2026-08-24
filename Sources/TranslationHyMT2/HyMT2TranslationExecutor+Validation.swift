@@ -42,7 +42,8 @@ extension HyMT2TranslationExecutor {
             targetLanguage: input.targetLanguage,
             pronounPlan: input.pronounPlan,
             flatRetryCapability: flatRetryCapability,
-            strictRetry: strictRetry
+            strictRetry: strictRetry,
+            context: input.context
         )
     }
 }

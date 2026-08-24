@@ -23,8 +23,8 @@ import TranslationAPI
             strict: false
         )
 
-        #expect(prompt.contains("因信称义 translates to justification by faith"))
-        #expect(prompt.contains("恩典 translates to grace"))
+        #expect(prompt.contains("因信称义 翻译成 justification by faith"))
+        #expect(prompt.contains("恩典 翻译成 grace"))
         #expect(!prompt.contains("洗礼"))
         #expect(prompt.contains("<CURRENT_SOURCE>\n\(source)\n</CURRENT_SOURCE>"))
     }
@@ -74,5 +74,24 @@ import TranslationAPI
         )
 
         #expect(matched == [term])
+    }
+
+    @Test func longerLexicalCompoundsSuppressMisleadingSingleCharacterTerm() {
+        let god = TranslationTerm(source: "神", target: "God")
+        let nerve = TranslationTerm(
+            source: "神经",
+            target: "nerve",
+            acceptedTargets: ["nerves", "neural"]
+        )
+        let seminary = TranslationTerm(source: "神学院", target: "seminary")
+
+        let matched = TranslationTermMatcher.matched(
+            in: "麻风病人的神经受伤，宣教士也建立了神学院。",
+            from: [god, nerve, seminary],
+            limit: 64
+        )
+
+        #expect(matched == [seminary, nerve])
+        #expect(!matched.contains(god))
     }
 }

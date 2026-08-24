@@ -5,6 +5,8 @@ extension OutputValidationIssue {
             nil
         case .implausibleLength:
             "quality.implausible_length"
+        case .contextReplay:
+            "quality.context_replay"
         case .metaText:
             "quality.meta_text"
         case .unexpectedSourceScript:
@@ -17,7 +19,8 @@ extension OutputValidationIssue {
             "quality.missing_negation"
         case .malformedScriptureReference:
             "quality.scripture_reference"
-        case .wrongPronounRealization, .reusedPronounRealization:
+        case .wrongPronounRealization, .reusedPronounRealization,
+            .pronounAlternativeList:
             "quality.pronoun_alignment"
         case .negativePronounSourceRange, .emptyPronounSourceRange,
             .pronounSourceRangeOutOfBounds, .pronounSourceRangeNotOnCharacterBoundary,
@@ -25,7 +28,7 @@ extension OutputValidationIssue {
             .pronounSourceRangeWrongGlyph, .tooManyPronounOccurrences,
             .reservedPronounMarkerCollision, .missingPronounMarker,
             .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
-            .pronounMarkerResolutionMismatch:
+            .pronounMarkerOrderMismatch, .pronounMarkerResolutionMismatch:
             "quality.pronoun_protocol"
         }
     }

@@ -29,15 +29,16 @@ import TranslationAPI
         let first = fixture.plan.occurrences[0]
         let second = anchored(fixture.plan, 1, "he")
         let firstToken = HyMT2PronounResolutionToken.value(for: first.resolution)
+        let firstCode = String(HyMT2PronounResolutionToken.compactCode(for: first.resolution))
         let malformedFirstAnchors = [
             "<QLR_\(first.markerName)>她</QLR_\(first.markerName)>",
             "she<QLR_\(first.markerName)/>",
-            anchored(fixture.plan, 0, "she").replacingOccurrences(of: "QLR_", with: "qlr_"),
+            anchored(fixture.plan, 0, "she").replacingOccurrences(of: "<Q", with: "<q"),
             "she" + String(first.protectedBlock.dropLast()),
             "she"
                 + first.protectedBlock.replacingOccurrences(
-                    of: firstToken,
-                    with: firstToken.lowercased()
+                    of: "\(firstCode)>",
+                    with: "\(firstCode.lowercased())>"
                 ),
             "she<QLR_\(first.markerName)>KEEP</QLR_\(first.markerName)>",
             "she<QLR_\(first.markerName)></QLR_\(first.markerName)>",
@@ -73,13 +74,13 @@ import TranslationAPI
         #expect(!issues(detached, fixture).isEmpty)
     }
 
-    @Test func rejectsAllowedSentinelThatDisagreesWithExpectedResolution() throws {
+    @Test func rejectsCompactCodeThatDisagreesWithExpectedResolution() throws {
         let fixture = try fixture()
         let female = fixture.plan.occurrences[0]
-        let femaleToken = HyMT2PronounResolutionToken.value(for: .verifiedFemale)
-        let maleToken = HyMT2PronounResolutionToken.value(for: .verifiedMale)
+        let femaleToken = String(HyMT2PronounResolutionToken.compactCode(for: .verifiedFemale))
+        let maleToken = String(HyMT2PronounResolutionToken.compactCode(for: .verifiedMale))
         let changed = anchored(fixture.plan, 0, "she")
-            .replacingOccurrences(of: femaleToken, with: maleToken)
+            .replacingOccurrences(of: "\(femaleToken)>", with: "\(maleToken)>")
         let output = changed + " asked " + anchored(fixture.plan, 1, "he") + "."
 
         #expect(

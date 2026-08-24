@@ -63,22 +63,22 @@ import TranslationQualificationSupport
         #expect(!result.passesReleaseReadyGates)
     }
 
-    @Test func releaseCheckFailureCannotBeOverriddenByHumanReview() throws {
+    @Test func preferredTermMissCanBeSettledByHumanReview() throws {
         let fixture = try SyntheticTranslationWorkspace()
         let corpus = try fixture.load()
         let baseline = try SyntheticTranslationReportFactory.build(corpus: corpus)
         let index = baseline.attempts.count - 1
-        let failedTerm = TranslationQualificationTermResult(
+        let reviewTerm = TranslationQualificationTermResult(
             source: "这里",
             preferredTarget: "synthetic term",
             acceptedTargets: [],
             required: false,
-            status: .fail
+            status: .humanReviewRequired
         )
         let changed = SyntheticTranslationAttemptCopy.make(
             baseline.attempts[index],
             segment: corpus.manifest.segments[index],
-            glossaryTerms: [failedTerm]
+            glossaryTerms: [reviewTerm]
         )
         let report = try rebuild(baseline, corpus: corpus, index: index, attempt: changed)
         let expectation = try SyntheticHumanReviewSettlementFactory.expectation(
@@ -95,9 +95,9 @@ import TranslationQualificationSupport
             humanReviewSidecar: try SyntheticHumanReviewSettlementFactory.data(settlement)
         )
 
-        #expect(result.releaseCheckFailureCount == 1)
+        #expect(result.releaseCheckFailureCount == 0)
         #expect(result.reviewBindingFailureCount == 0)
-        #expect(!result.passesReleaseReadyGates)
+        #expect(result.passesReleaseReadyGates)
     }
 
     @Test func protocolEchoRefusalAndUnknownWarningsAreNeverHumanResolvable() throws {

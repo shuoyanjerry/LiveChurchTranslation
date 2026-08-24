@@ -18,7 +18,7 @@ public struct HyMT2Configuration: Sendable {
         healthPollInterval: Duration = .milliseconds(150),
         requestTimeout: TimeInterval = 30,
         contextSize: Int = 4_096,
-        maximumOutputTokens: Int = 768,
+        maximumOutputTokens: Int = 1_536,
         threadCount: Int = 4,
         gpuLayerCount: Int = 99,
         maximumGlossaryTerms: Int = 64

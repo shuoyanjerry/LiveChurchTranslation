@@ -12,7 +12,7 @@ enum HyMTNegationDiagnosticIssueMapper {
         _ issue: OutputValidationIssue
     ) -> HyMTNegationDiagnosticIssueCode {
         switch issue {
-        case .empty, .implausibleLength, .metaText, .promptControlDelimiter:
+        case .empty, .implausibleLength, .contextReplay, .metaText, .promptControlDelimiter:
             basicCode(issue)
         case .unexpectedSourceScript, .missingTerm, .missingNumber, .missingNegation,
             .malformedScriptureReference:
@@ -30,7 +30,9 @@ enum HyMTNegationDiagnosticIssueMapper {
             .duplicatePronounMarker,
             .unknownPronounMarker,
             .malformedPronounMarker,
+            .pronounMarkerOrderMismatch,
             .pronounMarkerResolutionMismatch,
+            .pronounAlternativeList,
             .reusedPronounRealization,
             .wrongPronounRealization:
             .pronounProtocol
@@ -43,6 +45,7 @@ enum HyMTNegationDiagnosticIssueMapper {
         switch issue {
         case .empty: .empty
         case .implausibleLength: .implausibleLength
+        case .contextReplay: .contextReplay
         case .metaText: .metaText
         case .promptControlDelimiter: .promptControl
         default: preconditionFailure("Unexpected basic diagnostic issue.")

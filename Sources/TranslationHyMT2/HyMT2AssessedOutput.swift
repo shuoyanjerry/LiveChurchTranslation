@@ -4,8 +4,27 @@ struct HyMT2AssessedOutput: Equatable, Sendable {
     let target: String
     let review: TranslationReview?
     let validationIssueCount: Int
+    let pronounRealizations: [HyMT2PronounRealization]
+    let reviewedPhase: HyMT2AttemptPhase?
+
+    init(
+        target: String,
+        review: TranslationReview?,
+        validationIssueCount: Int,
+        pronounRealizations: [HyMT2PronounRealization] = [],
+        reviewedPhase: HyMT2AttemptPhase? = nil
+    ) {
+        self.target = target
+        self.review = review
+        self.validationIssueCount = validationIssueCount
+        self.pronounRealizations = pronounRealizations
+        self.reviewedPhase = reviewedPhase
+    }
 
     func preferredBestEffort(over previous: HyMT2AssessedOutput) -> HyMT2AssessedOutput {
+        if hasContextReplayIssue != previous.hasContextReplayIssue {
+            return hasContextReplayIssue ? previous : self
+        }
         if hasImplausibleLengthIssue != previous.hasImplausibleLengthIssue {
             return hasImplausibleLengthIssue ? previous : self
         }
@@ -18,7 +37,9 @@ struct HyMT2AssessedOutput: Equatable, Sendable {
         HyMT2AssessedOutput(
             target: target,
             review: nil,
-            validationIssueCount: 0
+            validationIssueCount: 0,
+            pronounRealizations: [],
+            reviewedPhase: nil
         )
     }
 
@@ -33,11 +54,17 @@ struct HyMT2AssessedOutput: Equatable, Sendable {
         return HyMT2AssessedOutput(
             target: target,
             review: TranslationReview(issueCodes: issueCodes),
-            validationIssueCount: validationIssueCount + 1
+            validationIssueCount: validationIssueCount + 1,
+            pronounRealizations: [],
+            reviewedPhase: nil
         )
     }
 
     private var hasImplausibleLengthIssue: Bool {
         review?.issueCodes.contains("quality.implausible_length") == true
+    }
+
+    private var hasContextReplayIssue: Bool {
+        review?.issueCodes.contains("quality.context_replay") == true
     }
 }

@@ -17,6 +17,7 @@ enum HyMTNegationTargetCueClass: String, Codable, CaseIterable, Sendable {
 enum HyMTNegationDiagnosticIssueCode: String, Codable, CaseIterable, Sendable {
     case empty
     case implausibleLength
+    case contextReplay
     case metaText
     case promptControl
     case sourceScript

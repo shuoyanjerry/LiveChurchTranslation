@@ -30,6 +30,20 @@ import TranslationAPI
         #expect(stronger.preferredBestEffort(over: weaker) == stronger)
     }
 
+    @Test func freshCandidateAlwaysOutranksDetectedContextReplay() {
+        let replay = reviewed(
+            target: "A stale translation from the preceding segment.",
+            issueCodes: ["quality.context_replay"]
+        )
+        let fresh = reviewed(
+            target: "A complete translation of the current segment.",
+            issueCodes: ["quality.missing_required_term", "quality.missing_number"]
+        )
+
+        #expect(fresh.preferredBestEffort(over: replay) == fresh)
+        #expect(replay.preferredBestEffort(over: fresh) == fresh)
+    }
+
     private func reviewed(
         target: String,
         issueCodes: [String]

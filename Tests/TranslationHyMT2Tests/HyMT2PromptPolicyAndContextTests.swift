@@ -4,7 +4,7 @@ import TranslationAPI
 @testable import TranslationHyMT2
 
 @Suite struct HyMT2PromptPolicyAndContextTests {
-    @Test func strictPromptAddsFaithfulnessAndScriptureRules() {
+    @Test func strictPromptUsesCompactChineseFaithfulnessAndScriptureRules() {
         let prompt = HyMT2PromptBuilder.prompt(
             source: "约翰福音三章十六节",
             targetLanguage: "en",
@@ -12,13 +12,16 @@ import TranslationAPI
             strict: true
         )
 
-        #expect(prompt.contains("without summarizing, adding, or omitting"))
         let edition = ScriptureEditionPair.production.english
-        #expect(prompt.contains(edition.fullName))
-        #expect(prompt.contains(edition.editionLabel))
-        #expect(prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
-        #expect(prompt.contains("John 3:16"))
-        #expect(prompt.contains("ONLY output the translated result"))
+        #expect(prompt.contains(edition.abbreviation))
+        #expect(prompt.contains("逐句完整、忠实"))
+        #expect(prompt.contains("不得概括、添加或漏译"))
+        #expect(prompt.contains("保留所有数字、专名、明确否定和指定术语"))
+        #expect(prompt.contains("只使用目标语言"))
+        #expect(!prompt.contains(edition.fullName))
+        #expect(!prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
+        #expect(!prompt.contains("John 3:16"))
+        #expect(prompt.contains("<CURRENT_SOURCE>\n约翰福音三章十六节\n</CURRENT_SOURCE>"))
     }
 
     @Test func initialEnglishToChinesePromptPinsShenEditionWithoutInventingText() {
@@ -33,13 +36,14 @@ import TranslationAPI
         let edition = ScriptureEditionPair.production.simplifiedChinese
         #expect(prompt.contains(edition.abbreviation))
         #expect(prompt.contains(edition.fullName))
-        #expect(prompt.contains(edition.officialEditionReference))
-        #expect(prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
-        #expect(prompt.contains("use 神 rather than 上帝"))
-        #expect(prompt.contains("allow 他 or 祂 according to context"))
-        #expect(prompt.contains("never reconstruct or invent verse text"))
-        #expect(prompt.contains("prefer the established wording of this edition"))
-        #expect(prompt.contains("never add a clause that is absent from the source"))
+        #expect(prompt.contains("write 神 rather than 上帝"))
+        #expect(prompt.contains("preserve chapter-and-verse numbers"))
+        #expect(prompt.contains("never add Scripture absent from the source"))
+        #expect(prompt.contains("without summarizing, adding, or omitting"))
+        #expect(prompt.contains("Output only the translation"))
+        #expect(!prompt.contains(edition.officialEditionReference))
+        #expect(!prompt.contains(ScriptureEditionPair.terminologyBaselineNotice))
+        #expect(!prompt.contains("allow 他 or 祂 according to context"))
     }
 
     @Test func sanitizesNewlinesInsideTerminology() {
@@ -50,7 +54,9 @@ import TranslationAPI
             strict: false
         )
 
-        #expect(prompt.contains("圣 灵 translates to Holy Spirit"))
+        #expect(prompt.contains("圣 灵 翻译成 Holy Spirit"))
+        #expect(!prompt.contains("圣\n灵"))
+        #expect(!prompt.contains("Holy\nSpirit"))
     }
 
     @Test func labelsPriorPairsAsBackgroundInsteadOfCurrentInput() {
@@ -73,7 +79,7 @@ import TranslationAPI
         #expect(prompt.contains("BACKGROUND FOR DISAMBIGUATION ONLY"))
         #expect(prompt.contains("Chinese: \"这位姊妹分享了见证。\""))
         #expect(prompt.contains("English: \"The sister shared her testimony.\""))
-        #expect(prompt.contains("Do not translate, output, copy, repeat, or summarize"))
+        #expect(!prompt.contains("Do not translate, output, copy, repeat, or summarize"))
         #expect(prompt.contains("<CURRENT_SOURCE>\n\(source)\n</CURRENT_SOURCE>"))
         #expect(
             prompt.range(of: "END BACKGROUND")!.upperBound

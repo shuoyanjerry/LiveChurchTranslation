@@ -78,7 +78,7 @@ actor URLSessionLlamaServerTransport: LlamaServerTransport {
 
 private struct ChatRequest: Encodable {
     let messages: [Message]
-    let temperature = 0.0
+    let temperature = 0.7
     let topP = 0.6
     let topK = 20
     let repetitionPenalty = 1.05

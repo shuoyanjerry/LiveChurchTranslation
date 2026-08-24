@@ -1,6 +1,6 @@
 extension PublicNegationChallengeFixtures {
-    /// Public, human-authored examples whose English is deliberately unfaithful.
-    static let falsePasses = [
+    /// Scope errors that a surface-count guard cannot decide safely.
+    static let scopeLimitations = [
         PublicNegationChallengeFixture(
             id: "single-bare-negation-scope-shift",
             source: "这位弟兄不离开，他继续服事。",
@@ -8,6 +8,17 @@ extension PublicNegationChallengeFixtures {
             policy: .humanReview,
             humanOracle: .reject
         ),
+        PublicNegationChallengeFixture(
+            id: "quantifier-scope-not-all-to-none",
+            source: "不是所有听见的人都明白。",
+            target: "No one who hears understands.",
+            policy: .humanReview,
+            humanOracle: .reject
+        ),
+    ]
+
+    /// Independent negation losses now caught by the production count guard.
+    static let repairedCountLosses = [
         PublicNegationChallengeFixture(
             id: "two-independent-negations-one-lost",
             source: "我们不靠行为得救，也不轻看悔改。",
@@ -20,13 +31,6 @@ extension PublicNegationChallengeFixtures {
             source: "教会不隐藏真理，不忽略穷人，也不高举自己。",
             target: "The church does not hide the truth, ignores the poor, and exalts itself.",
             policy: .mustPreserveCount(3),
-            humanOracle: .reject
-        ),
-        PublicNegationChallengeFixture(
-            id: "quantifier-scope-not-all-to-none",
-            source: "不是所有听见的人都明白。",
-            target: "No one who hears understands.",
-            policy: .humanReview,
             humanOracle: .reject
         ),
     ]

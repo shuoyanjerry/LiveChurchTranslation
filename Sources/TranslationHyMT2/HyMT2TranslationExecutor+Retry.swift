@@ -4,9 +4,12 @@ extension HyMT2TranslationExecutor {
     ) async throws -> HyMT2AssessedOutput {
         let output: String
         do {
+            let promptInput =
+                request.omitContextOnRetry
+                ? request.context.input.withoutContext : request.context.input
             output = try await observedCompletion(
                 prompt(
-                    request.context.input,
+                    promptInput,
                     strict: true,
                     pronounCorrection: request.pronounCorrection
                 ),
@@ -27,9 +30,16 @@ extension HyMT2TranslationExecutor {
         _ output: String,
         request: HyMT2StrictRetryRequest
     ) async throws -> HyMT2AssessedOutput {
+        let candidate = await auditedPronounRepairCandidate(
+            output,
+            input: request.context.input,
+            requestID: request.context.requestID,
+            phase: .strictRetry,
+            flatRetryCapability: request.flatRetryCapability
+        )
         do {
             return try await acceptedTarget(
-                output,
+                candidate,
                 input: request.context.input,
                 requestID: request.context.requestID,
                 phase: .strictRetry,
@@ -41,7 +51,11 @@ extension HyMT2TranslationExecutor {
                 requestID: request.context.requestID,
                 phase: .strictRetry
             )
-            return try await selectedFallback(output: output, failure: failure, request: request)
+            return try await selectedFallback(
+                output: candidate,
+                failure: failure,
+                request: request
+            )
         }
     }
 
@@ -53,7 +67,8 @@ extension HyMT2TranslationExecutor {
         let assessed = HyMT2BestEffortExtractor.assess(
             output,
             failure: failure,
-            input: request.context.input
+            input: request.context.input,
+            phase: .strictRetry
         )
         if let assessed {
             guard let fallback = request.fallback else { return assessed }
@@ -73,6 +88,7 @@ extension HyMT2TranslationExecutor {
         request.context.input.pronounPlan != nil
             && request.fallback == nil
             && !failure.issues.isEmpty
-            && failure.issues.allSatisfy(\.isPronounValidationIssue)
+            && (failure.issues.allSatisfy(\.isPronounValidationIssue)
+                || failure.issues.contains(.pronounAlternativeList))
     }
 }

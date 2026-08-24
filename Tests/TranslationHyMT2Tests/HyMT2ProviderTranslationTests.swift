@@ -27,7 +27,7 @@ import TranslationAPI
         #expect(result.sourceText == request.sourceText)
         let prompts = await harness.transport.completionRequests().map(\.prompt)
         #expect(prompts.count == 1)
-        #expect(prompts[0].contains("因信称义 translates to justification by faith"))
+        #expect(prompts[0].contains("因信称义 翻译成 justification by faith"))
         #expect(!prompts[0].contains("洗礼"))
     }
 
@@ -55,8 +55,10 @@ import TranslationAPI
                 $0.stopSequences == [HyMT2PromptControlDelimiter.currentSourceClosing]
             }
         )
-        #expect(!prompts[0].contains("without summarizing"))
-        #expect(prompts[1].contains("without summarizing"))
+        #expect(prompts[0].contains("不得概括、添加或漏译"))
+        #expect(prompts[1].contains("不得概括、添加或漏译"))
+        #expect(!prompts[0].contains("保留所有数字、专名、明确否定和指定术语"))
+        #expect(prompts[1].contains("保留所有数字、专名、明确否定和指定术语"))
     }
 
     @Test func transportFailureDoesNotTriggerContentRetry() async throws {

@@ -13,4 +13,23 @@ enum HyMT2PronounResolutionToken {
             "QLR_VERIFIED_DEITY"
         }
     }
+
+    static func compactCode(for resolution: TranslationPronounResolution) -> Character {
+        switch resolution {
+        case .unresolvedSpokenMandarin: "N"
+        case .verifiedFemale: "F"
+        case .verifiedMale: "M"
+        case .verifiedDeity: "D"
+        }
+    }
+
+    static func value(forCompactCode code: Character) -> String? {
+        switch code {
+        case "N": value(for: .unresolvedSpokenMandarin)
+        case "F": value(for: .verifiedFemale)
+        case "M": value(for: .verifiedMale)
+        case "D": value(for: .verifiedDeity)
+        default: nil
+        }
+    }
 }

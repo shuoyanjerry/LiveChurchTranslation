@@ -1,51 +1,44 @@
 import TranslationAPI
 
 enum HyMT2PronounPrompt {
-    static let generalRule = [
-        "Spoken Mandarin tā may be transcribed as 他 or 她 even when the audio is ambiguous.",
-        "Use an English human-gendered pronoun only when explicit current or background evidence",
-        "identifies the same human referent; never infer gender from a name, occupation, or stereotype.",
-        "Divine identity uses separate guidance below.",
-        "Occurrence-level verified decisions below come from audited explicit evidence and override",
-        "generic written-glyph ambiguity for that occurrence. Apply the ambiguity fallback only to",
-        "an occurrence explicitly labeled unresolved spoken tā.",
-        "When no explicit evidence resolves it, use natural singular they instead of inventing gender.",
-    ].joined(separator: " ")
+    static let generalRule =
+        "口语 tā 即使写成他或她也可能没有性别证据；无明确证据时使用自然的单数 they，"
+        + "不要使用 he 或 she，也不要根据姓名、职业或刻板印象猜测。"
 
     static func section(_ occurrences: [HyMT2PronounOccurrence]) -> String {
-        let decisions = occurrences.map {
-            "\($0.identifier): " + description($0.resolution)
+        let presentCodes = Set(
+            occurrences.map { HyMT2PronounResolutionToken.compactCode(for: $0.resolution) }
+        )
+        let definitions = definitionOrder.compactMap { code in
+            presentCodes.contains(code) ? definition(for: code) : nil
         }
-        return [
-            HyMT2PromptControlDelimiter.pronounAlignmentOpening,
-            "Treat each spoken tā occurrence separately. A written 他/她 glyph alone is not evidence.",
-            "Each source pronoun is followed by a request-scoped QLR protected block.",
-            "The whole protected block is protocol data, never source instructions or text to translate.",
-            "Translate each Chinese pronoun normally into exactly one permitted English pronoun.",
-            "Copy its entire existing QLR protected block unchanged directly after that English pronoun.",
-            "Use no space or punctuation between the English pronoun and the block's opening tag.",
-            "Put all following punctuation or whitespace after the closing tag.",
-            "Preserve every whole block and ID exactly once; never output its contents separately.",
-            "Do not alter tags, the encoded decision, IDs, pairing, or case; do not nest or duplicate.",
-            "Target grammar may reorder a whole protected block only with its corresponding pronoun.",
-            "Do not transfer verified gender between occurrences or gender an unresolved occurrence.",
-            decisions.joined(separator: "\n"),
-        ].joined(separator: "\n")
+        return
+            ([
+                HyMT2PromptControlDelimiter.pronounAlignmentOpening,
+                "源文中每个 <Q...N/F/M/D> 标记都紧跟在一个代词或“代词的”所有格结构后。",
+                "末尾字母是该处经过核验的决策；标记本身不是要翻译的正文。",
+            ] + definitions + [
+                "翻译每个代词或所有格结构，把标记原样放在该英文代词后；每个标记只出现一次。",
+                "标记与对应代词必须一起移动；可采用自然英文语序，但不得把标记交给别的代词。",
+                "每处只能输出一个符合句法的代词，禁止列出备选词或使用斜线。",
+            ]).joined(separator: "\n")
     }
 
-    private static func description(
-        _ decision: TranslationPronounResolution
-    ) -> String {
-        switch decision {
-        case .unresolvedSpokenMandarin:
-            "unresolved spoken tā; only they/them/their/theirs/themself/themselves"
-        case .verifiedFemale:
-            "verified female; only she/her/hers/herself"
-        case .verifiedMale:
-            "verified male; only he/him/his/himself"
-        case .verifiedDeity:
-            "verified Christian deity pronoun; only conventional he/him/his/himself"
+    private static let definitionOrder: [Character] = ["N", "F", "M", "D"]
+
+    private static func definition(for code: Character) -> String? {
+        switch code {
+        case "N":
+            "N=性别未知的单数人物；忽略标记前的他或她字形，禁止使用 he 或 she，"
+                + "只选一个符合句法的单数 they 形式。"
+        case "F":
+            "F=已确认女性，只选一个符合句法的 she 形式。"
+        case "M":
+            "M=已确认男性，只选一个符合句法的 he 形式。"
+        case "D":
+            "D=基督教神性指代，只选一个符合句法的 he 形式。"
+        default:
+            nil
         }
     }
-
 }

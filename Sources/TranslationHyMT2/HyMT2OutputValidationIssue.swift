@@ -3,6 +3,7 @@ import TranslationAPI
 enum OutputValidationIssue: Equatable, Sendable {
     case empty
     case implausibleLength
+    case contextReplay
     case metaText
     case promptControlDelimiter
     case unexpectedSourceScript
@@ -27,7 +28,9 @@ enum OutputValidationIssue: Equatable, Sendable {
     case duplicatePronounMarker(String)
     case unknownPronounMarker(String)
     case malformedPronounMarker
+    case pronounMarkerOrderMismatch
     case pronounMarkerResolutionMismatch(String)
+    case pronounAlternativeList
     case reusedPronounRealization(String)
     case wrongPronounRealization(
         String,
@@ -40,6 +43,7 @@ enum OutputValidationIssue: Equatable, Sendable {
         switch self {
         case .empty: "empty output"
         case .implausibleLength: "implausible output length"
+        case .contextReplay: "recent translation context was replayed"
         case .metaText: "model commentary or instruction text"
         case .promptControlDelimiter: "prompt-control delimiter remains in output"
         case .unexpectedSourceScript: "output script does not match the target language"
@@ -73,8 +77,12 @@ enum OutputValidationIssue: Equatable, Sendable {
             "unknown pronoun marker: \(identifier)"
         case .malformedPronounMarker:
             "malformed or incomplete pronoun marker"
+        case .pronounMarkerOrderMismatch:
+            "pronoun markers changed source occurrence order"
         case .pronounMarkerResolutionMismatch(let identifier):
             "pronoun marker \(identifier) changed its encoded resolution"
+        case .pronounAlternativeList:
+            "model emitted a pronoun alternative list"
         case .reusedPronounRealization(let identifier):
             "pronoun marker \(identifier) reuses another pronoun token"
         case .wrongPronounRealization(let identifier, _, let expected, let observed):
@@ -93,6 +101,15 @@ enum OutputValidationIssue: Equatable, Sendable {
 
 struct OutputValidationFailure: Error, Equatable, Sendable {
     let issues: [OutputValidationIssue]
+    let pronounRealizations: [HyMT2PronounRealization]
+
+    init(
+        issues: [OutputValidationIssue],
+        pronounRealizations: [HyMT2PronounRealization] = []
+    ) {
+        self.issues = issues
+        self.pronounRealizations = pronounRealizations
+    }
 
     var safeDescriptions: [String] {
         issues.map(\.safeDescription)
@@ -108,7 +125,8 @@ extension OutputValidationIssue {
             .pronounSourceRangeWrongGlyph, .tooManyPronounOccurrences,
             .reservedPronounMarkerCollision, .missingPronounMarker,
             .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
-            .pronounMarkerResolutionMismatch:
+            .pronounMarkerOrderMismatch, .pronounMarkerResolutionMismatch,
+            .pronounAlternativeList:
             "pronoun protocol validation failed"
         case .reusedPronounRealization, .wrongPronounRealization:
             "pronoun alignment validation failed"
@@ -116,7 +134,7 @@ extension OutputValidationIssue {
             "missing required term"
         case .missingNumber:
             "missing source number"
-        case .empty, .implausibleLength, .metaText, .promptControlDelimiter,
+        case .empty, .implausibleLength, .contextReplay, .metaText, .promptControlDelimiter,
             .unexpectedSourceScript, .missingNegation, .malformedScriptureReference:
             description
         }
@@ -130,10 +148,11 @@ extension OutputValidationIssue {
             .pronounSourceRangeWrongGlyph, .tooManyPronounOccurrences,
             .reservedPronounMarkerCollision, .missingPronounMarker,
             .duplicatePronounMarker, .unknownPronounMarker, .malformedPronounMarker,
-            .pronounMarkerResolutionMismatch, .reusedPronounRealization,
-            .wrongPronounRealization:
+            .pronounMarkerOrderMismatch, .pronounMarkerResolutionMismatch,
+            .reusedPronounRealization,
+            .pronounAlternativeList, .wrongPronounRealization:
             true
-        case .empty, .implausibleLength, .metaText, .promptControlDelimiter,
+        case .empty, .implausibleLength, .contextReplay, .metaText, .promptControlDelimiter,
             .unexpectedSourceScript, .missingTerm, .missingNumber,
             .missingNegation, .malformedScriptureReference:
             false

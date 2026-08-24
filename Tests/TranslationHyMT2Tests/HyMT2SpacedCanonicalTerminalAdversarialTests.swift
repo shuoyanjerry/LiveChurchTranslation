@@ -65,8 +65,8 @@ import TranslationAPI
             with: "ABCDEF123456"
         )
         let wrongResolution = valid.replacingOccurrences(
-            of: "QLR_VERIFIED_FEMALE",
-            with: "QLR_VERIFIED_MALE"
+            of: "\(HyMT2PronounResolutionToken.compactCode(for: .verifiedFemale))>",
+            with: "\(HyMT2PronounResolutionToken.compactCode(for: .verifiedMale))>"
         )
 
         for output in [unknown, duplicate, wrongNonce, wrongResolution] {

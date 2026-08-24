@@ -7,20 +7,15 @@ struct HyMT2PronounOccurrence: Equatable, Sendable {
     let sourceRange: TranslationSourceRange
     let resolution: TranslationPronounResolution
     let sourceGlyph: String
+    let morphologyHint: HyMT2PronounMorphologyHint
 
     var protectedBlock: String {
-        let token = HyMT2PronounResolutionToken.value(for: resolution)
-        return "<QLR_\(markerName)>\(token)</QLR_\(markerName)>"
+        let compactName = markerName.replacingOccurrences(of: "_", with: "")
+        let resolutionCode = HyMT2PronounResolutionToken.compactCode(for: resolution)
+        return "<Q\(compactName)\(resolutionCode)>"
     }
 
-    var modelVisibleGlyph: String {
-        switch resolution {
-        case .unresolvedSpokenMandarin: "they"
-        case .verifiedFemale: "she"
-        case .verifiedMale: "他"
-        case .verifiedDeity: "祂"
-        }
-    }
+    var modelVisibleGlyph: String { sourceGlyph }
 }
 
 struct HyMT2PronounPlan: Equatable, Sendable {
@@ -50,7 +45,11 @@ struct HyMT2PronounPlan: Equatable, Sendable {
                 markerName: "\(namespace)_\(identifier)",
                 sourceRange: item.guidance.sourceRange,
                 resolution: item.guidance.resolution,
-                sourceGlyph: item.glyph
+                sourceGlyph: item.glyph,
+                morphologyHint: morphologyHint(
+                    after: item.guidance.sourceRange,
+                    in: source
+                )
             )
         }
         return HyMT2PronounPlan(
@@ -59,58 +58,14 @@ struct HyMT2PronounPlan: Equatable, Sendable {
         )
     }
 
-    private static let maximumOccurrenceCount = 9_999
+}
 
-    private static func markerNamespace(_ requestID: UUID) -> String {
-        String(
-            requestID.uuidString
-                .replacingOccurrences(of: "-", with: "")
-                .uppercased()
-                .prefix(12)
-        )
-    }
+enum HyMT2PronounMorphologyHint: Equatable, Sendable {
+    case unspecified
+    case possessiveDeterminer
+    case possessiveIndependent
 
-    private static func insertProtectedBlocks(
-        in source: String,
-        occurrences: [HyMT2PronounOccurrence]
-    ) throws -> String {
-        var result = ""
-        var cursor = source.startIndex
-        for occurrence in occurrences {
-            let sourceRange = occurrence.sourceRange
-            guard
-                let range = Range(
-                    NSRange(location: sourceRange.location, length: sourceRange.length),
-                    in: source
-                )
-            else {
-                throw OutputValidationFailure(
-                    issues: [
-                        .pronounSourceRangeNotOnCharacterBoundary(
-                            sourceRange.location,
-                            sourceRange.length
-                        )
-                    ]
-                )
-            }
-            result += source[cursor..<range.lowerBound]
-            result += occurrence.modelVisibleGlyph
-            result += occurrence.protectedBlock
-            if needsWordSeparator(after: range.upperBound, in: source) {
-                result += " "
-            }
-            cursor = range.upperBound
-        }
-        result += source[cursor...]
-        return result
-    }
-
-    private static func needsWordSeparator(
-        after index: String.Index,
-        in source: String
-    ) -> Bool {
-        guard index < source.endIndex else { return false }
-        let next = source[index]
-        return next.isLetter || next.isNumber
+    var isPossessive: Bool {
+        self != .unspecified
     }
 }

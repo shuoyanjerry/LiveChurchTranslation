@@ -60,6 +60,7 @@ public enum HyMT2SafeFailureCode {
 private enum StrictValidationCategory: String, CaseIterable {
     case empty
     case length
+    case contextReplay = "context-replay"
     case meta
     case promptControl = "prompt-control"
     case sourceScript = "source-script"
@@ -74,6 +75,7 @@ private enum StrictValidationCategory: String, CaseIterable {
         switch self {
         case .empty: "empty"
         case .length: "len"
+        case .contextReplay: "replay"
         case .meta: "meta"
         case .promptControl: "ctl"
         case .sourceScript: "zh"
@@ -97,6 +99,7 @@ private enum StrictValidationCategory: String, CaseIterable {
     private static let exactReasons: [String: Self] = [
         "empty output": .empty,
         "implausible output length": .length,
+        "recent translation context was replayed": .contextReplay,
         "model commentary or instruction text": .meta,
         "prompt-control delimiter remains in output": .promptControl,
         "Chinese source script remains in English output": .sourceScript,

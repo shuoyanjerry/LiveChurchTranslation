@@ -28,8 +28,15 @@ import TranslationAPI
 
         #expect(prompt.contains("into Simplified Chinese"))
         #expect(prompt.contains("without summarizing, adding, or omitting"))
-        #expect(prompt.contains("约翰福音 3:16"))
-        #expect(!prompt.contains("Spoken Mandarin tā"))
+        #expect(prompt.contains("write 神 rather than 上帝"))
+        #expect(prompt.contains("preserve chapter-and-verse numbers"))
+        #expect(prompt.contains("preserve every number, name, explicit negation, and required term"))
+        #expect(!prompt.contains("口语 tā"))
+        #expect(
+            prompt.contains(
+                "<CURRENT_SOURCE>\n\(fixture.source)\n</CURRENT_SOURCE>"
+            )
+        )
         for term in fixture.requiredTerms {
             #expect(prompt.contains("\(term.source) translates to \(term.target)"))
         }

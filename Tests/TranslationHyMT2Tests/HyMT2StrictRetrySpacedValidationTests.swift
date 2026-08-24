@@ -15,13 +15,21 @@ import TranslationAPI
         #expect(validated.pronounRealizations.map(\.realizationClass) == [.feminine, .masculine])
     }
 
-    @Test func initialValidationStillRejectsExactSpacedBlocks() throws {
+    @Test func initialValidationAcceptsExactSpacedBlocks() throws {
         let fixture = try makeStrictSpacedFixture()
         let output =
             "\(spacedCanonical(fixture.plan, 0, "She"))asked "
             + "\(spacedCanonical(fixture.plan, 1, "him"))to reply."
 
-        #expect(!validationIssues(output: output, source: fixture.source, plan: fixture.plan).isEmpty)
+        let validated = try HyMT2OutputValidator.validated(
+            output,
+            source: fixture.source,
+            requiredTerms: [],
+            pronounPlan: fixture.plan
+        )
+
+        #expect(validated.target == "She asked him to reply.")
+        #expect(validated.pronounRealizations.map(\.realizationClass) == [.feminine, .masculine])
     }
 
     @Test func strictRetryStillRejectsFlatCertificatesWithoutCapability() throws {

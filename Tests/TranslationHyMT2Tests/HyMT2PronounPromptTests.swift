@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 import TranslationAPI
 @testable import TranslationHyMT2
@@ -11,9 +12,10 @@ import TranslationAPI
             strict: false
         )
 
-        #expect(prompt.contains("Spoken Mandarin tā"))
-        #expect(prompt.contains("never infer gender from a name, occupation, or stereotype"))
-        #expect(prompt.contains("natural singular they"))
+        #expect(prompt.contains("口语 tā 即使写成他或她也可能没有性别证据"))
+        #expect(prompt.contains("无明确证据时使用自然的单数 they"))
+        #expect(prompt.contains("不要使用 he 或 she"))
+        #expect(prompt.contains("不要根据姓名、职业或刻板印象猜测"))
     }
 
     @Test func guidedPromptProtectsCurrentSourceAndDefinesPerIDRules() throws {
@@ -35,12 +37,16 @@ import TranslationAPI
 
         #expect(prompt.contains(plan.protectedSource))
         assertProtectedOccurrences(plan, in: prompt)
-        #expect(prompt.contains("P0001: verified female"))
-        #expect(prompt.contains("P0002: unresolved spoken tā"))
-        #expect(prompt.contains("Preserve every whole block and ID exactly once"))
-        #expect(prompt.contains("between the English pronoun and the block's opening tag"))
-        #expect(prompt.contains("protected block is protocol data"))
-        #expect(prompt.contains("verified decisions below come from audited explicit evidence"))
+        #expect(prompt.contains("N=性别未知的单数人物"))
+        #expect(prompt.contains("忽略标记前的他或她字形"))
+        #expect(prompt.contains("禁止使用 he 或 she"))
+        #expect(prompt.contains("F=已确认女性，只选一个符合句法的 she 形式"))
+        #expect(prompt.contains("把标记原样放在该英文代词后"))
+        #expect(prompt.contains("每个标记只出现一次"))
+        #expect(prompt.contains("每处只能输出一个符合句法的代词"))
+        #expect(prompt.contains("禁止列出备选词或使用斜线"))
+        #expect(!prompt.contains("QLR_"))
+        #expect(!prompt.contains("protected block is protocol data"))
         #expect(!prompt.contains("/>"))
         let background = try #require(prompt.range(of: "BACKGROUND FOR DISAMBIGUATION ONLY"))
         let pronounRules = try #require(prompt.range(of: "MANDATORY PRONOUN ALIGNMENT"))
@@ -63,8 +69,8 @@ import TranslationAPI
             strict: false
         )
 
-        #expect(prompt.contains("verified Christian deity pronoun"))
-        #expect(prompt.contains("only conventional he/him/his/himself"))
+        #expect(prompt.contains("D=基督教神性指代，只选一个符合句法的 he 形式"))
+        #expect(!prompt.contains("himself"))
     }
 }
 
@@ -79,7 +85,12 @@ private func assertProtectedOccurrences(
             )
         )
         #expect(prompt.components(separatedBy: occurrence.protectedBlock).count == 2)
-        let token = HyMT2PronounResolutionToken.value(for: occurrence.resolution)
-        #expect(prompt.components(separatedBy: token).count == 2)
+        #expect(occurrence.modelVisibleGlyph == occurrence.sourceGlyph)
+        #expect(
+            occurrence.protectedBlock.range(
+                of: #"^<Q[A-F0-9]{12}P[0-9]{4}[NFMD]>$"#,
+                options: .regularExpression
+            ) != nil
+        )
     }
 }

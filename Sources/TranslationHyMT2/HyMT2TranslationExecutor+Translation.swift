@@ -17,16 +17,24 @@ extension HyMT2TranslationExecutor {
             requestID: requestID,
             phase: .initial
         )
-        return try await assessInitial(first, context: context)
+        let assessed = try await assessInitial(first, context: context)
+        await recordReviewedPronouns(assessed, requestID: requestID)
+        return assessed
     }
 
     private func assessInitial(
         _ output: String,
         context: HyMT2TranslationExecutionContext
     ) async throws -> HyMT2AssessedOutput {
+        let candidate = await auditedPronounRepairCandidate(
+            output,
+            input: context.input,
+            requestID: context.requestID,
+            phase: .initial
+        )
         do {
             return try await acceptedTarget(
-                output,
+                candidate,
                 input: context.input,
                 requestID: context.requestID,
                 phase: .initial
@@ -34,7 +42,7 @@ extension HyMT2TranslationExecutor {
         } catch let failure as OutputValidationFailure {
             await recordRejection(failure, requestID: context.requestID, phase: .initial)
             return try await strictRetry(
-                retryRequest(output: output, failure: failure, context: context)
+                retryRequest(output: candidate, failure: failure, context: context)
             )
         }
     }
@@ -59,8 +67,10 @@ extension HyMT2TranslationExecutor {
             fallback: HyMT2BestEffortExtractor.assess(
                 output,
                 failure: failure,
-                input: context.input
-            )
+                input: context.input,
+                phase: .initial
+            ),
+            omitContextOnRetry: failure.issues.contains(where: \.requiresContextFreeRetry)
         )
     }
 }
@@ -76,4 +86,16 @@ struct HyMT2StrictRetryRequest: Sendable {
     let pronounCorrection: HyMT2PronounRetryCorrection?
     let flatRetryCapability: HyMT2FlatPronounRetryCapability?
     let fallback: HyMT2AssessedOutput?
+    let omitContextOnRetry: Bool
+}
+
+extension OutputValidationIssue {
+    fileprivate var requiresContextFreeRetry: Bool {
+        switch self {
+        case .contextReplay, .implausibleLength, .missingNumber:
+            true
+        default:
+            false
+        }
+    }
 }
