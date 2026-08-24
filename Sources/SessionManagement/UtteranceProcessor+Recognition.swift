@@ -22,19 +22,20 @@ extension UtteranceProcessor {
                     contextPrompt: asrPrompt(from: enabled, mode: mode)
                 )
             )
-            return recognizedInputs(
+            let inputs = recognizedInputs(
                 recognition,
                 segment: segment,
                 glossary: enabled,
                 discourseContext: discourseContext
             )
+            guard !inputs.isEmpty else {
+                throw failure(stage: .recognition, error: ASRError.noProcessableSentences)
+            }
+            return inputs
         } catch let failure as UtteranceProcessingFailure {
             throw failure
         } catch let classified as any ASRFailureImpactProviding {
-            guard classified.asrFailureImpact == .ignoredUtterance else {
-                throw failure(stage: .recognition, error: classified)
-            }
-            throw IgnoredUtterance(message: classified.localizedDescription)
+            throw failure(stage: .recognition, error: classified)
         } catch {
             if error is CancellationError { throw CancellationError() }
             throw failure(stage: .recognition, error: error)

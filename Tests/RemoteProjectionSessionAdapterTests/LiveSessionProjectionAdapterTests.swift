@@ -42,6 +42,78 @@ struct LiveSessionProjectionAdapterTests {
         #expect(!(await projection.messages()).contains { $0.contains("/Users/") })
     }
 
+    @Test("Does not project per-segment recognition failures")
+    func doesNotProjectRecognitionFailureDetails() async throws {
+        let sessionID = UUID()
+        let controller = ProjectionSessionControllerFake(
+            initial: makeListeningSnapshot(sessionID: sessionID)
+        )
+        let projection = ProjectionUpdateFake()
+        let adapter = LiveSessionProjectionAdapter(controller: controller, projection: projection)
+
+        await adapter.start()
+        try await waitUntil { await projection.messages().count == 1 }
+        await emitRecognitionFailures(controller, sessionID: sessionID)
+        try await waitUntil {
+            let messages = await projection.messages()
+            return messages.count >= 2 && messages.last == "直播中"
+        }
+
+        #expect(await projection.entries().isEmpty)
+        #expect(await projection.messages() == ["直播中", "直播中"])
+        #expect(
+            !(await projection.messages()).contains {
+                $0.contains("asr.") || $0.contains("/Users/")
+            }
+        )
+    }
+}
+
+extension LiveSessionProjectionAdapterTests {
+    private func emitRecognitionFailures(
+        _ controller: ProjectionSessionControllerFake,
+        sessionID: UUID
+    ) async {
+        await controller.emit(
+            .recoverableError("asr.filtered_nonspeech /Users/private/pending.wav")
+        )
+        await controller.emit(
+            .stateChanged(makeRecognitionFailureSnapshot(sessionID: sessionID))
+        )
+    }
+
+    private func makeListeningSnapshot(sessionID: UUID) -> LiveSessionSnapshot {
+        LiveSessionSnapshot(
+            sessionID: sessionID,
+            phase: .listening,
+            transcript: [],
+            sourceLanguage: "zh-Hans",
+            targetLanguage: "en",
+            modelStatus: nil,
+            statusMessage: "正在聆听"
+        )
+    }
+
+    private func makeRecognitionFailureSnapshot(sessionID: UUID) -> LiveSessionSnapshot {
+        LiveSessionSnapshot(
+            sessionID: sessionID,
+            phase: .listening,
+            transcript: [],
+            sourceLanguage: "zh-Hans",
+            targetLanguage: "en",
+            modelStatus: nil,
+            statusMessage: "asr.filtered_nonspeech",
+            issues: [
+                LiveSessionIssue(
+                    stage: .recognition,
+                    utteranceSequence: 7,
+                    message: "asr.filtered_nonspeech /Users/private/pending.wav",
+                    isRecoverable: false
+                )
+            ]
+        )
+    }
+
     private func makeEntry() -> TranscriptEntry {
         TranscriptEntry(
             sequence: 1,
@@ -72,45 +144,4 @@ struct LiveSessionProjectionAdapterTests {
         }
         throw ProjectionAdapterTestError.timedOut
     }
-}
-
-private enum ProjectionAdapterTestError: Error { case timedOut }
-
-private actor ProjectionSessionControllerFake: LiveSessionController {
-    private let initial: LiveSessionSnapshot
-    private var continuation: AsyncStream<LiveSessionEvent>.Continuation?
-    init(initial: LiveSessionSnapshot) { self.initial = initial }
-    func start(inputDeviceID _: AudioInputID?) {}
-    func stop() {}
-    func currentSnapshot() -> LiveSessionSnapshot { initial }
-    func events() -> AsyncStream<LiveSessionEvent> {
-        AsyncStream { continuation in
-            self.continuation = continuation
-            continuation.yield(.stateChanged(initial))
-        }
-    }
-    func emit(_ event: LiveSessionEvent) { continuation?.yield(event) }
-}
-
-private actor ProjectionUpdateFake: RemoteProjectionUpdating {
-    private var sessionIDs: [UUID] = []
-    private var stateMessages: [String] = []
-    private var projectedEntries: [RemoteProjectionEntryInput] = []
-    func beginSession(id: UUID, message _: String) { sessionIDs.append(id) }
-    func updateState(phase _: RemoteSessionPhase, message: String) { stateMessages.append(message) }
-    func upsert(_ input: RemoteProjectionEntryInput) -> RemoteTranscriptEntry {
-        projectedEntries.append(input)
-        return RemoteTranscriptEntry(
-            id: input.id,
-            sequence: input.sequence,
-            revision: UInt64(projectedEntries.count),
-            sourceText: input.sourceText,
-            targetText: input.targetText,
-            createdAt: input.createdAt
-        )
-    }
-    func heartbeat() {}
-    func sessions() -> [UUID] { sessionIDs }
-    func messages() -> [String] { stateMessages }
-    func entries() -> [RemoteProjectionEntryInput] { projectedEntries }
 }
