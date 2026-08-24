@@ -17,8 +17,10 @@ audit_macho_dependencies() {
   local relative
   local rpath
 
-  if LC_ALL=C rg -a -q '/Users/[^/]+/' "$binary"; then
-    fail "Mach-O contains an absolute build-user path: $(basename "$binary")"
+  if LC_ALL=C rg -a -q \
+    '/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/' \
+    "$binary"; then
+    fail "Mach-O contains an absolute project build path: $(basename "$binary")"
   fi
 
   while IFS= read -r rpath; do

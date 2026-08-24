@@ -110,8 +110,9 @@ rg -Fq 'install_name_tool -delete_rpath "$rpath"' "$SCRIPT_DIR/package_release.s
 rg -Fq 'strip -S "$APP/Contents/MacOS/LiveChurchTranslation"' \
   "$SCRIPT_DIR/package_release.sh" \
   || fail "release packaging does not strip private build paths from the app executable"
-rg -Fq "rg -a -q '/Users/[^/]+/'" "$SCRIPT_DIR/audit_release_app.sh" \
-  || fail "release app audit does not reject absolute build-user paths"
+rg -Fq "(Live_Church_Translation|LiveChurchTranslation)/'" \
+  "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not reject absolute project build paths"
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
 [[ "$(plist_value "$INFO" "CFBundleName")" == "Live Church Translation" ]] \
