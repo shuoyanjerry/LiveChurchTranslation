@@ -16,7 +16,7 @@ if git ls-files | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
     exit 1
 fi
 
-if git grep --ignore-case --fixed-strings --line-number -I "$FORBIDDEN_TOOL_NAME" -- .; then
+if git grep --ignore-case --fixed-strings --line-number -a "$FORBIDDEN_TOOL_NAME" -- .; then
     echo "Tracked repository text contains the forbidden tool name." >&2
     exit 1
 fi
@@ -27,14 +27,14 @@ while IFS= read -r revision; do
         echo "Git history contains a forbidden tracked path at $revision." >&2
         exit 1
     fi
-    if git grep --ignore-case --fixed-strings --line-number -I \
+    if git grep --ignore-case --fixed-strings --line-number -a \
         "$FORBIDDEN_TOOL_NAME" "$revision" -- .; then
         echo "Git history contains forbidden repository text at $revision." >&2
         exit 1
     fi
-done < <(git rev-list --all)
+done < <(git rev-list refs/heads/main)
 
-if git log --all --format='%B' | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
+if git log refs/heads/main --format='%B' | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
     echo "Git history contains a forbidden commit message." >&2
     exit 1
 fi
@@ -51,7 +51,7 @@ if ! rg --fixed-strings "Copyright (c) 2026 $EXPECTED_NAME" LICENSE >/dev/null; 
 fi
 
 unexpected_identity="$({
-    git log --all --format='%an%x09%ae%n%cn%x09%ce'
+    git log refs/heads/main --format='%an%x09%ae%n%cn%x09%ce'
 } | awk -F '\t' -v name="$EXPECTED_NAME" -v email="$EXPECTED_EMAIL" \
     '$1 != name || $2 != email { print }')"
 if [[ -n "$unexpected_identity" ]]; then

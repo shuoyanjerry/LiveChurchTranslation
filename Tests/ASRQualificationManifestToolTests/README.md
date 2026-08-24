@@ -11,8 +11,8 @@ The env-gated test selects exactly `webrtcStable`, joins files by the `.wav` fil
 ```sh
 mkdir -p .artifacts/asr-qualification
 ASR_QUALIFICATION_VAD_REPORT="$PWD/.artifacts/vad-benchmarks/public-spiritual-webrtc-stable-v1.json" \
-ASR_QUALIFICATION_CORPUS_MANIFEST="/Users/shuoyan/church_translation/data/evaluation/public_spiritual_corpus_v1/corpus.json" \
-ASR_QUALIFICATION_REFERENCE_MANIFEST="/Users/shuoyan/church_translation/data/evaluation/runs/qwen3-asr-06b-q8-zh.manifest.json" \
+ASR_QUALIFICATION_CORPUS_MANIFEST="/path/to/public_spiritual_corpus_v1/corpus.json" \
+ASR_QUALIFICATION_REFERENCE_MANIFEST="/path/to/qwen3-asr-06b-q8-zh.manifest.json" \
 ASR_QUALIFICATION_WAV_DIR="$PWD/.artifacts/public-spiritual-wav-v1" \
 ASR_QUALIFICATION_OUTPUT="$PWD/.artifacts/asr-qualification/public-domain-mandarin-scripture-v2.json" \
 swift test --filter ASRQualificationManifestToolRunTests.freezeConfiguredManifestV2

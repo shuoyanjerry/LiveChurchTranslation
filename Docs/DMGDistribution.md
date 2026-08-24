@@ -4,7 +4,7 @@ The public GitHub asset is always named `Live Church Translation.dmg`. A local c
 to:
 
 ```text
-/Users/shuoyan/Live_Church_Translation/dist/Live Church Translation.dmg
+$PWD/dist/Live Church Translation.dmg
 ```
 
 Only a Developer ID-signed, Apple-notarized, stapled candidate that passes the release evidence and

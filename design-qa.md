@@ -61,7 +61,7 @@ Live were exercised in the running interfaces rather than inferred from screensh
 | Typography | Pass | Large restrained serif transcript, small monospaced timestamps, and compact UI labels follow the selected direction. |
 | Layout | Pass | A single continuous reader, aligned timestamp rail, quiet header, and bottom-right Jump to Live match the source hierarchy. |
 | Color | Pass | Warm white/stone canvas, olive status, dark ink, and restrained gold accent are consistent with the selected reference palette. |
-| Assets | Pass with constraint | The third-party reference mark is not redistributed; the app uses its original generated icon and an SF Symbol in-product. |
+| Assets | Pass with constraint | The third-party reference mark is not redistributed; the app uses its original project icon and an SF Symbol in-product. |
 | Copy | Pass with product deviation | Generic sermon copy replaces church-specific schedule and identity copy because this is a reusable translation tool. |
 | Controls | Pass | Input selection, Start/Stop, source visibility, Share, reader options, scroll pause, and Jump to Live are functional. |
 | Accessibility | Pass | Named controls, 44-point targets, non-color status text, reduced-motion handling, and semantic Jump to Live behavior are present. |
