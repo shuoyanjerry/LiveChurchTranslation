@@ -1,14 +1,24 @@
 import Foundation
 import Testing
+import TranslationAPI
 import TranslationQualificationSupport
 @testable import TranslationHyMT2
 
 @Suite struct HyMTQualificationGlossaryEvidenceTests {
-    @Test func promptGlossaryRemainsTheProductionDefaultCatalog() {
-        let source = "请传讲救赎与基督。"
-        let matched = HyMTQualificationGlossary.matchedTerms(in: source)
-
-        #expect(matched.isEmpty)
+    @Test func coreRedemptionTermsAreRequiredInProductionCatalog() throws {
+        var terms: [String: TranslationTerm] = [:]
+        for source in ["救赎", "十字架", "永生"] {
+            let term = try #require(
+                HyMTQualificationGlossary.matchedTerms(in: "请传讲\(source)。").first {
+                    $0.source == source
+                }
+            )
+            #expect(term.requirement == .required)
+            terms[source] = term
+        }
+        #expect(terms["救赎"]?.acceptedTargets.contains("redemptive") == true)
+        #expect(terms["十字架"]?.acceptedTargets.contains("crucified") == true)
+        #expect(terms["永生"]?.acceptedTargets.contains("everlasting life") == true)
     }
 
     @Test func retainsExactCatalogEvidenceWhenLongerPromptTermWins() throws {
@@ -57,9 +67,9 @@ import TranslationQualificationSupport
 
         #expect(
             HyMTQualificationGlossary.theologyPolicyID
-                == "hymt-qualification-theology-surface-v1")
+                == "hymt-qualification-theology-surface-v2")
         #expect(hash == HyMTQualificationGlossary.catalogSHA256)
-        #expect(hash == "c10e3635558ab81dec8221898578f11a7966d95d891ad872df24e5dd2300bf59")
+        #expect(hash == "68343b01e31bd813fa84e7933ff4ef1ad54147283add0baa91d1fdb9beacf21e")
     }
 
     @Test func genericSinRequiresACompleteExplicitEnglishToken() throws {

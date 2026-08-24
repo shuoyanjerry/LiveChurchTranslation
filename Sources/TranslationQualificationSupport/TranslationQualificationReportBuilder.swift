@@ -83,6 +83,10 @@ public enum TranslationQualificationReportBuilder {
         )
         try require(!attempt.translationSourceText.isEmpty, "translation source is empty")
         try require(attempt.humanReferenceEnglish == segment.referenceEnglish, "reference mismatch")
+        try require(
+            attempt.semanticReviewEligible == segment.qualification.semanticScoringEligible,
+            "semantic review eligibility mismatch"
+        )
         try require(!attempt.exactStringMetricEligible, "exact string metric is forbidden")
         try require(attempt.latencySeconds.isFinite && attempt.latencySeconds >= 0, "invalid latency")
         try require(attempt.contextSegmentIDs.count <= 2, "context exceeds two entries")

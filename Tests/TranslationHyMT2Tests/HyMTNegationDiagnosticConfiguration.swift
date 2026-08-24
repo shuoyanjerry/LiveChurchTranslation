@@ -61,6 +61,8 @@ struct HyMTNegationDiagnosticConfiguration {
             workspaceRoot: workspaceRoot,
             manifestURL: manifestURL,
             reportFilename: reportFilename,
+            reviewPacketFilename: "synthetic-negation.review-packet.json",
+            freezeRequestFilename: "synthetic-negation.freeze-request.json",
             modelURL: modelURL,
             helperURL: helperURL,
             backgroundLoad: backgroundLoad,

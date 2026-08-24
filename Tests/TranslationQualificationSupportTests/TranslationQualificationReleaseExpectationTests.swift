@@ -77,17 +77,62 @@ import TranslationQualificationSupport
         )
     }
 
-    @Test func correctExternalExpectationPassesReleaseReadyGate() throws {
+    @Test func correctExternalExpectationStillNeedsSignedReviewSidecar() throws {
         let values = try releaseValues(requiresHumanReview: false)
         let result = TranslationQualificationReleaseGate.evaluate(
             values.report,
             expectation: values.expectation
         )
 
-        #expect(result.passesReleaseReadyGates)
-        try TranslationQualificationReleaseGate.requireReleaseReadyGates(
-            values.report,
-            expectation: values.expectation
-        )
+        #expect(!result.passesReleaseReadyGates)
+        #expect(result.reviewBindingFailureCount == 1)
+        #expect(throws: TranslationQualificationError.self) {
+            try TranslationQualificationReleaseGate.requireReleaseReadyGates(
+                values.report,
+                expectation: values.expectation
+            )
+        }
     }
+
+    @Test func reviewerTrustRequiresBothExternallyBoundEvidenceHashes() throws {
+        let values = try releaseValues()
+        let reviewers = values.expectation.trustedHumanReviewers
+
+        #expect(throws: TranslationQualificationError.self) {
+            _ = try copyExpectation(values, reviewers: reviewers)
+        }
+        #expect(throws: TranslationQualificationError.self) {
+            _ = try copyExpectation(
+                values,
+                reviewers: reviewers,
+                packetSHA256: SyntheticHumanReviewSettlementFactory.trustedReviewPacketSHA256
+            )
+        }
+        #expect(throws: TranslationQualificationError.self) {
+            _ = try copyExpectation(
+                values,
+                packetSHA256: SyntheticHumanReviewSettlementFactory.trustedReviewPacketSHA256,
+                registrySHA256:
+                    SyntheticHumanReviewSettlementFactory.trustedReviewerRegistrySHA256
+            )
+        }
+    }
+}
+
+private func copyExpectation(
+    _ values: TranslationReleaseValues,
+    reviewers: [TranslationHumanReviewerIdentity] = [],
+    packetSHA256: String? = nil,
+    registrySHA256: String? = nil
+) throws -> TranslationReleaseExpectation {
+    try TranslationReleaseExpectation(
+        trustedExecutionProvenance: values.expectation.executionProvenance,
+        corpus: values.expectation.corpus,
+        provider: values.expectation.provider,
+        environment: values.expectation.environment,
+        attempts: values.report.attempts,
+        trustedHumanReviewers: reviewers,
+        trustedHumanReviewPacketSHA256: packetSHA256,
+        trustedHumanReviewerRegistrySHA256: registrySHA256
+    )
 }

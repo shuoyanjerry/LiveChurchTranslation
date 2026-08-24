@@ -23,6 +23,8 @@ struct SessionTestConfiguration {
     let recordingAppendFails: Bool
     let recordingFinishFails: Bool
     let recordingRepairFails: Bool
+    let recordingAppendDelay: Duration?
+    let audioProcessingDelay: Duration?
     let modelPreparationDelay: Duration?
     let audioFrames: [AudioFrame]
     let holdsPermissionRequest: Bool
@@ -45,7 +47,7 @@ struct SessionAudioComponents {
             holdsPermissionRequest: configuration.holdsPermissionRequest,
             holdsStreamOpen: configuration.holdsCaptureOpen
         )
-        processor = FakeAudioProcessor()
+        processor = FakeAudioProcessor(delay: configuration.audioProcessingDelay)
         vad = FakeSegmentingVAD(
             emitsOnlyOnFlush: configuration.emitsOnlyOnFlush,
             emitsEveryFrame: configuration.emitsEveryFrame
@@ -113,7 +115,8 @@ struct SessionStorageComponents {
         recordingStore = FakeSessionRecordingStore(
             failAppendAfterWrite: configuration.recordingAppendFails,
             failFinish: configuration.recordingFinishFails,
-            failRepair: configuration.recordingRepairFails
+            failRepair: configuration.recordingRepairFails,
+            appendDelay: configuration.recordingAppendDelay
         )
         recoveryStore = FakeUtteranceRecoveryStore(stageFails: configuration.recoveryStageFails)
         diagnostics = FakeDiagnosticsRecorder()

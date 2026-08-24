@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+umask 077
 
 fail() {
   echo "Release evidence generation failed: $*" >&2
@@ -14,6 +15,7 @@ RELEASE_MODE="${3:-dry-run}"
 EVIDENCE_DIR="$REPOSITORY_ROOT/dist/Live Church Translation.release-evidence"
 EVIDENCE_LABEL="$(basename "$EVIDENCE_DIR")"
 SOURCE_MANIFEST="$SCRIPT_DIR/release_model_sources.tsv"
+NOTARY_VALIDATOR="$SCRIPT_DIR/validate_notary_evidence.py"
 MODEL_ROOT="$APP/Contents/Resources/Models"
 MODEL_MANIFEST="$EVIDENCE_DIR/MODEL-MANIFEST.tsv"
 APP_MANIFEST="$EVIDENCE_DIR/APP-CONTENTS.sha256"
@@ -24,6 +26,8 @@ CHECKSUMS="$EVIDENCE_DIR/SHA256SUMS"
 
 [[ "$RELEASE_MODE" == "dry-run" || "$RELEASE_MODE" == "developer-id-notarized" ]] \
   || fail "release mode must be dry-run or developer-id-notarized"
+[[ -f "$NOTARY_VALIDATOR" && ! -L "$NOTARY_VALIDATOR" && -x "$NOTARY_VALIDATOR" ]] \
+  || fail "notarization evidence validator is missing or unsafe"
 [[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
   || fail "app artifact must be named Live Church Translation.app"
 [[ "$(basename "$DMG")" == "Live Church Translation.dmg" ]] \
@@ -37,14 +41,18 @@ fi
 if [[ "$RELEASE_MODE" == "developer-id-notarized" && "$SOURCE_STATE" != "clean" ]]; then
   fail "a formal release must be built from a clean Git worktree"
 fi
-[[ -d "$APP" && -f "$DMG" ]] || fail "app and DMG must exist before evidence generation"
+[[ -d "$APP" && ! -L "$APP" && -f "$DMG" && ! -L "$DMG" ]] \
+  || fail "app and DMG must exist as ordinary artifacts before evidence generation"
 "$SCRIPT_DIR/check_release_models.sh" "$MODEL_ROOT"
 mkdir -p "$EVIDENCE_DIR"
+[[ -d "$EVIDENCE_DIR" && ! -L "$EVIDENCE_DIR" ]] \
+  || fail "release evidence directory is unsafe"
+chmod 0700 "$EVIDENCE_DIR"
 rm -f \
   "$MODEL_MANIFEST" "$APP_MANIFEST" "$RUNTIME_MANIFEST" "$LICENSE_MANIFEST" \
   "$REPORT" "$CHECKSUMS"
 if [[ "$RELEASE_MODE" == "dry-run" ]]; then
-  rm -f "$EVIDENCE_DIR"/notary-*.json
+  rm -f "$EVIDENCE_DIR"/notary-*.json "$EVIDENCE_DIR"/notary-*-submitted.sha256
 fi
 
 printf 'model_id\trelative_path\tbytes\tsha256\timmutable_url\n' >"$MODEL_MANIFEST"
@@ -91,17 +99,52 @@ APP_NOTARY_ID="not performed"
 APP_NOTARY_STATUS="dry-run"
 DMG_NOTARY_ID="not performed"
 DMG_NOTARY_STATUS="dry-run"
+APP_SUBMITTED_SHA="not performed"
+DMG_SUBMITTED_SHA="not performed"
 if [[ "$RELEASE_MODE" == "developer-id-notarized" ]]; then
   APP_NOTARY_JSON="$EVIDENCE_DIR/notary-app.json"
+  APP_NOTARY_LOG="$EVIDENCE_DIR/notary-app-log.json"
+  APP_SUBMITTED_DIGEST="$EVIDENCE_DIR/notary-app-submitted.sha256"
   DMG_NOTARY_JSON="$EVIDENCE_DIR/notary-dmg.json"
-  [[ -f "$APP_NOTARY_JSON" && -f "$DMG_NOTARY_JSON" ]] \
+  DMG_NOTARY_LOG="$EVIDENCE_DIR/notary-dmg-log.json"
+  DMG_SUBMITTED_DIGEST="$EVIDENCE_DIR/notary-dmg-submitted.sha256"
+  [[ -f "$APP_NOTARY_JSON" && ! -L "$APP_NOTARY_JSON" \
+    && -f "$APP_NOTARY_LOG" && ! -L "$APP_NOTARY_LOG" \
+    && -f "$APP_SUBMITTED_DIGEST" && ! -L "$APP_SUBMITTED_DIGEST" \
+    && -f "$DMG_NOTARY_JSON" && ! -L "$DMG_NOTARY_JSON" \
+    && -f "$DMG_NOTARY_LOG" && ! -L "$DMG_NOTARY_LOG" \
+    && -f "$DMG_SUBMITTED_DIGEST" && ! -L "$DMG_SUBMITTED_DIGEST" ]] \
     || fail "notarization evidence is missing"
+  for notary_file in \
+    "$APP_NOTARY_JSON" "$APP_NOTARY_LOG" "$APP_SUBMITTED_DIGEST" \
+    "$DMG_NOTARY_JSON" "$DMG_NOTARY_LOG" "$DMG_SUBMITTED_DIGEST"; do
+    [[ -s "$notary_file" ]] || fail "notarization evidence is empty: $(basename "$notary_file")"
+    [[ "$(stat -f '%Lp' "$notary_file")" == "600" ]] \
+      || fail "notarization evidence must use owner-only permissions: $(basename "$notary_file")"
+  done
+  APP_SUBMITTED_SHA="$(
+    "$NOTARY_VALIDATOR" "$APP_NOTARY_JSON" "$APP_NOTARY_LOG" \
+      --expected-sha-file "$APP_SUBMITTED_DIGEST"
+  )" || fail "app notarization evidence is not internally bound"
+  DMG_SUBMITTED_SHA="$(
+    "$NOTARY_VALIDATOR" "$DMG_NOTARY_JSON" "$DMG_NOTARY_LOG" \
+      --expected-sha-file "$DMG_SUBMITTED_DIGEST"
+  )" || fail "DMG notarization evidence is not internally bound"
   APP_NOTARY_ID="$(plutil -extract id raw -o - "$APP_NOTARY_JSON")"
   APP_NOTARY_STATUS="$(plutil -extract status raw -o - "$APP_NOTARY_JSON")"
   DMG_NOTARY_ID="$(plutil -extract id raw -o - "$DMG_NOTARY_JSON")"
   DMG_NOTARY_STATUS="$(plutil -extract status raw -o - "$DMG_NOTARY_JSON")"
   [[ "$APP_NOTARY_STATUS" == "Accepted" && "$DMG_NOTARY_STATUS" == "Accepted" ]] \
     || fail "notarization evidence is not Accepted"
+  xcrun stapler validate "$APP" >/dev/null \
+    || fail "the app notarization ticket is not valid"
+  xcrun stapler validate "$DMG" >/dev/null \
+    || fail "the DMG notarization ticket is not valid"
+  hdiutil verify "$DMG" >/dev/null || fail "the final stapled DMG is invalid"
+  spctl --assess --type execute --verbose=4 "$APP" >/dev/null \
+    || fail "Gatekeeper rejected the app"
+  spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG" \
+    >/dev/null || fail "Gatekeeper rejected the DMG"
 fi
 
 {
@@ -120,8 +163,23 @@ fi
   printf -- '- App bytes: `%s`\n' "$APP_BYTES"
   printf -- '- DMG bytes: `%s`\n' "$DMG_BYTES"
   printf -- '- DMG SHA-256: `%s`\n' "$DMG_SHA"
-  printf -- '- App notarization: `%s` (`%s`)\n' "$APP_NOTARY_STATUS" "$APP_NOTARY_ID"
-  printf -- '- DMG notarization: `%s` (`%s`)\n\n' "$DMG_NOTARY_STATUS" "$DMG_NOTARY_ID"
+  if [[ "$RELEASE_MODE" == "developer-id-notarized" ]]; then
+    printf -- '- App notarization: `%s` (`%s`)\n' "$APP_NOTARY_STATUS" "$APP_NOTARY_ID"
+    printf -- '- App submission JSON: `%s/notary-app.json`\n' "$EVIDENCE_LABEL"
+    printf -- '- App notarization log: `%s/notary-app-log.json`\n' "$EVIDENCE_LABEL"
+    printf -- '- App submitted ZIP SHA-256: `%s`\n' "$APP_SUBMITTED_SHA"
+    printf -- '- App submitted SHA seal: `%s/notary-app-submitted.sha256`\n' \
+      "$EVIDENCE_LABEL"
+    printf -- '- DMG notarization: `%s` (`%s`)\n' "$DMG_NOTARY_STATUS" "$DMG_NOTARY_ID"
+    printf -- '- DMG submission JSON: `%s/notary-dmg.json`\n' "$EVIDENCE_LABEL"
+    printf -- '- DMG notarization log: `%s/notary-dmg-log.json`\n' "$EVIDENCE_LABEL"
+    printf -- '- Submitted DMG SHA-256: `%s`\n' "$DMG_SUBMITTED_SHA"
+    printf -- '- Submitted DMG SHA seal: `%s/notary-dmg-submitted.sha256`\n\n' \
+      "$EVIDENCE_LABEL"
+  else
+    printf -- '- App notarization: `not performed` (`dry-run`)\n'
+    printf -- '- DMG notarization: `not performed` (`dry-run`)\n\n'
+  fi
   printf 'The candidate contains seven revision-pinned model artifacts totaling '
   printf '2,120,095,795 bytes. Exact paths, sizes, hashes, and immutable source URLs are in '
   printf '`MODEL-MANIFEST.tsv`. Runtime and full app-content hashes are recorded separately.\n\n'

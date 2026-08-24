@@ -52,6 +52,7 @@ struct HyMTQualificationReportSnapshot: Equatable {
             value.st_size > 0,
             value.st_size <= maximumByteCount,
             value.st_nlink == 1,
+            value.st_uid == geteuid(),
             (value.st_mode & mode_t(0o077)) == 0
         else { throw storageFailure }
         return value

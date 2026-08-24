@@ -48,6 +48,34 @@ struct HyMTQualificationPostflightAttestation: Codable, Equatable {
         postflightVerified = true
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: StrictKey.self)
+        let expected = Set([
+            "schemaVersion", "reportSHA256", "sourceBundleSHA256",
+            "testExecutableSHA256", "modelSHA256", "helperSHA256",
+            "runtimeBundleSHA256", "configurationSHA256", "manifestSHA256",
+            "schemaSHA256", "postflightTimestamp", "postflightVerified",
+        ])
+        guard Set(container.allKeys.map(\.stringValue)) == expected else {
+            throw TranslationQualificationError.invalidReport(
+                "postflight attestation has missing or unknown fields"
+            )
+        }
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+        reportSHA256 = try values.decode(String.self, forKey: .reportSHA256)
+        sourceBundleSHA256 = try values.decode(String.self, forKey: .sourceBundleSHA256)
+        testExecutableSHA256 = try values.decode(String.self, forKey: .testExecutableSHA256)
+        modelSHA256 = try values.decode(String.self, forKey: .modelSHA256)
+        helperSHA256 = try values.decode(String.self, forKey: .helperSHA256)
+        runtimeBundleSHA256 = try values.decode(String.self, forKey: .runtimeBundleSHA256)
+        configurationSHA256 = try values.decode(String.self, forKey: .configurationSHA256)
+        manifestSHA256 = try values.decode(String.self, forKey: .manifestSHA256)
+        schemaSHA256 = try values.decode(String.self, forKey: .schemaSHA256)
+        postflightTimestamp = try values.decode(String.self, forKey: .postflightTimestamp)
+        postflightVerified = try values.decode(Bool.self, forKey: .postflightVerified)
+    }
+
     private static func isSHA256(_ value: String) -> Bool {
         value.count == 64 && value.allSatisfy { $0.isHexDigit && !$0.isUppercase }
     }
@@ -57,5 +85,20 @@ struct HyMTQualificationPostflightAttestation: Codable, Equatable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter.date(from: value) != nil
+    }
+}
+
+private struct StrictKey: CodingKey {
+    let stringValue: String
+    let intValue: Int?
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        intValue = nil
+    }
+
+    init?(intValue: Int) {
+        stringValue = String(intValue)
+        self.intValue = intValue
     }
 }

@@ -66,7 +66,7 @@ public actor AVFoundationAudioCaptureProvider: AudioCaptureProvider {
     }
 
     private func makeStream() -> (stream: Stream, continuation: Stream.Continuation) {
-        let pair = Stream.makeStream(bufferingPolicy: .bufferingOldest(64))
+        let pair = AudioFrameStream.makeBounded()
         pair.continuation.onTermination = { [weak self] _ in
             Task { [weak self] in await self?.stopCapture() }
         }

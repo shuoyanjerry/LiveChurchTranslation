@@ -79,6 +79,10 @@ active_gate="endpoint packet tests"
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
     -s Tests/EndpointHumanLabelPacketTests -p 'test_*.py' -v
 
+active_gate="notarization evidence tests"
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+    -s Tests/NotaryEvidenceTests -p 'test_*.py' -v
+
 active_gate="Swift build"
 run_logged_gate "$active_gate" swift build -Xswiftc -warnings-as-errors
 active_gate="Swift tests"

@@ -81,13 +81,20 @@ struct LiveReaderHeader: View {
         Menu {
             microphonePicker
         } label: {
-            InlineMenuLabel(title: selectedInputName, systemImage: "mic")
+            InlineMenuLabel(
+                title: MicrophoneControlPresentation.title(
+                    selectedInputName: selectedInputName,
+                    expanded: true
+                ),
+                systemImage: "mic"
+            )
         }
         .menuIndicator(.hidden)
         .buttonStyle(ChurchSecondaryButtonStyle())
         .fixedSize(horizontal: true, vertical: false)
         .disabled(viewModel.sessionControlsLocked)
-        .accessibilityLabel("音频输入")
+        .accessibilityLabel(MicrophoneControlPresentation.settingsTitle)
         .accessibilityValue(selectedInputName)
+        .help(selectedInputName)
     }
 }

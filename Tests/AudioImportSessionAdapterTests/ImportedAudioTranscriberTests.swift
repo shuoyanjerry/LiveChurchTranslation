@@ -1,4 +1,5 @@
 import AudioCaptureAPI
+import AudioImportAPI
 import AudioImportSessionAdapter
 import Foundation
 import SessionManagementAPI
@@ -6,7 +7,7 @@ import SettingsAPI
 import Testing
 
 @Suite @MainActor struct ImportedAudioTranscriberTests {
-    @Test func cancellationBeforeEventsReturnNeverStartsImport() async throws {
+    @Test func cancellationBeforeEventsReturnNeverStartsAndReportsCancellation() async throws {
         let controller = ImportedAudioControllerStub(holdEvents: true)
         let transcriber = makeTranscriber(controller)
         let importTask = startImport(transcriber)
@@ -14,13 +15,15 @@ import Testing
 
         await transcriber.cancelImport()
         await controller.releaseEvents()
-        try await importTask.value
+        await #expect(throws: AudioImportError.cancelled) {
+            try await importTask.value
+        }
 
         #expect(await controller.startCallCount() == 0)
         #expect(await controller.stopCallCount() >= 1)
     }
 
-    @Test func cancellationWhileStartIsPendingStopsWithoutAnError() async throws {
+    @Test func cancellationWhileStartIsPendingStopsAndReportsCancellation() async throws {
         let controller = ImportedAudioControllerStub(holdStart: true)
         let transcriber = makeTranscriber(controller)
         let importTask = startImport(transcriber)
@@ -28,19 +31,37 @@ import Testing
 
         await transcriber.cancelImport()
         await controller.releaseStart()
-        try await importTask.value
+        await #expect(throws: AudioImportError.cancelled) {
+            try await importTask.value
+        }
 
         #expect(await controller.stopCallCount() >= 1)
     }
 
-    @Test func cancellationAfterStartReturnsStopsWithoutAnError() async throws {
+    @Test func cancellationAfterStartReturnsStopsAndReportsCancellation() async throws {
         let controller = ImportedAudioControllerStub()
         let transcriber = makeTranscriber(controller)
         let importTask = startImport(transcriber)
         try await waitUntil { await controller.startCallCount() == 1 }
 
         await transcriber.cancelImport()
-        try await importTask.value
+        await #expect(throws: AudioImportError.cancelled) {
+            try await importTask.value
+        }
+
+        #expect(await controller.stopCallCount() >= 1)
+    }
+
+    @Test func cancellingCallerTaskPropagatesToActiveImport() async throws {
+        let controller = ImportedAudioControllerStub()
+        let transcriber = makeTranscriber(controller)
+        let importTask = startImport(transcriber)
+        try await waitUntil { await controller.startCallCount() == 1 }
+
+        importTask.cancel()
+        await #expect(throws: AudioImportError.cancelled) {
+            try await importTask.value
+        }
 
         #expect(await controller.stopCallCount() >= 1)
     }

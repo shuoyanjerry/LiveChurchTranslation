@@ -5,6 +5,13 @@ struct HyMT2AssessedOutput: Equatable, Sendable {
     let review: TranslationReview?
     let validationIssueCount: Int
 
+    func preferredBestEffort(over previous: HyMT2AssessedOutput) -> HyMT2AssessedOutput {
+        if hasImplausibleLengthIssue != previous.hasImplausibleLengthIssue {
+            return hasImplausibleLengthIssue ? previous : self
+        }
+        return validationIssueCount <= previous.validationIssueCount ? self : previous
+    }
+
     static func approved(
         target: String
     ) -> HyMT2AssessedOutput {
@@ -28,5 +35,9 @@ struct HyMT2AssessedOutput: Equatable, Sendable {
             review: TranslationReview(issueCodes: issueCodes),
             validationIssueCount: validationIssueCount + 1
         )
+    }
+
+    private var hasImplausibleLengthIssue: Bool {
+        review?.issueCodes.contains("quality.implausible_length") == true
     }
 }

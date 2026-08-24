@@ -5,6 +5,21 @@ import TranslationQualificationSupport
 enum HyMTQualificationPostflightWriter {
     @discardableResult
     static func writePrivate(
+        _ data: Data,
+        workspaceRoot: URL,
+        filename: String
+    ) throws -> URL {
+        try TranslationQualificationReportWriter.validatePrivateFilename(filename)
+        try HyMTQualificationPostflightDirectory.withDescriptor(
+            workspaceRoot: workspaceRoot
+        ) { try write(data, filename: filename, directory: $0) }
+        return workspaceRoot.resolvingSymlinksInPath().standardizedFileURL
+            .appendingPathComponent(".artifacts/translation-qualification", isDirectory: true)
+            .appendingPathComponent(filename, isDirectory: false)
+    }
+
+    @discardableResult
+    static func writePrivate(
         _ attestation: HyMTQualificationPostflightAttestation,
         workspaceRoot: URL,
         reportFilename: String
@@ -22,12 +37,7 @@ enum HyMTQualificationPostflightWriter {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(attestation)
-        try HyMTQualificationPostflightDirectory.withDescriptor(
-            workspaceRoot: workspaceRoot
-        ) { try write(data, filename: filename, directory: $0) }
-        return workspaceRoot.resolvingSymlinksInPath().standardizedFileURL
-            .appendingPathComponent(".artifacts/translation-qualification", isDirectory: true)
-            .appendingPathComponent(filename, isDirectory: false)
+        return try writePrivate(data, workspaceRoot: workspaceRoot, filename: filename)
     }
 
     private static func write(_ data: Data, filename: String, directory: Int32) throws {

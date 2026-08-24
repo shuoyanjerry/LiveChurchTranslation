@@ -21,7 +21,7 @@ public enum AudioCaptureError: Error, Equatable, LocalizedError, Sendable {
         case .invalidConfiguration(let message):
             "音频采集配置无效：\(message)"
         case .streamBufferOverflow:
-            "处理速度未能跟上，音频采集已停止。完整录音将用于恢复。"
+            "处理速度未能跟上，录音已停止并保留已录内容。"
         case .systemFailure(let operation, let status):
             "Core Audio 在执行 \(operation) 时失败（OSStatus \(status)）。"
         case .engineStartFailed(let message):

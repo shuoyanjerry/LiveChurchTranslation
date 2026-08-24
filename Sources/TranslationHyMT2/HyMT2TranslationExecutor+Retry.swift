@@ -57,9 +57,7 @@ extension HyMT2TranslationExecutor {
         )
         if let assessed {
             guard let fallback = request.fallback else { return assessed }
-            return assessed.validationIssueCount <= fallback.validationIssueCount
-                ? assessed
-                : fallback
+            return assessed.preferredBestEffort(over: fallback)
         }
         if let fallback = request.fallback { return fallback }
         guard qualifiesForSafetyFallback(failure, request: request) else {

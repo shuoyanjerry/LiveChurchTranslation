@@ -115,6 +115,8 @@ extension HyMTPostflightTestFixture {
             workspaceRoot: URL(fileURLWithPath: "/synthetic-workspace", isDirectory: true),
             manifestURL: URL(fileURLWithPath: "/synthetic-manifest.json"),
             reportFilename: "synthetic-report.json",
+            reviewPacketFilename: "synthetic-report.review-packet.json",
+            freezeRequestFilename: "synthetic-report.freeze-request.json",
             modelURL: URL(fileURLWithPath: "/synthetic-model", isDirectory: true),
             helperURL: URL(fileURLWithPath: "/synthetic-runtime/llama-server"),
             backgroundLoad: "synthetic-idle",

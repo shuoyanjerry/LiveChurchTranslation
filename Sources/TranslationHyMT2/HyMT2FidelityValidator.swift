@@ -11,7 +11,14 @@ enum HyMT2FidelityValidator {
     ) -> [OutputValidationIssue] {
         var issues: [OutputValidationIssue] = []
         if target.isEmpty { issues.append(.empty) }
-        if !plausibleLength(target, source: source) { issues.append(.implausibleLength) }
+        if !plausibleLength(
+            target,
+            source: source,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage
+        ) {
+            issues.append(.implausibleLength)
+        }
         if containsMetaText(target) { issues.append(.metaText) }
         let containsPromptControl =
             HyMT2PromptControlDelimiter.occurs(in: target)

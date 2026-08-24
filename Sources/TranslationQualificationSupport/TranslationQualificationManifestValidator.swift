@@ -70,6 +70,11 @@ public enum TranslationManifestValidator {
             try validateTextAndOccurrences(segment)
             try require(!segment.qualification.exactStringScoringEligible, "exact scoring enabled")
             try require(!segment.qualification.asrCEREligible, "CER enabled")
+            try require(
+                !segment.qualification.requiresHumanSemanticReview
+                    || segment.qualification.semanticScoringEligible,
+                "human semantic review requires semantic scoring eligibility"
+            )
             seenBySource[segment.sourceID, default: []].insert(segment.id)
         }
         for source in manifest.sources {

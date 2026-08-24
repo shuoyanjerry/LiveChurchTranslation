@@ -6,6 +6,7 @@ actor FakeSessionRecordingStore: SessionRecordingStore {
     private let failAppendAfterWrite: Bool
     private let failFinish: Bool
     private let failRepair: Bool
+    private let appendDelay: Duration?
     private var active: Set<UUID> = []
     private var frames: [UUID: [AudioFrame]] = [:]
     private var completed: Set<UUID> = []
@@ -15,18 +16,23 @@ actor FakeSessionRecordingStore: SessionRecordingStore {
     init(
         failAppendAfterWrite: Bool = false,
         failFinish: Bool = false,
-        failRepair: Bool = false
+        failRepair: Bool = false,
+        appendDelay: Duration? = nil
     ) {
         self.failAppendAfterWrite = failAppendAfterWrite
         self.failFinish = failFinish
         self.failRepair = failRepair
+        self.appendDelay = appendDelay
     }
 
     func begin(sessionID: UUID) throws {
         active.insert(sessionID)
     }
 
-    func append(_ frame: AudioFrame, to sessionID: UUID) throws {
+    func append(_ frame: AudioFrame, to sessionID: UUID) async throws {
+        if let appendDelay {
+            try await Task.sleep(for: appendDelay)
+        }
         guard active.contains(sessionID) else {
             throw RecordingStoreError.sessionNotActive(sessionID)
         }

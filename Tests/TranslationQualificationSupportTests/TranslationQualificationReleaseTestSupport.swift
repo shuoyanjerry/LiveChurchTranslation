@@ -15,10 +15,14 @@ func releaseValues(
         requiresHumanReview: requiresHumanReview
     )
     let corpus = try workspace.load()
+    let report = try SyntheticTranslationReportFactory.build(corpus: corpus)
     return TranslationReleaseValues(
         workspace: workspace,
-        report: try SyntheticTranslationReportFactory.build(corpus: corpus),
-        expectation: try SyntheticTranslationReportFactory.releaseExpectation(corpus: corpus)
+        report: report,
+        expectation: try SyntheticHumanReviewSettlementFactory.expectation(
+            report: report,
+            corpus: corpus
+        )
     )
 }
 
@@ -84,7 +88,10 @@ private func releaseExpectation(
         trustedEnvironment: correct.environment,
         trustedAttempts: attempts,
         attemptCount: attemptCount ?? correct.attemptCount,
-        attemptIdentitySHA256: identity ?? correct.attemptIdentitySHA256
+        attemptIdentitySHA256: identity ?? correct.attemptIdentitySHA256,
+        trustedHumanReviewers: correct.trustedHumanReviewers,
+        trustedHumanReviewPacketSHA256: correct.trustedHumanReviewPacketSHA256,
+        trustedHumanReviewerRegistrySHA256: correct.trustedHumanReviewerRegistrySHA256
     )
 }
 

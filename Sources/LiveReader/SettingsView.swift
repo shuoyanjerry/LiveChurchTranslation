@@ -28,7 +28,7 @@ struct SettingsView: View {
                 .disabled(viewModel.sessionControlsLocked)
             }
             Section("音频输入") {
-                Picker("麦克风", selection: $draftInputID) {
+                Picker(MicrophoneControlPresentation.settingsTitle, selection: $draftInputID) {
                     Text("系统默认麦克风").tag(AudioInputID?.none)
                     ForEach(viewModel.devices) { device in
                         Text(device.name).tag(Optional(device.id))

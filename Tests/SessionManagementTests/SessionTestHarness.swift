@@ -45,6 +45,8 @@ struct SessionTestHarness {
         recordingAppendFails: Bool = false,
         recordingFinishFails: Bool = false,
         recordingRepairFails: Bool = false,
+        recordingAppendDelay: Duration? = nil,
+        audioProcessingDelay: Duration? = nil,
         modelPreparationDelay: Duration? = nil,
         holdsPermissionRequest: Bool = false,
         holdsCaptureOpen: Bool = false,
@@ -76,6 +78,8 @@ struct SessionTestHarness {
                     recordingAppendFails: recordingAppendFails,
                     recordingFinishFails: recordingFinishFails,
                     recordingRepairFails: recordingRepairFails,
+                    recordingAppendDelay: recordingAppendDelay,
+                    audioProcessingDelay: audioProcessingDelay,
                     modelPreparationDelay: modelPreparationDelay,
                     audioFrames: audioFrames ?? [Self.audioFrame],
                     holdsPermissionRequest: holdsPermissionRequest,
@@ -83,8 +87,7 @@ struct SessionTestHarness {
                     emitsOnlyOnFlush: emitsOnlyOnFlush,
                     emitsEveryFrame: emitsEveryFrame,
                     translationMode: translationMode,
-                    sentenceVisibilityClock:
-                        sentenceVisibilityClock ?? ContinuousSentenceVisibilityClock()
+                    sentenceVisibilityClock: sentenceVisibilityClock ?? Self.defaultClock
                 )
             ),
             sessionKind: sessionKind
@@ -114,6 +117,10 @@ struct SessionTestHarness {
             sessionKind: sessionKind,
             sentenceVisibilityClock: components.sentenceVisibilityClock
         )
+    }
+
+    private static var defaultClock: any SentenceVisibilityClock {
+        ContinuousSentenceVisibilityClock()
     }
 
     func run(timeout: Duration = .seconds(2)) async throws -> [LiveSessionEvent] {

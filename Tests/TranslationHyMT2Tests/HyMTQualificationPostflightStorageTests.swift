@@ -73,6 +73,41 @@ import TranslationQualificationSupport
         }
     }
 
+    @Test func postflightDecoderRejectsUnknownAndDuplicateFields() throws {
+        let fixture = try HyMTPostflightTestFixture.make()
+        let attestation = try HyMTQualificationPostflightValidator.validate(
+            snapshot: fixture.snapshot,
+            corpus: fixture.corpus,
+            provenance: fixture.provenance,
+            configuration: fixture.configuration,
+            timestamp: "2026-08-22T13:00:00Z"
+        )
+        let data = try JSONEncoder().encode(attestation)
+        var object = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        object["unknown"] = true
+        let unknown = try JSONSerialization.data(withJSONObject: object)
+        #expect(throws: Error.self) {
+            _ = try JSONDecoder().decode(
+                HyMTQualificationPostflightAttestation.self,
+                from: unknown
+            )
+        }
+        let text = try #require(String(data: data, encoding: .utf8))
+        let duplicate = Data(
+            text.replacingOccurrences(
+                of: "{",
+                with: "{\"schemaVersion\":1,",
+                options: [],
+                range: text.startIndex..<text.index(after: text.startIndex)
+            ).utf8
+        )
+        #expect(throws: TranslationQualificationError.self) {
+            try TranslationJSONDuplicateKeyValidator.validate(duplicate)
+        }
+    }
+
     private let expectedKeys = Set([
         "schemaVersion", "reportSHA256", "sourceBundleSHA256",
         "testExecutableSHA256", "modelSHA256", "helperSHA256",

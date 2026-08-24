@@ -43,8 +43,13 @@ struct InlineMenuLabel: View {
         HStack(spacing: 6) {
             Image(systemName: systemImage)
                 .frame(width: 14)
-            Text(title)
+            (Text(title)
+                + Text(" ")
+                + Text(Image(systemName: "chevron.down"))
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundColor(ChurchTheme.ink.opacity(0.58)))
                 .lineLimit(1)
+                .accessibilityLabel(title)
         }
         .font(.callout.weight(.medium))
         .fixedSize(horizontal: true, vertical: false)

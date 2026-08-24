@@ -1,11 +1,69 @@
 import Foundation
 
 extension HyMT2FidelityValidator {
-    static func plausibleLength(_ target: String, source: String) -> Bool {
+    static func plausibleLength(
+        _ target: String,
+        source: String,
+        sourceLanguage: String,
+        targetLanguage: String
+    ) -> Bool {
         guard !target.isEmpty else { return false }
         let sourceCount = max(1, source.count)
+        guard target.count <= sourceCount * 10 + 80 else { return false }
+
+        let sourceIsChinese = sourceLanguage.lowercased().hasPrefix("zh")
+        let targetIsChinese = targetLanguage.lowercased().hasPrefix("zh")
+        if sourceIsChinese, !targetIsChinese {
+            return preservesEnoughContent(target, source: source, divisor: 5)
+        }
+        if !sourceIsChinese, targetIsChinese {
+            return preservesEnoughContent(target, source: source, divisor: 3)
+        }
         return target.count >= max(1, sourceCount / 5)
-            && target.count <= sourceCount * 10 + 80
+    }
+
+    private static func preservesEnoughContent(
+        _ target: String,
+        source: String,
+        divisor: Int
+    ) -> Bool {
+        let sourceUnits = contentUnitCount(in: source)
+        guard sourceUnits >= 24 else { return true }
+        let minimumTargetUnits = (sourceUnits - 1) / divisor + 1
+        return contentUnitCount(in: target) >= minimumTargetUnits
+    }
+
+    private static func contentUnitCount(in text: String) -> Int {
+        hanCharacterCount(in: text) + latinWordCount(in: text)
+    }
+
+    private static func hanCharacterCount(in text: String) -> Int {
+        text.unicodeScalars.reduce(into: 0) { count, scalar in
+            if scalar.properties.isIdeographic { count += 1 }
+        }
+    }
+
+    private static func latinWordCount(in text: String) -> Int {
+        var count = 0
+        var isInsideWord = false
+        for scalar in text.unicodeScalars {
+            if isLatinLetter(scalar) {
+                if !isInsideWord { count += 1 }
+                isInsideWord = true
+            } else if scalar != "'", scalar != "’" {
+                isInsideWord = false
+            }
+        }
+        return count
+    }
+
+    private static func isLatinLetter(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x0041...0x005A, 0x0061...0x007A, 0x00C0...0x024F:
+            true
+        default:
+            false
+        }
     }
 
     static func containsMetaText(_ target: String) -> Bool {

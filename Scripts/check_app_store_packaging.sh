@@ -258,6 +258,68 @@ rg -Fq 'environment: production-release' "$RELEASE_WORKFLOW" \
 rg -Fq 'git merge-base --is-ancestor' "$RELEASE_WORKFLOW" \
   || fail "formal release workflow must restrict tags to default-branch history"
 
+NOTARIZE_SCRIPT="$SCRIPT_DIR/notarize_release.sh"
+EVIDENCE_SCRIPT="$SCRIPT_DIR/generate_release_evidence.sh"
+NOTARY_VALIDATOR="$SCRIPT_DIR/validate_notary_evidence.py"
+rg -Fq 'umask 077' "$NOTARIZE_SCRIPT" \
+  || fail "notarization evidence must default to owner-only permissions"
+rg -Fq 'umask 077' "$EVIDENCE_SCRIPT" \
+  || fail "release evidence must default to owner-only permissions"
+rg -Fq 'xcrun notarytool log "$submission_id"' "$NOTARIZE_SCRIPT" \
+  || fail "successful notarization logs are not downloaded"
+rg -Fq '[[ "$status" == "Accepted" ]]' "$NOTARIZE_SCRIPT" \
+  || fail "notarization does not fail closed on non-Accepted status"
+rg -Fq '[[ "$APP_NOTARY_STATUS" == "Accepted" && "$DMG_NOTARY_STATUS" == "Accepted" ]]' \
+  "$EVIDENCE_SCRIPT" \
+  || fail "formal evidence does not fail closed on non-Accepted status"
+rg -Fq -- '--artifact "$artifact" --expected-sha-file "$digest_tmp"' \
+  "$NOTARIZE_SCRIPT" \
+  || fail "notarization results are not bound to both the artifact and sealed digest"
+rg -Fq -- '--expected-sha-file "$APP_SUBMITTED_DIGEST"' "$EVIDENCE_SCRIPT" \
+  || fail "app notarization evidence is not revalidated from its sealed digest"
+rg -Fq -- '--expected-sha-file "$DMG_SUBMITTED_DIGEST"' "$EVIDENCE_SCRIPT" \
+  || fail "DMG notarization evidence is not revalidated from its sealed digest"
+rg -Fq 'notary-app-log.json' "$EVIDENCE_SCRIPT" \
+  || fail "app notarization log is absent from release evidence"
+rg -Fq 'notary-dmg-log.json' "$EVIDENCE_SCRIPT" \
+  || fail "DMG notarization log is absent from release evidence"
+rg -Fq 'notary-app-submitted.sha256' "$EVIDENCE_SCRIPT" \
+  || fail "app submitted-artifact digest is absent from release evidence"
+rg -Fq 'notary-dmg-submitted.sha256' "$EVIDENCE_SCRIPT" \
+  || fail "DMG submitted-artifact digest is absent from release evidence"
+rg -Fq "stat -f '%Lp'" "$EVIDENCE_SCRIPT" \
+  || fail "notarization evidence permissions are not audited"
+rg -Fq 'Tests/NotaryEvidenceTests' "$SCRIPT_DIR/check.sh" \
+  || fail "notarization evidence validator tests are absent from the quality gate"
+ARTIFACT_SEAL_LINE="$(rg -nF 'artifact_sha="$(shasum -a 256 "$artifact"' \
+  "$NOTARIZE_SCRIPT" | cut -d: -f1)"
+NOTARY_SUBMIT_LINE="$(rg -nF 'xcrun notarytool submit "$artifact"' \
+  "$NOTARIZE_SCRIPT" | cut -d: -f1)"
+NOTARY_BIND_LINE="$(rg -nF -- '--artifact "$artifact" --expected-sha-file "$digest_tmp"' \
+  "$NOTARIZE_SCRIPT" | cut -d: -f1)"
+[[ -n "$ARTIFACT_SEAL_LINE" && -n "$NOTARY_SUBMIT_LINE" && -n "$NOTARY_BIND_LINE" \
+  && "$ARTIFACT_SEAL_LINE" -lt "$NOTARY_SUBMIT_LINE" \
+  && "$NOTARY_SUBMIT_LINE" -lt "$NOTARY_BIND_LINE" ]] \
+  || fail "the submitted artifact is not sealed and rebound in the required order"
+DMG_STAPLE_VALIDATE_LINE="$(rg -nF 'xcrun stapler validate "$DMG"' "$NOTARIZE_SCRIPT" \
+  | cut -d: -f1)"
+FINAL_DMG_VERIFY_LINE="$(rg -nF 'hdiutil verify "$DMG"' "$NOTARIZE_SCRIPT" \
+  | cut -d: -f1)"
+[[ -n "$DMG_STAPLE_VALIDATE_LINE" && -n "$FINAL_DMG_VERIFY_LINE" \
+  && "$FINAL_DMG_VERIFY_LINE" -gt "$DMG_STAPLE_VALIDATE_LINE" ]] \
+  || fail "the stapled final DMG is not reverified"
+for command in \
+  'xcrun stapler validate "$APP"' \
+  'xcrun stapler validate "$DMG"' \
+  'hdiutil verify "$DMG"' \
+  'spctl --assess --type execute --verbose=4 "$APP"' \
+  'spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG"'; do
+  rg -Fq "$command" "$EVIDENCE_SCRIPT" \
+    || fail "formal evidence generation omits artifact revalidation: $command"
+done
+[[ -f "$NOTARY_VALIDATOR" && ! -L "$NOTARY_VALIDATOR" ]] \
+  || fail "notarization evidence validator is missing or unsafe"
+
 EXECUTABLE_SCRIPTS=(
   archive_app_store.sh
   audit_app_store_archive.sh
@@ -278,6 +340,7 @@ EXECUTABLE_SCRIPTS=(
   generate_xcode_project.sh
   notarize_release.sh
   package_release.sh
+  validate_notary_evidence.py
 )
 for name in "${EXECUTABLE_SCRIPTS[@]}"; do
   [[ -x "$SCRIPT_DIR/$name" ]] || fail "$name is not executable"
