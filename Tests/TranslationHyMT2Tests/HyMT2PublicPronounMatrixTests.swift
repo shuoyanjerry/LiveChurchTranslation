@@ -64,9 +64,12 @@ struct HyMT2PublicPronounMatrixTests {
             )
         }
         let expected = try fixture.expectedTraces()
-        #expect(actual == expected, "Trace mismatch in \(fixture.name)")
-        #expect(!containsProtocolResidue(result.targetText), "Protocol leak in \(fixture.name)")
-        print("HYMT_PUBLIC_MATRIX_\(fixture.name)=passed")
+        let tracesMatch = actual == expected
+        let residueFree = !containsProtocolResidue(result.targetText)
+        #expect(tracesMatch, "Trace mismatch in \(fixture.name)")
+        #expect(residueFree, "Protocol leak in \(fixture.name)")
+        let outcome = tracesMatch && residueFree ? "passed" : "failed"
+        print("HYMT_PUBLIC_MATRIX_\(fixture.name)=\(outcome)")
     }
 
     private func printOutputs(

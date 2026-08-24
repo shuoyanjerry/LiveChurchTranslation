@@ -76,7 +76,12 @@ enum HyMT2PronounDeterministicRepairer {
         return HyMT2PronounRepairBinding(
             markerName: token.markerName,
             pronounRange: range,
-            word: String(output[range])
+            word: String(output[range]),
+            subjectAgreementIsNumberInvariant:
+                HyMT2SubjectAgreementGuard.isNumberInvariant(
+                    after: token.range.upperBound,
+                    in: output
+                )
         )
     }
 
@@ -98,4 +103,5 @@ struct HyMT2PronounRepairBinding {
     let markerName: String
     let pronounRange: Range<String.Index>
     let word: String
+    let subjectAgreementIsNumberInvariant: Bool
 }
