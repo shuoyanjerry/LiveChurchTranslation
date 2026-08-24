@@ -24,6 +24,7 @@ public actor BundledModelProvider: ModelDownloadProvider {
     }
 
     public func ensureAvailable(_ descriptor: ModelDescriptor) async throws -> URL {
+        try Task.checkCancellation()
         if let verified = verifiedLocations[descriptor.id] { return verified }
         guard let manifest = manifests[descriptor.id], manifest.descriptor == descriptor else {
             try await fail(descriptor, with: .manifestMismatch)

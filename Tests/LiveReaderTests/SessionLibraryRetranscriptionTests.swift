@@ -155,7 +155,7 @@ extension SessionLibraryRetranscriptionTests {
 
         #expect(await recorder.calls().count == 1)
         #expect(await fixture.store.deletedIDs().isEmpty)
-        #expect(fixture.viewModel.presentedError == "请等待当前音频听抄完成。")
+        #expect(fixture.viewModel.presentedError == "请等待当前媒体听抄完成。")
         await gate.release()
         await first.value
         #expect(!fixture.viewModel.isImporting)

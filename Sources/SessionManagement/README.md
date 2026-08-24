@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Orchestrates bilingual live sessions and source-only imported-audio transcription as explicit session
+Orchestrates bilingual live sessions and source-only imported-media transcription as explicit session
 policies. It prepares the models required by each policy, captures and segments audio, persists entries,
 replays recoverable utterances, and drains work during stop. Live sessions additionally translate with
 glossary context. Mandarin source text passes through literal normalization and conservative discourse
@@ -21,13 +21,13 @@ evidence travels as immutable typed guidance.
 
 For live sessions, one finalized VAD segment is one translation and presentation unit. Its complete
 recognized text is sent in one translation request, projected to a source-only durable entry, and
-published with its transient translation without punctuation-based splitting. Imported audio keeps the
+published with its transient translation without punctuation-based splitting. Imported media keeps the
 same one-segment source presentation but skips translation entirely. FIFO processing preserves segment
 order. A legacy splitter remains isolated to recovery of records partially persisted
 by releases that created multiple sentence entries for one segment. Durable recovery
 schema v1 predates a topology marker, so replay resolves it from already persisted
 entry identities and timing; ambiguous records remain pending instead of being guessed.
-Schema v2 marks the atomic segment topology. New live and imported-audio work never
+Schema v2 marks the atomic segment topology. New live and imported-media work never
 enters the legacy split path.
 
 ## Dependencies

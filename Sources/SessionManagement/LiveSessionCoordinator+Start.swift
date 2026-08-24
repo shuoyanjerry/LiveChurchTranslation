@@ -4,7 +4,13 @@ import SettingsAPI
 
 extension LiveSessionCoordinator {
     public func start(inputDeviceID: AudioInputID?) async {
-        guard !Task.isCancelled, !isActive, stopTask == nil, state.sessionID == nil else {
+        guard
+            !Task.isCancelled,
+            !isShuttingDown,
+            !isActive,
+            stopTask == nil,
+            state.sessionID == nil
+        else {
             return
         }
         let sessionID = UUID()
@@ -165,15 +171,4 @@ extension LiveSessionCoordinator {
         observeModelStatus()
     }
 
-    private func makePreparationTask(
-        mode: TranslationMode,
-        excludingSessionID: UUID
-    ) -> Task<PreparedSessionInference, any Error> {
-        Task { [sessionPreparer] in
-            try await sessionPreparer.prepareInference(
-                mode: mode,
-                excludingSessionID: excludingSessionID
-            )
-        }
-    }
 }

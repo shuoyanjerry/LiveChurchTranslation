@@ -25,6 +25,15 @@ CONTENTS="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH"
 EXECUTABLES="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
 
+if [[ "${LCT_COMPILE_ONLY_APP_BUILD:-0}" == "1" ]]; then
+  [[ "${CODE_SIGNING_ALLOWED:-YES}" == "NO" ]] \
+    || fail "compile-only app builds must disable code signing"
+  [[ "${ACTION:-build}" != "install" ]] \
+    || fail "compile-only runtime omission is forbidden for archives"
+  echo "Pinned runtime embedding omitted for a non-archive compile-only build."
+  exit 0
+fi
+
 [[ -d "$RUNTIME" && ! -L "$RUNTIME" ]] \
   || fail "run Scripts/fetch_llama_runtime.sh before building the app target"
 [[ -f "$MANIFEST" && -f "$HELPER_ENTITLEMENTS" ]] \

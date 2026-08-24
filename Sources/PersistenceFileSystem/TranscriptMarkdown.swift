@@ -116,14 +116,14 @@ extension TranscriptSessionKind {
     fileprivate var markdownDocumentTitle: String {
         switch self {
         case .live: "会议听抄稿"
-        case .importedAudio: "导入音频听抄稿"
+        case .importedAudio: "导入媒体听抄稿"
         }
     }
 
     fileprivate var markdownName: String {
         switch self {
         case .live: "现场会议"
-        case .importedAudio: "导入音频"
+        case .importedAudio: "导入媒体"
         }
     }
 }

@@ -30,10 +30,11 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
     let pipeline: InferenceModelPreparationPipeline
     let descriptors: [ModelDescriptor]
     let scope: InferenceModelPreparationScope
-    private let retryDelays: [Duration]
+    let retryDelays: [Duration]
     var snapshot: ModelPreparationSnapshot
     var preparation: ActiveModelPreparation?
-    private var automaticPreparation: AutomaticModelPreparation?
+    var automaticPreparation: AutomaticModelPreparation?
+    var isShutDown = false
     var progressByModel: [ModelID: Double] = [:]
     var cachedLocations: InferenceModelLocations?
     var waiters: [UUID: CheckedContinuation<Void, any Error>] = [:]
@@ -68,62 +69,8 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
         self.retryDelays = retryDelays
     }
 
-    public func prepareModels() async {
-        let active = automaticPreparation ?? startAutomaticPreparation()
-        await active.task.value
-        clearAutomaticPreparation(matching: active.token)
-    }
-
-    public func retryModelPreparation() async {
-        if let active = automaticPreparation {
-            await active.task.value
-            clearAutomaticPreparation(matching: active.token)
-        }
-        guard !snapshot.isReady else { return }
-        let active = startAutomaticPreparation()
-        await active.task.value
-        clearAutomaticPreparation(matching: active.token)
-    }
-
-    private func startAutomaticPreparation() -> AutomaticModelPreparation {
-        let token = UUID()
-        let coordinator = self
-        let task = Task<Void, Never> {
-            await coordinator.performAutomaticPreparation()
-        }
-        let active = AutomaticModelPreparation(token: token, task: task)
-        automaticPreparation = active
-        return active
-    }
-
-    private func performAutomaticPreparation() async {
-        for attemptIndex in 0...retryDelays.count {
-            do {
-                try await ensureReady()
-                return
-            } catch is CancellationError {
-                return
-            } catch {
-                guard attemptIndex < retryDelays.count else { return }
-                let nextAttempt = attemptIndex + 2
-                publish(
-                    ModelPreparationSnapshot(
-                        phase: .retrying(attempt: nextAttempt),
-                        message: "模型准备暂时中断，即将自动重试（\(nextAttempt)/\(retryDelays.count + 1)）…"
-                    )
-                )
-                try? await Task.sleep(for: retryDelays[attemptIndex])
-            }
-        }
-    }
-
-    private func clearAutomaticPreparation(matching token: UUID) {
-        guard automaticPreparation?.token == token else { return }
-        automaticPreparation = nil
-    }
-
     func startPreparationIfNeeded() {
-        guard preparation == nil else { return }
+        guard !isShutDown, preparation == nil else { return }
         let reusableLocations = snapshot.isReady ? cachedLocations : nil
         progressByModel = Dictionary(
             uniqueKeysWithValues: descriptors.map { ($0.id, 0) }
@@ -137,7 +84,7 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
         let token = UUID()
         let pipeline = pipeline
         let coordinator = self
-        Task {
+        let task = Task {
             let result: Result<InferenceModelLocations, any Error>
             do {
                 result = .success(
@@ -149,15 +96,11 @@ public actor InferenceModelPreparationCoordinator: ModelPreparationController {
             }
             await coordinator.finishPreparation(token: token, result: result)
         }
-        preparation = ActiveModelPreparation(token: token)
+        preparation = ActiveModelPreparation(token: token, task: task)
     }
 }
 
 struct ActiveModelPreparation: Sendable {
-    let token: UUID
-}
-
-private struct AutomaticModelPreparation: Sendable {
     let token: UUID
     let task: Task<Void, Never>
 }

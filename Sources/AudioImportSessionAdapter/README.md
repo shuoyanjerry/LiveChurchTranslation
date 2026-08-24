@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Adapts a selected audio file to a speech-only session while preserving its requested recognition
-language, complete finalization checks, and cooperative cancellation. Import never requests or
-publishes translation.
+Adapts selected audio or a supported video's audio track to a speech-only session while preserving
+its requested recognition language, complete finalization checks, and cooperative cancellation.
+Import never requests or publishes translation.
 
 ## Public API
 
@@ -24,8 +24,8 @@ the adapter owns import task cancellation and controller lifetime.
 
 ## Failure Modes
 
-Concurrent imports are rejected, deliberate cancellation returns quietly, and incomplete or failed
-session finalization is surfaced as `AudioImportError`.
+Input validation completes before controller creation. Concurrent imports are rejected, deliberate
+cancellation returns quietly, and incomplete or failed finalization is surfaced as `AudioImportError`.
 
 ## Tests
 

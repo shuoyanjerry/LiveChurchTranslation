@@ -18,11 +18,14 @@ extension InferenceModelPreparationCoordinator {
 
     public func ensureReady() async throws {
         try Task.checkCancellation()
+        guard !isShutDown else { throw CancellationError() }
         if snapshot.isReady {
             let runtimesAreReady = await pipeline.runtimesAreReady()
+            guard !isShutDown else { throw CancellationError() }
             if snapshot.isReady, runtimesAreReady { return }
         }
         startPreparationIfNeeded()
+        guard !isShutDown, preparation != nil else { throw CancellationError() }
         let waiterID = UUID()
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in

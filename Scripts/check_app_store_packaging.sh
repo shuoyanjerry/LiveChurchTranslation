@@ -106,6 +106,10 @@ rg -Fq '"$INSTALLED_APP/Contents/MacOS/LiveChurchTranslation" --verify-installat
   || fail "DMG audit does not launch the relocated installation probe"
 rg -Fq 'audit_macho_dependencies "$MAIN"' "$SCRIPT_DIR/audit_release_app.sh" \
   || fail "release app audit does not close the Mach-O dependency graph"
+rg -Fq 'audit_macho_platform "$MAIN"' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not enforce the deployment platform"
+rg -Fq 'version_is_at_most "$minos" "15.0"' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not enforce the macOS 15 compatibility ceiling"
 rg -Fq 'install_name_tool -delete_rpath "$rpath"' "$SCRIPT_DIR/package_release.sh" \
   || fail "release packaging does not remove build-host runtime search paths"
 rg -Fq 'strip -S "$APP/Contents/MacOS/LiveChurchTranslation"' \

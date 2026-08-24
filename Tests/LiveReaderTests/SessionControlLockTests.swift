@@ -41,7 +41,7 @@ import Testing
         await viewModel.toggleSession()
         #expect(await controller.startCount() == 0)
         #expect(!viewModel.presentsRecordingNotice)
-        #expect(viewModel.presentedError?.contains("音频听抄") == true)
+        #expect(viewModel.presentedError?.contains("媒体听抄") == true)
     }
 
     @Test func controlsUnlockAfterImportFinishes() async {
@@ -91,6 +91,7 @@ actor ModelPreparationStub: ModelPreparationController {
 
     func prepareModels() { preparations += 1 }
     func retryModelPreparation() { preparations += 1 }
+    func shutdownModelPreparation() {}
     func currentModelPreparation() -> ModelPreparationSnapshot {
         ModelPreparationSnapshot(phase: .ready, message: "Models ready")
     }

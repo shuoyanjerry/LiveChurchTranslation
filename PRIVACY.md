@@ -2,19 +2,19 @@
 
 Effective: August 24, 2026
 
-Live Church Translation processes microphone audio, imported audio, transcripts, and live
-translations locally on the user's Mac. Imported audio is transcribed in its selected source
-language and is not translated. The app does not create an account, include advertising or
-tracking, or send meeting content to the developer or an AI service.
+Live Church Translation processes microphone audio, imported media audio tracks, transcripts, and
+live translations locally on the user's Mac. Imported media is transcribed in its selected source
+language and is not translated. The app does not create an account, include advertising or tracking,
+or send meeting content to the developer or an AI service.
 
 ## Data stored on the Mac
 
 When a user starts a meeting, the app saves the complete audio recording, recognized
 source text, timestamps, and source-correction audit in the app's sandboxed Application
 Support container. Translations remain available to live readers but are not retained in
-the session library. Imported audio is decoded and transcribed locally without entering the
-translation pipeline. Model
-weights are sealed into the signed release app, verified by size and SHA-256 before use,
+the session library. Imported audio or a supported video's audio track is decoded and transcribed
+locally without entering the translation pipeline. The source video is not copied into the library.
+Model weights are sealed into the signed release app, verified by size and SHA-256 before use,
 and loaded locally without a first-run download. Meeting content remains until the user
 deletes the meeting or removes the app's data.
 

@@ -19,9 +19,9 @@ composition library.
 ## Threading Model
 
 Composition and SwiftUI scene construction are main-actor isolated; injected actors retain their own
-state ownership. Live capture and audio imports reuse one ASR actor and downloader through separate,
+state ownership. Live capture and media imports reuse one ASR actor and downloader through separate,
 scope-specific model-preparation coordinators. Live capture additionally uses the shared translation
-actor; imported audio follows the speech-only policy and never prepares or invokes translation for its
+actor; imported media follows the speech-only policy and never prepares or invokes translation for its
 own processing.
 
 ## Failure Modes

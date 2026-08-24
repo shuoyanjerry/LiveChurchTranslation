@@ -49,7 +49,7 @@ import Testing
         let formats = Set(SpokenAudioFixtureCase.required.map(\.format))
         let languages = Set(SpokenAudioFixtureCase.required.map(\.language))
 
-        #expect(formats == [.wav, .aiff, .aifc, .caf, .aac, .m4a])
+        #expect(formats == [.wav, .aiff, .aifc, .caf, .aac, .m4a, .flac])
         #expect(languages == Set(FixtureLanguage.allCases))
     }
 

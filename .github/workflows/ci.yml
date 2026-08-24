@@ -13,14 +13,25 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: macos-15
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS 15 / Xcode 16.4
+            runner: macos-15
+            xcode: /Applications/Xcode_16.4.app/Contents/Developer
+          - name: macOS 26 / Xcode 26.6
+            runner: macos-26
+            xcode: /Applications/Xcode_26.6.app/Contents/Developer
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+        run: sudo xcode-select -s "${{ matrix.xcode }}"
       - name: Install quality-gate tools
         run: |
           set -euo pipefail
@@ -34,3 +45,16 @@ jobs:
         run: swift package resolve
       - name: Quality gates
         run: ./Scripts/check.sh
+      - name: Compile Release app target
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project LiveChurchTranslation.xcodeproj \
+            -scheme LiveChurchTranslation \
+            -configuration Release \
+            -destination 'platform=macOS,arch=arm64' \
+            -derivedDataPath "$RUNNER_TEMP/LiveChurchTranslationDerivedData" \
+            LCT_COMPILE_ONLY_APP_BUILD=1 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build

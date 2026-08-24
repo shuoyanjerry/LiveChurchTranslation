@@ -11,6 +11,7 @@ struct SpokenAudioFixtureCase: Sendable {
         .init(format: .caf, language: .english),
         .init(format: .aac, language: .mandarin),
         .init(format: .m4a, language: .english),
+        .init(format: .flac, language: .mandarin),
     ]
 
     static let mp3 = Self(format: .mp3, language: .english)
@@ -42,6 +43,7 @@ enum AudioFixtureFormat: String, CaseIterable, Sendable {
     case caf
     case aac
     case m4a
+    case flac
     case mp3
 
     var fileExtension: String { rawValue }
@@ -54,6 +56,7 @@ enum AudioFixtureFormat: String, CaseIterable, Sendable {
         case .caf: ["-f", "caff", "-d", "LEI16"]
         case .aac: ["-f", "adts", "-d", "aac", "-b", "64000"]
         case .m4a: ["-f", "m4af", "-d", "aac", "-b", "64000"]
+        case .flac: ["-f", "flac", "-d", "flac"]
         case .mp3: ["-f", "MPG3", "-d", ".mp3", "-b", "64000"]
         }
     }
@@ -68,11 +71,15 @@ enum AudioFixtureFormat: String, CaseIterable, Sendable {
             case .aifc: ascii.hasPrefix("FORM") && ascii.dropFirst(8).hasPrefix("AIFC")
             case .caf: ascii.hasPrefix("caff")
             case .aac: prefix.count >= 2 && prefix[0] == 0xFF && prefix[1] & 0xF6 == 0xF0
-            case .m4a: ascii.dropFirst(4).hasPrefix("ftyp")
-            case .mp3:
-                ascii.hasPrefix("ID3")
-                    || (prefix.count >= 2 && prefix[0] == 0xFF && prefix[1] & 0xE0 == 0xE0)
+            case .m4a, .flac, .mp3: hasExtendedSignature(prefix: prefix, ascii: ascii)
             }
         guard valid else { throw FixtureError.invalidSignature(rawValue) }
+    }
+
+    private func hasExtendedSignature(prefix: Data.SubSequence, ascii: String) -> Bool {
+        if self == .m4a { return ascii.dropFirst(4).hasPrefix("ftyp") }
+        if self == .flac { return ascii.hasPrefix("fLaC") }
+        return ascii.hasPrefix("ID3")
+            || (prefix.count >= 2 && prefix[0] == 0xFF && prefix[1] & 0xE0 == 0xE0)
     }
 }

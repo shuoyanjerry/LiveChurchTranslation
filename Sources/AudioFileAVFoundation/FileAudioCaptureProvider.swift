@@ -16,6 +16,30 @@ public actor FileAudioCaptureProvider: AudioCaptureProvider {
         sourceURL = url
     }
 
+    public static func validateSource(
+        at url: URL,
+        recordingDirectory: URL? = nil
+    ) async throws {
+        let decoder = try FileAudioDecoder.open(url: url, bufferSeconds: 0.1)
+        do {
+            let requiredBytes = try await decoder.estimatedPCM16StorageBytes()
+            if let recordingDirectory {
+                try validateFileAudioStorage(
+                    requiredBytes: requiredBytes,
+                    recordingDirectory: recordingDirectory
+                )
+            }
+            guard let frame = try await decoder.nextFrame(), frame.frameCount > 0 else {
+                await decoder.cancel()
+                throw FileAudioCaptureError.unsupportedFormat("文件不包含可读取的音轨")
+            }
+            await decoder.cancel()
+        } catch {
+            await decoder.cancel()
+            throw error
+        }
+    }
+
     public func authorizationStatus() -> AudioCapturePermission {
         .authorized
     }
@@ -84,6 +108,38 @@ public actor FileAudioCaptureProvider: AudioCaptureProvider {
         guard let capture = activeCapture, capture.id == id else { return }
         activeCapture = nil
         await capture.decoder.cancel()
+    }
+}
+
+private func validateFileAudioStorage(
+    requiredBytes: UInt64,
+    recordingDirectory: URL
+) throws {
+    let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey]
+    guard
+        let value = try? recordingDirectory.resourceValues(forKeys: keys)
+            .volumeAvailableCapacityForImportantUsage,
+        value >= 0
+    else { return }
+    try FileAudioStoragePreflight.validate(
+        requiredBytes: requiredBytes,
+        availableBytes: UInt64(value)
+    )
+}
+
+enum FileAudioStoragePreflight {
+    static let safetyMarginBytes: UInt64 = 1_024 * 1_024 * 1_024
+
+    static func validate(requiredBytes: UInt64, availableBytes: UInt64) throws {
+        let proportionalMargin = requiredBytes / 10
+        let margin = max(safetyMarginBytes, proportionalMargin)
+        let minimum = requiredBytes.addingReportingOverflow(margin)
+        guard !minimum.overflow, availableBytes >= minimum.partialValue else {
+            throw FileAudioCaptureError.insufficientStorage(
+                requiredBytes: minimum.overflow ? UInt64.max : minimum.partialValue,
+                availableBytes: availableBytes
+            )
+        }
     }
 }
 

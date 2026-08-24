@@ -7,6 +7,30 @@ import SettingsAPI
 import Testing
 
 @Suite @MainActor struct ImportedAudioTranscriberTests {
+    @Test func rejectedSourceNeverCreatesOrStartsASession() async {
+        let controller = ImportedAudioControllerStub()
+        var factoryCallCount = 0
+        let transcriber = ImportedAudioTranscriber(
+            inputDeviceID: AudioInputID(rawValue: "import-test"),
+            validateSource: { _ in throw ImportedAudioTestError.rejectedSource },
+            makeController: { _, _, _ in
+                factoryCallCount += 1
+                return controller
+            }
+        )
+
+        await #expect(throws: ImportedAudioTestError.rejectedSource) {
+            try await transcriber.importAudio(
+                from: URL(fileURLWithPath: "/tmp/video-without-audio.mp4"),
+                mode: .englishToSimplifiedChinese
+            )
+        }
+
+        #expect(factoryCallCount == 0)
+        #expect(await controller.eventsCallCount() == 0)
+        #expect(await controller.startCallCount() == 0)
+    }
+
     @Test func cancellationBeforeEventsReturnNeverStartsAndReportsCancellation() async throws {
         let controller = ImportedAudioControllerStub(holdEvents: true)
         let transcriber = makeTranscriber(controller)
@@ -66,6 +90,27 @@ import Testing
         #expect(await controller.stopCallCount() >= 1)
     }
 
+    @Test func shutdownJoinsTheActiveImportAndPermanentlyRejectsNewImports() async throws {
+        let controller = ImportedAudioControllerStub()
+        let transcriber = makeTranscriber(controller)
+        let importTask = startImport(transcriber)
+        try await waitUntil { await controller.startCallCount() == 1 }
+
+        await transcriber.shutdown()
+        await #expect(throws: AudioImportError.cancelled) {
+            try await importTask.value
+        }
+        await #expect(throws: AudioImportError.cancelled) {
+            try await transcriber.importAudio(
+                from: URL(fileURLWithPath: "/tmp/second-import.wav"),
+                mode: .englishToSimplifiedChinese
+            )
+        }
+
+        #expect(await controller.stopCallCount() >= 1)
+        #expect(await controller.startCallCount() == 1)
+    }
+
     private func makeTranscriber(
         _ controller: ImportedAudioControllerStub
     ) -> ImportedAudioTranscriber {
@@ -96,70 +141,7 @@ import Testing
     }
 }
 
-private enum ImportedAudioTestError: Error {
+enum ImportedAudioTestError: Error {
+    case rejectedSource
     case timedOut
-}
-
-private actor ImportedAudioControllerStub: LiveSessionController {
-    private let holdEvents: Bool
-    private let holdStart: Bool
-    private var eventCalls = 0
-    private var startCalls = 0
-    private var stopCalls = 0
-    private var eventWaiters: [CheckedContinuation<Void, Never>] = []
-    private var startWaiters: [CheckedContinuation<Void, Never>] = []
-    private var streamContinuation: AsyncStream<LiveSessionEvent>.Continuation?
-
-    init(holdEvents: Bool = false, holdStart: Bool = false) {
-        self.holdEvents = holdEvents
-        self.holdStart = holdStart
-    }
-
-    func events() async -> AsyncStream<LiveSessionEvent> {
-        eventCalls += 1
-        if holdEvents {
-            await withCheckedContinuation { eventWaiters.append($0) }
-        }
-        let (stream, continuation) = AsyncStream.makeStream(of: LiveSessionEvent.self)
-        streamContinuation = continuation
-        return stream
-    }
-
-    func start(inputDeviceID _: AudioInputID?) async {
-        startCalls += 1
-        if holdStart {
-            await withCheckedContinuation { startWaiters.append($0) }
-        }
-    }
-
-    func stop() {
-        stopCalls += 1
-        streamContinuation?.finish()
-    }
-
-    func currentSnapshot() -> LiveSessionSnapshot {
-        LiveSessionSnapshot(
-            sessionID: nil,
-            phase: .idle,
-            transcript: [],
-            modelStatus: nil,
-            statusMessage: ""
-        )
-    }
-
-    func releaseEvents() {
-        let waiters = eventWaiters
-        eventWaiters.removeAll()
-        waiters.forEach { $0.resume() }
-    }
-
-    func releaseStart() {
-        let waiters = startWaiters
-        startWaiters.removeAll()
-        waiters.forEach { $0.resume() }
-    }
-
-    func eventsCallCount() -> Int { eventCalls }
-    func startCallCount() -> Int { startCalls }
-    func stopCallCount() -> Int { stopCalls }
 }

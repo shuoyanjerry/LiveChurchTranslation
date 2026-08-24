@@ -75,6 +75,11 @@ let package = Package(
         target("PersistenceAPI", dependencies: ["TranscriptAPI"]),
         target("SettingsAPI"),
         target("AudioImportAPI", dependencies: ["SettingsAPI"]),
+        .target(
+            name: "ApplicationLifecycle",
+            dependencies: ["AudioImportAPI", "SessionManagementAPI"],
+            swiftSettings: strict
+        ),
         target("LoggingAPI"),
         target("DiagnosticsAPI"),
         target("RemoteSharingAPI"),
@@ -217,8 +222,9 @@ let package = Package(
         target(
             "ChurchTranslatorApp",
             dependencies: [
-                "ASRNormalizationCore", "ASRQwen3", "AudioCaptureAVFoundation", "AudioImportAPI",
-                "AudioFileAVFoundation", "AudioImportSessionAdapter", "AudioProcessingCore",
+                "ApplicationLifecycle", "ASRNormalizationCore", "ASRQwen3",
+                "AudioCaptureAVFoundation", "AudioImportAPI", "AudioFileAVFoundation",
+                "AudioImportSessionAdapter", "AudioProcessingCore",
                 "DiagnosticsCore", "GlossaryCore",
                 "GlossaryFileSystem", "LiveReader", "LoggingOSLog", "ModelDownloadAPI",
                 "ModelDownloadHTTP",
@@ -328,6 +334,10 @@ let package = Package(
                 "AudioCaptureAPI", "AudioImportAPI", "AudioImportSessionAdapter",
                 "SessionManagementAPI", "SettingsAPI",
             ]
+        ),
+        test(
+            "ApplicationLifecycleTests",
+            dependencies: ["ApplicationLifecycle"]
         ),
         test(
             "ModelDownloadHTTPTests",

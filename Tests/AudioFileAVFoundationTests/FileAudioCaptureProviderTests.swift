@@ -105,7 +105,12 @@ extension FileAudioCaptureProviderTests {
     @Test func reportsInvalidAudioFile() async throws {
         let fixture = try AudioFileTestFixture()
         defer { fixture.remove() }
-        let provider = FileAudioCaptureProvider(url: try fixture.invalidFile())
+        let url = try fixture.invalidFile()
+        let provider = FileAudioCaptureProvider(url: url)
+
+        await #expect(throws: FileAudioCaptureError.self) {
+            try await FileAudioCaptureProvider.validateSource(at: url)
+        }
 
         await #expect(throws: FileAudioCaptureError.self) {
             try await provider.startCapture(request: AudioCaptureRequest())

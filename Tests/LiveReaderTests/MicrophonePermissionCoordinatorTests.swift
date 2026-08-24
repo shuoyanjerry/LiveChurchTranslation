@@ -77,11 +77,13 @@ import Testing
 
     private func makeCoordinator(
         client: PermissionClientFake,
-        opener: SettingsOpenerFake = SettingsOpenerFake()
+        opener: SettingsOpenerFake = SettingsOpenerFake(),
+        requestTimeout: Duration = .seconds(20)
     ) -> MicrophonePermissionCoordinator {
         MicrophonePermissionCoordinator(
             permissionClient: client,
-            settingsOpener: opener
+            settingsOpener: opener,
+            requestTimeout: requestTimeout
         )
     }
 
@@ -94,47 +96,5 @@ import Testing
         case .notDetermined: .notDetermined
         case .authorized: nil
         }
-    }
-}
-
-private actor PermissionClientFake: MicrophonePermissionClient {
-    private var permission: AudioCapturePermission
-    private let requestResult: AudioCapturePermission
-    private var checks = 0
-    private var requests = 0
-
-    init(
-        permission: AudioCapturePermission,
-        requestResult: AudioCapturePermission? = nil
-    ) {
-        self.permission = permission
-        self.requestResult = requestResult ?? permission
-    }
-
-    func authorizationStatus() -> AudioCapturePermission {
-        checks += 1
-        return permission
-    }
-
-    func requestPermission() -> AudioCapturePermission {
-        requests += 1
-        permission = requestResult
-        return permission
-    }
-
-    func setPermission(_ permission: AudioCapturePermission) {
-        self.permission = permission
-    }
-
-    func authorizationChecks() -> Int { checks }
-    func permissionRequests() -> Int { requests }
-}
-
-@MainActor
-private final class SettingsOpenerFake: MicrophoneSettingsOpening {
-    private(set) var openCount = 0
-
-    func openMicrophoneSettings() {
-        openCount += 1
     }
 }

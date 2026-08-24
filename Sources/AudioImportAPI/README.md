@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Defines the app-facing contract for transcribing a local audio file in its selected source language.
-Imported audio never enters translation; bilingual processing remains exclusive to live sessions.
+Defines the app-facing contract for transcribing a local audio file or a supported video's audio
+track in its selected source language. Imported media never enters translation; bilingual processing
+remains exclusive to live sessions.
 
 ## Public API
 

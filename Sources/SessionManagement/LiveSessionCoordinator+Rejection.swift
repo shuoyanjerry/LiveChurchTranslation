@@ -35,7 +35,7 @@ extension LiveSessionCoordinator {
         if processingPolicy.requiresCompleteCapture {
             terminalFailureMessage =
                 terminalFailureMessage
-                ?? "音频听抄不完整：有内容未通过本地质量校验。完整录音已保留。"
+                ?? "媒体听抄不完整：有内容未通过本地质量校验。完整录音已保留。"
         }
         publishContinuingStatus()
     }
@@ -44,8 +44,8 @@ extension LiveSessionCoordinator {
         let recovery =
             hasDurableRecord
             ? "未完成的片段已保留，稍后可自动恢复。"
-            : "完整的导入录音仍然保留，请重新处理原始文件。"
-        return "音频听抄未完成。\(recovery)"
+            : "完整的导入音频仍然保留，请重新处理原始文件。"
+        return "媒体听抄未完成。\(recovery)"
     }
 
     private func recordTerminalRejection(

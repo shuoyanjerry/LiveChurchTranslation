@@ -1,8 +1,21 @@
 import Foundation
 import RecordingAPI
 import SessionManagementAPI
+import SettingsAPI
 
 extension LiveSessionCoordinator {
+    func makePreparationTask(
+        mode: TranslationMode,
+        excludingSessionID: UUID
+    ) -> Task<PreparedSessionInference, any Error> {
+        Task { [sessionPreparer] in
+            try await sessionPreparer.prepareInference(
+                mode: mode,
+                excludingSessionID: excludingSessionID
+            )
+        }
+    }
+
     func acceptsFrames(for sessionID: UUID) -> Bool {
         state.sessionID == sessionID
     }

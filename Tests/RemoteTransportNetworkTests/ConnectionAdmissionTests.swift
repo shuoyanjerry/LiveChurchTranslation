@@ -5,6 +5,17 @@ import Testing
 
 @Suite("Per-client connection admission")
 struct ConnectionAdmissionTests {
+    @Test("The production default reserves capacity for one hundred listeners")
+    func defaultAudienceCapacity() {
+        let configuration = RemoteTransportConfiguration(
+            advertisedHostName: "reader.local",
+            bonjour: .init(name: "Reader", type: "_churchtranslate._tcp", textRecord: Data())
+        )
+
+        #expect(configuration.maximumConnections == 512)
+        #expect(configuration.maximumConnectionsPerPeer == 6)
+    }
+
     @Test("One LAN client cannot occupy every global connection slot", .timeLimit(.minutes(1)))
     func perClientLimit() async throws {
         let fixture = try await DeadlineServerFixture.start(

@@ -26,6 +26,7 @@ public struct ModelPreparationSnapshot: Equatable, Sendable {
 public protocol ModelPreparationController: Sendable {
     func prepareModels() async
     func retryModelPreparation() async
+    func shutdownModelPreparation() async
     func currentModelPreparation() async -> ModelPreparationSnapshot
     func modelPreparationEvents() async -> AsyncStream<ModelPreparationSnapshot>
 }

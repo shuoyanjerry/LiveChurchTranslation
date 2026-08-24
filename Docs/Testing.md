@@ -19,7 +19,8 @@ The command stops at the first failed phase:
 5. Debug build and all default tests with compiler warnings promoted to errors.
 6. Dead-code analysis using the mandatory deterministic scan and Periphery when installed.
 
-GitHub Actions is configured to call the same gate. A local or CI pass is development
+GitHub Actions runs the same gate on macOS 15 with Xcode 16.4 and macOS 26 with Xcode 26.6,
+then compiles the real Release app target without signing. A local or CI pass is development
 evidence only; it is not model-quality, soak, signing, notarization, or clean-Mac evidence.
 
 ## Automated suites
@@ -48,8 +49,9 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
 | `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, shared disk-space preflight/reservations, atomic install, cancellation, and deduplication |
 | `AudioImportSessionAdapterTests` | Speech-only import policy, recognition-language isolation, completion outcomes, concurrent-import rejection, and cancellation races before events, during start, and after capture begins |
-| `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
-| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, source-only import/retranscription presentation, calm phase/status mapping, separate recording state, visible-by-default/legacy-compatible timestamp preference persistence, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
+| `ApplicationLifecycleTests` | Idempotent asynchronous shutdown, shared repeated quit requests, and termination-signal cleanup before exit |
+| `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, application shutdown with inference-runtime release, partial preservation, context, replay, and persistence failures |
+| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, source-only import/retranscription presentation, calm phase/status mapping, separate recording state, visible-by-default/legacy-compatible timestamp preference persistence, automatic model-preparation presentation, bounded microphone permission requests and refresh, sharing presentation contracts, and live-session control locking |
 | `RemotePairingCoreTests` | Session-lived reusable viewer links and grants, bounded operator expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, closed command authorization, stale revisions, concurrent races, replay, and target failure |
 | `RemoteControlSessionAdapterTests` | Remote Start fail-closed policy and authorized stop-only forwarding |
@@ -64,7 +66,7 @@ Most tests use protocol fakes and temporary directories. The default gate does n
 download model weights, use a real microphone, or launch Safari. The network suite does
 open an ephemeral loopback `NWListener`; it is not a multi-device or hostile-network test.
 
-## 2026-08-24 LAN crash and progress-feedback gate — automated pass, device gate pending
+## 2026-08-24 LAN gate — single-host load pass; physical-device gate pending
 
 Two macOS 15.5 crash reports from the `0.0.0 (24)` engineering application ended at
 `WebSocketFrameCodec.parseClientFrame(_:)` while Safari traffic was being processed. Both reports
@@ -107,18 +109,46 @@ count, duration, crash/hang result, and relevant redacted diagnostics. A single 
 connection is only a smoke test.
 
 Status for the corrected tree on 2026-08-24: **the complete Xcode 26.6 quality gate passed on macOS
-26.6.2**. It covered 103 architecture targets, strict formatting and 1,257 SwiftLint-clean Swift
-files, four endpoint packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,164
-Swift tests, and the dead-code pass. Swift 6.1 compatibility also passed a warnings-as-errors
+26.6.2**. It covered the architecture, identity, packaging, formatting, static-analysis and
+warnings-as-errors build gates, followed by 1,186 Swift tests across 339 suites and the dead-code
+pass. Swift 6.1 compatibility also passed a warnings-as-errors
 `ChurchTranslatorApp` build and 45 focused tests in an isolated build directory. Physical-device
 results are not recorded yet. The repeated Safari matrix above remains mandatory before the LAN
 incident can be closed for release.
 
-The audio-import format suite uses `/usr/bin/say` and `/usr/bin/afconvert` at test time with
+The packaged `1.0.0 (8)` engineering candidate also passed a local real-transport load run with
+YouTube speech on the same macOS 26.6.2 host. One hundred simulated clients used distinct `/32`
+loopback source addresses, and a separate visible browser listener brought the app display to 101
+listeners. The evidence was:
+
+- 180 seconds of live playback: 300 cold-start asset responses, 100 authenticated snapshots, 100
+  WebSockets, 1,800 heartbeats, and 13 ordered translated passages delivered identically to every
+  client without resynchronization;
+- 100 simultaneous clean disconnects and reconnects: 200 WebSocket sessions, 200 initial snapshots,
+  600 heartbeats, and 200 normal close handshakes; and
+- sharing stop/restart with a rotated invitation, followed by another 100-client cold start and 60
+  seconds of playback: three further passages delivered identically to every client.
+
+The app remained alive throughout. Open file descriptors rose from 106 to 207 with the 100-client
+fan-out and returned to 107 after disconnect; observed TCP connections rose to 103 and returned to
+three. With both inference models active, app RSS peaked at approximately 1.9 GB. Normal application
+quit removed the helper process, and the temporary loopback aliases were removed. The reusable
+harness is `Scripts/run_listener_load_test.py`; it keeps credentials, cookies, transcript text, and
+fingerprints out of its output.
+
+This run exercises real HTTP pairing, authenticated snapshots, WebSockets, heartbeats, broadcast
+ordering, full reconnect, invitation rotation, and shutdown on one Mac. It does not emulate target
+venue Wi-Fi capacity, radio interference, access-point client limits, IPv6-only networks, or 100
+physical browsers. The minimum-macOS, clean-Mac, iPhone, iPad, Mac Safari, and target-network gates
+above therefore remain required for a public release.
+
+The media-import format suite uses `/usr/bin/say` and `/usr/bin/afconvert` at test time with
 short, original phrases (`Grace and peace.` and `愿你平安。`). It commits no audio and validates
 container signatures before passing each file to the production AVFoundation stream decoder.
-The current macOS 26.6.2 qualification host can encode WAV, AIFF, AIFC, CAF, AAC/ADTS, and AAC/M4A,
-so those formats are mandatory in the default gate. Its system converter has no MP3 encoder;
+WAV, AIFF, AIFC, CAF, AAC/ADTS, AAC/M4A, and FLAC are mandatory in the default gate. Separate tests
+create real H.264/AAC MOV, MP4, and M4V files with both video and audio tracks, decode their audio,
+and reject a video without an audio track before creating a library session. The system converter
+has no MP3 encoder;
 the MP3 case is visibly skipped rather than synthesized under a false extension. To rerun the
 private MP3 qualification, provide a local, rights-safe file explicitly:
 
@@ -127,12 +157,21 @@ AUDIO_IMPORT_MP3_FIXTURE=/absolute/path/to/rights-safe.mp3 \
   swift test --filter AudioFormatQualificationTests
 ```
 
-On 2026-08-22, that environment-backed lane passed with a local private-QA, rights-safe MP3 through
+On 2026-08-24, that environment-backed lane passed with locally generated, rights-safe speech through
 the production adapter. It decoded only the bounded prefix of 16 × 100 ms chunks before cancelling.
-No private audio or source path was committed or copied. This qualifies the decoder/container path
-only; it does not grant permission to redistribute the fixture. The gate must pass again against
-the exact signed release candidate before App Store metadata or release notes claim MP3 support.
-Setting the variable to a missing or invalid file fails the test.
+No audio or source path was committed. Setting the variable to a missing or invalid file fails the
+test.
+
+The packaged `1.0.0 (8)` application then passed the real Library UI path with locally generated,
+rights-safe MP3, FLAC, MOV, MP4, and M4V fixtures. Every format produced the same accurate English
+source transcript, with no translated field or translated text in the UI, JSONL, or Markdown. A real
+video-only MOV was rejected before session creation, and the Library project count remained
+unchanged. The temporary fixtures were not committed.
+
+Production preflight reads one bounded frame before controller or library-session creation. It
+estimates decoded PCM16 storage and requires at least 1 GiB or 10% additional free space, whichever
+is greater. Unreadable, audio-less, or oversized media therefore fails before model preparation and
+cannot leave an empty library project.
 
 That lane verifies container bytes and AVFoundation streaming only. Import recognition-language
 routing and source-only recovery are separately proved by `ImportedAudioSettingsStoreTests` and

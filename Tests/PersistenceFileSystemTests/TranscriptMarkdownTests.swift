@@ -36,7 +36,7 @@ import TranscriptAPI
     }
 
     private func expectActiveImportedMarkdown(_ markdown: String) {
-        #expect(markdown.contains("# 导入音频听抄稿"))
+        #expect(markdown.contains("# 导入媒体听抄稿"))
         #expect(markdown.contains("- 结束时间：进行中"))
         #expect(markdown.contains("- 记录状态：处理中"))
     }

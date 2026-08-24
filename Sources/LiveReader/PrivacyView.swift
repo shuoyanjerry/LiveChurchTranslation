@@ -19,7 +19,7 @@ struct PrivacyView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     section(
                         "本地处理",
-                        "现场语音识别与翻译只在这台 Mac 上处理；导入录音只生成听抄稿，不翻译。"
+                        "现场语音识别与翻译只在这台 Mac 上处理；导入媒体只生成听抄稿，不翻译。"
                     )
                     section(
                         "本地保存",

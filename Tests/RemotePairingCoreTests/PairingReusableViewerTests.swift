@@ -4,7 +4,35 @@ import RemotePairingCore
 import Testing
 
 @Suite("Reusable viewer pairing")
-struct PairingReusableViewerTests {
+struct PairingReusableViewerTests {}
+
+extension PairingReusableViewerTests {
+    @Test("The production default admits a one-hundred-listener audience")
+    func defaultAudienceCapacity() async throws {
+        let registry = PairingRegistry()
+        let now = Date(timeIntervalSince1970: 1_400)
+        let invitation = try await registry.issueMacApprovedInvitation(role: .viewer, now: now)
+        let grants = try await concurrentlyRedeem(
+            invitation,
+            registry: registry,
+            count: 100,
+            now: now.addingTimeInterval(1)
+        )
+
+        #expect(grants.count == 100)
+        #expect(await registry.snapshot(now: now.addingTimeInterval(2)).activePeers.count == 100)
+
+        let replacementAudience = try await concurrentlyRedeem(
+            invitation,
+            registry: registry,
+            count: 100,
+            addressOffset: 120,
+            now: now.addingTimeInterval(3)
+        )
+        #expect(replacementAudience.count == 100)
+        #expect(await registry.snapshot(now: now.addingTimeInterval(4)).activePeers.count == 200)
+    }
+
     @Test("A viewer invitation is session-lived and reusable by concurrent clients")
     func concurrentRedemption() async throws {
         let registry = PairingRegistry(configuration: .init(maximumActiveGrants: 16))
@@ -117,6 +145,7 @@ private func concurrentlyRedeem(
     _ invitation: PairingInvitation,
     registry: PairingRegistry,
     count: Int,
+    addressOffset: Int = 20,
     now: Date
 ) async throws -> [(RemotePairingClientBinding, PairingGrant)] {
     try await withThrowingTaskGroup(
@@ -125,7 +154,9 @@ private func concurrentlyRedeem(
     ) { group in
         for index in 0..<count {
             group.addTask {
-                let client = try pairingTestBinding("192.168.20.\(20 + index)")
+                let thirdOctet = 20 + ((addressOffset + index) / 250)
+                let fourthOctet = 1 + ((addressOffset + index) % 250)
+                let client = try pairingTestBinding("192.168.\(thirdOctet).\(fourthOctet)")
                 let grant = try await redeemForTest(
                     invitation,
                     registry: registry,

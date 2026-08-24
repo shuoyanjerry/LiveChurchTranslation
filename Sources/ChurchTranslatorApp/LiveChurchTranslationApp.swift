@@ -12,7 +12,8 @@ public struct LiveChurchTranslationApp: App {
             startup = .ready(dependencies)
             lifecycle.configure(
                 controller: dependencies.controller,
-                audioImporter: dependencies.audioImporter
+                audioImporter: dependencies.audioImporter,
+                modelPreparations: dependencies.modelPreparations
             )
         } catch {
             Logger(

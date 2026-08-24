@@ -65,11 +65,11 @@ struct SessionLibraryView: View {
                             .foregroundStyle(ChurchTheme.danger)
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel("停止导入音频听抄")
+                    .accessibilityLabel("停止导入媒体听抄")
                     .help("停止听抄")
                 } else {
                     Menu {
-                        Section("选择录音语言") {
+                        Section("选择内容语言") {
                             ForEach(TranslationMode.allCases) { mode in
                                 Button(SessionLibraryPresentation.importLanguageLabel(for: mode)) {
                                     onImport(mode)
@@ -82,7 +82,7 @@ struct SessionLibraryView: View {
                     .menuIndicator(.hidden)
                     .menuStyle(.borderlessButton)
                     .fixedSize(horizontal: true, vertical: false)
-                    .accessibilityLabel("导入音频并生成听抄稿")
+                    .accessibilityLabel("导入音频或视频并生成听抄稿")
                     .help(SessionLibraryPresentation.importHelp)
                 }
             }
@@ -122,9 +122,9 @@ struct SessionLibraryView: View {
 
 enum SessionLibraryPresentation {
     static let deletionMessage = "听抄稿和完整录音将从此 Mac 删除，且无法恢复。"
-    static let importHelp = "选择录音语言，只生成听抄稿，不会翻译。"
+    static let importHelp = "选择内容语言；支持常见音频和含音轨视频，只生成听抄稿，不会翻译。"
 
     static func importLanguageLabel(for mode: TranslationMode) -> String {
-        "\(mode.sourceDisplayName)录音"
+        "\(mode.sourceDisplayName)内容"
     }
 }

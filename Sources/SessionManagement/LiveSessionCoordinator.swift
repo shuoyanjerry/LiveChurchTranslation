@@ -38,6 +38,8 @@ public actor LiveSessionCoordinator: LiveSessionController {
     var captureStartupTask: Task<StartedSessionCapture, any Error>?
     var preparationTask: Task<PreparedSessionInference, any Error>?
     var stopTask: Task<Void, Never>?
+    var shutdownTask: Task<Void, Never>?
+    var isShuttingDown = false
     var segmentQueue = PendingUtteranceQueue()
     var pendingUtterances: [PendingUtterance] = []
     var unresolvedUtteranceCount = 0

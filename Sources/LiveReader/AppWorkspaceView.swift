@@ -76,7 +76,7 @@ public struct AppWorkspaceView: View {
         }
         .fileImporter(
             isPresented: $showsAudioImporter,
-            allowedContentTypes: [.audio],
+            allowedContentTypes: SessionImportMediaPolicy.allowedContentTypes,
             allowsMultipleSelection: false
         ) { result in
             guard
@@ -86,7 +86,7 @@ public struct AppWorkspaceView: View {
             else {
                 pendingImportRecognitionMode = nil
                 if case .failure(let error) = result, !isUserCancellation(error) {
-                    libraryViewModel.presentedError = "无法打开该音频文件。"
+                    libraryViewModel.presentedError = "无法打开该音频或视频文件。"
                 }
                 return
             }
@@ -104,6 +104,10 @@ public struct AppWorkspaceView: View {
             }
         }
     }
+}
+
+enum SessionImportMediaPolicy {
+    static let allowedContentTypes: [UTType] = [.audio, .mpeg4Movie, .quickTimeMovie]
 }
 
 extension AppWorkspaceView {

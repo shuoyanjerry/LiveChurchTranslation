@@ -12,6 +12,7 @@ import RemoteTransportAPI
 import RemoteTransportNetwork
 import RemoteWebAssets
 import SessionManagement
+import SessionManagementAPI
 import SettingsAPI
 
 struct AppSceneDependencies {
@@ -22,6 +23,7 @@ struct AppSceneDependencies {
     let sharingFeature: any LocalSharingFeature
     let projectionAdapter: LiveSessionProjectionAdapter
     let audioImporter: any AudioImporting
+    let modelPreparations: [any ModelPreparationController]
 }
 
 @MainActor
@@ -31,36 +33,10 @@ enum AppComposition {
         let models = productionModels
         let services = try AppServiceGraph(directories: directories, models: models)
         let controller = try makeController(services: services, directories: directories)
-        let viewModel = LiveReaderViewModel(
+        return makeSceneDependencies(
+            services: services,
             controller: controller,
-            modelPreparation: services.modelPreparation,
-            capture: services.capture,
-            glossary: services.glossary,
-            settingsStore: services.settings
-        )
-        let remote = makeRemoteServices(controller: controller, settings: services.settings)
-        let audioImporter = makeAudioImporter(services: services, directories: directories)
-        let libraryViewModel = SessionLibraryViewModel(
-            store: services.transcripts,
-            recoveryArtifacts: services.recovery
-        )
-        let permissionCoordinator = MicrophonePermissionCoordinator(
-            permissionClient: AudioCaptureMicrophonePermissionClient(capture: services.capture),
-            settingsOpener: MacMicrophoneSettingsOpener()
-        )
-        Task { await remote.projectionAdapter.start() }
-        Task {
-            _ = await recoverInterruptedRecordings(services: services)
-            await libraryViewModel.load()
-        }
-        return AppSceneDependencies(
-            controller: controller,
-            viewModel: viewModel,
-            libraryViewModel: libraryViewModel,
-            permissionCoordinator: permissionCoordinator,
-            sharingFeature: remote.sharingFeature,
-            projectionAdapter: remote.projectionAdapter,
-            audioImporter: audioImporter
+            directories: directories
         )
     }
 
@@ -75,7 +51,7 @@ enum AppComposition {
         )
     }
 
-    private static func makeRemoteServices(
+    static func makeRemoteServices(
         controller: LiveSessionCoordinator,
         settings: any SettingsStore
     ) -> RemoteServices {

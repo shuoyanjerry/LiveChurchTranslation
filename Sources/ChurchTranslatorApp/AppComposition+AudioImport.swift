@@ -23,6 +23,12 @@ extension AppComposition {
         }
         return ImportedAudioTranscriber(
             inputDeviceID: FileAudioCaptureProvider.inputID,
+            validateSource: { url in
+                try await FileAudioCaptureProvider.validateSource(
+                    at: url,
+                    recordingDirectory: directories.root
+                )
+            },
             makeController: factory
         )
     }

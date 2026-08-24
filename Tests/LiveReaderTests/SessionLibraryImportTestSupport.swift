@@ -112,7 +112,7 @@ func librarySummary(
     id: UUID = UUID(),
     integrity: StoredTranscriptIntegrity = .complete,
     location: URL? = nil,
-    title: String = "导入音频",
+    title: String = "导入媒体",
     sourceLanguage: String = "zh-Hans",
     targetLanguage: String = "en",
     pendingRecordCount: Int = 0,

@@ -40,8 +40,10 @@ instructions in its interface.
 `Scripts/audit_release_dmg.sh` mounts the final image read-only, checks the app-plus-Applications
 layout, simulates the drag copy into a fresh Applications directory, rejects symlinks inside the
 installed app, re-runs the signed app/resource/architecture audit, and executes the relocated app's
-non-interactive installation probe. The app audit also rejects build-host dynamic-library paths and
-requires every non-system Mach-O dependency to be bundled beside the executable.
+non-interactive installation probe. The release workflow runs this audit against the same candidate
+on macOS 15 and macOS 26 before publication. The app audit also rejects build-host dynamic-library
+paths, requires every non-system Mach-O dependency to be bundled beside the executable, and enforces
+the declared macOS 15 deployment ceiling.
 
 Formal packaging additionally requires Developer ID Application signing, hardened runtime, secure
 timestamps, Apple notarization of both app and DMG, stapled tickets, Gatekeeper acceptance, an exact
@@ -57,8 +59,8 @@ On each machine:
 - verify Gatekeeper acceptance, drag copy, eject, offline launch, and bundled-model readiness;
 - approve microphone access and record a saved meeting;
 - run one Mandarin-to-English and one English-to-Simplified-Chinese live segment;
-- import a supported audio file, confirm it produces source-language transcript text without a
-  translation, and reopen its transcript and recording;
+- import supported audio and a supported video with an audio track, confirm both produce only
+  source-language transcript text, and reopen their transcripts and recordings;
 - quit, relaunch, and repeat model preparation without a download;
 - confirm the native quiet phases, separate recording duration, and visible-by-default timestamp toggle in
   both directions;

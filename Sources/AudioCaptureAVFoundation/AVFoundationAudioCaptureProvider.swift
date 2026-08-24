@@ -1,5 +1,6 @@
 import AVFoundation
 import AudioCaptureAPI
+import Foundation
 
 /// AVFoundation/Core Audio implementation of the audio-capture boundary.
 public actor AVFoundationAudioCaptureProvider: AudioCaptureProvider {
@@ -25,7 +26,24 @@ public actor AVFoundationAudioCaptureProvider: AudioCaptureProvider {
         if authorizationStatus() != .notDetermined {
             return authorizationStatus()
         }
-        _ = await AVCaptureDevice.requestAccess(for: .audio)
+        let completion = MicrophonePermissionRequestCompletion()
+        AVCaptureDevice.requestAccess(for: .audio) { granted in
+            completion.record(granted: granted)
+        }
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(15))
+        while clock.now < deadline {
+            let current = authorizationStatus()
+            if current != .notDetermined { return current }
+            if let granted = completion.granted {
+                return granted ? .authorized : .denied
+            }
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return authorizationStatus()
+            }
+        }
         return authorizationStatus()
     }
 
@@ -73,4 +91,17 @@ public actor AVFoundationAudioCaptureProvider: AudioCaptureProvider {
         return pair
     }
 
+}
+
+private final class MicrophonePermissionRequestCompletion: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedGrant: Bool?
+
+    var granted: Bool? {
+        lock.withLock { storedGrant }
+    }
+
+    func record(granted: Bool) {
+        lock.withLock { storedGrant = granted }
+    }
 }

@@ -23,10 +23,24 @@ struct InferenceModelPreparationPipeline: Sendable {
         return asrIsReady && translatorIsReady
     }
 
+    func cancelDownloads() async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask {
+                await modelDownloader.cancelDownload(for: models.speechRecognition.id)
+            }
+            if scope.requiresTranslation {
+                group.addTask {
+                    await modelDownloader.cancelDownload(for: models.translation.id)
+                }
+            }
+        }
+    }
+
     func run(
         reusing cachedLocations: InferenceModelLocations?,
         report: @escaping @Sendable (ModelRuntimeStatus) async -> Void
     ) async throws -> InferenceModelLocations {
+        try Task.checkCancellation()
         let events = await modelReporter.events()
         let observer = Task {
             for await status in events {
@@ -51,6 +65,7 @@ struct InferenceModelPreparationPipeline: Sendable {
     }
 
     private func downloadLocations() async throws -> InferenceModelLocations {
+        try Task.checkCancellation()
         guard scope.requiresTranslation else {
             return InferenceModelLocations(
                 asr: try await modelDownloader.ensureAvailable(models.speechRecognition),

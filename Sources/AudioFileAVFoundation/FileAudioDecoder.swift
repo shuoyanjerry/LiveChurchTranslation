@@ -128,6 +128,15 @@ actor FileAudioDecoder {
     }
 }
 
+extension FileAudioDecoder {
+    func estimatedPCM16StorageBytes() throws -> UInt64 {
+        try pcm16StorageBytes(
+            frameCount: file.length,
+            channelCount: format.channelCount
+        )
+    }
+}
+
 private func makeAudioFrame(
     from buffer: AVAudioPCMBuffer,
     format: AVAudioFormat,
@@ -160,16 +169,6 @@ private func makeAudioFrame(
         samples: samples,
         sampleRate: format.sampleRate,
         channelCount: channels,
-        timestamp: audioTimestamp(for: frameOffset, sampleRate: format.sampleRate)
-    )
-}
-
-private func audioTimestamp(for offset: Int64, sampleRate: Double) -> Duration {
-    let value = Double(offset) / sampleRate
-    let seconds = value.rounded(.down)
-    let attoseconds = ((value - seconds) * 1e18).rounded()
-    return Duration(
-        secondsComponent: Int64(seconds),
-        attosecondsComponent: Int64(attoseconds)
+        timestamp: fileAudioTimestamp(for: frameOffset, sampleRate: format.sampleRate)
     )
 }

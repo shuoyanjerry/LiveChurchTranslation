@@ -186,9 +186,9 @@ separate:
 
 ## Privacy disclosure draft
 
-The current production architecture processes microphone audio, imported audio,
+The current production architecture processes microphone audio, imported media audio tracks,
 speech recognition, live translation, transcripts, glossary terms, diagnostics, and saved
-meeting recordings on the Mac. Imported audio uses speech recognition only and is not translated.
+meeting recordings on the Mac. Imported media uses speech recognition only and is not translated.
 It has no account system, analytics SDK, advertising, tracking domain, or developer-operated
 content server. Opt-in LAN sharing sends live recognized source text and translation only to
 explicitly paired devices on the same network. The seven
@@ -209,9 +209,9 @@ Publish `PRIVACY.md` at a stable public HTTPS URL and enter that URL in App Stor
 Connect. The bundled copy is useful in-app but does not replace the public privacy
 policy URL. Suggested short disclosure:
 
-> Live Church Translation processes speech, imported audio, live translations, transcripts,
-> and saved meeting recordings locally on your Mac. Imported audio is transcribed only and is not
-> translated. The app does not use ads, analytics, or tracking. Live LAN sharing is off until you
+> Live Church Translation processes speech, imported media audio tracks, live translations,
+> transcripts, and saved meeting recordings locally on your Mac. Imported media is transcribed only
+> and is not translated. The app does not use ads, analytics, or tracking. Live LAN sharing is off until you
 > enable it and pair a device. The speech and translation models are bundled with the app; your audio
 > and transcript are not uploaded. The Library retains recordings and recognized source text, not
 > translations.

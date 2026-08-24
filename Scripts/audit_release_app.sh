@@ -40,6 +40,53 @@ binary_contains() {
   fail "could not scan Mach-O for private build paths: $(basename "$binary")"
 }
 
+version_is_at_most() {
+  /usr/bin/awk -v actual="$1" -v maximum="$2" '
+    BEGIN {
+      split(actual, a, ".")
+      split(maximum, b, ".")
+      for (i = 1; i <= 4; i += 1) {
+        left = a[i] + 0
+        right = b[i] + 0
+        if (left < right) exit 0
+        if (left > right) exit 1
+      }
+      exit 0
+    }
+  '
+}
+
+audit_macho_platform() {
+  local binary="$1"
+  local metadata
+  local minos
+  local platform
+
+  metadata="$(
+    otool -l "$binary" | awk '
+      $1 == "cmd" && $2 == "LC_BUILD_VERSION" {
+        count += 1
+        reading = 1
+        next
+      }
+      reading && $1 == "platform" { platform = $2; next }
+      reading && $1 == "minos" { minos = $2; reading = 0; next }
+      END {
+        if (count == 1 && platform != "" && minos != "") {
+          print platform, minos
+        } else {
+          exit 1
+        }
+      }
+    '
+  )" || fail "Mach-O has no unambiguous LC_BUILD_VERSION: $(basename "$binary")"
+  read -r platform minos <<<"$metadata"
+  [[ "$platform" == "MACOS" || "$platform" == "1" ]] \
+    || fail "Mach-O targets a platform other than macOS: $(basename "$binary")"
+  version_is_at_most "$minos" "15.0" \
+    || fail "Mach-O requires macOS $minos, above the supported 15.0 minimum: $(basename "$binary")"
+}
+
 audit_macho_dependencies() {
   local binary="$1"
   local dependency
@@ -170,8 +217,11 @@ actual_dylibs="$(find "$CONTENTS/MacOS" -maxdepth 1 -type f -name '*.dylib' \
   || fail "unexpected llama.cpp dylib inventory"
 audit_macho_dependencies "$MAIN"
 audit_macho_dependencies "$HELPER"
+audit_macho_platform "$MAIN"
+audit_macho_platform "$HELPER"
 for library in "$CONTENTS"/MacOS/*.dylib; do
   audit_macho_dependencies "$library"
+  audit_macho_platform "$library"
 done
 codesign --verify --strict --verbose=2 "$HELPER" || fail "helper signature is invalid"
 codesign --verify --deep --strict --verbose=2 "$APP" || fail "app signature is invalid"
@@ -214,3 +264,4 @@ fi
 echo "Release app audit: PASS"
 echo "App: $APP"
 echo "Architectures: arm64"
+echo "Deployment compatibility: macOS 15.0 or earlier"

@@ -3,6 +3,7 @@ import Foundation
 @testable import LiveReader
 import Testing
 import TranscriptAPI
+import UniformTypeIdentifiers
 
 @Suite @MainActor struct SessionLibraryPresentationTests {
     @Test func storedTranscriptDisplaysRecognitionOnly() {
@@ -62,20 +63,45 @@ import TranscriptAPI
         #expect(!SessionLibraryPresentation.deletionMessage.contains("翻译"))
     }
 
-    @Test func audioImportCopyPromisesSourceTranscriptionOnly() {
+    @Test func mediaImportCopyPromisesSourceTranscriptionOnly() {
         #expect(
             SessionLibraryPresentation.importLanguageLabel(for: .mandarinToEnglish)
-                == "普通话录音"
+                == "普通话内容"
         )
         #expect(
             SessionLibraryPresentation.importLanguageLabel(for: .englishToSimplifiedChinese)
-                == "英语录音"
+                == "英语内容"
         )
-        #expect(SessionLibraryPresentation.importHelp == "选择录音语言，只生成听抄稿，不会翻译。")
+        #expect(
+            SessionLibraryPresentation.importHelp
+                == "选择内容语言；支持常见音频和含音轨视频，只生成听抄稿，不会翻译。"
+        )
         #expect(!SessionLibraryPresentation.importHelp.contains("方向"))
         #expect(
             AudioImportError.liveSessionRunning.errorDescription
-                == "请先停止当前现场会话，再导入并听抄音频文件。"
+                == "请先停止当前现场会话，再导入并听抄媒体文件。"
+        )
+    }
+
+    @Test func mediaPickerAcceptsDeclaredAudioAndMovieContainers() throws {
+        let extensions = [
+            "wav", "aiff", "aifc", "caf", "aac", "m4a", "mp3", "flac", "mov", "mp4", "m4v",
+        ]
+
+        for fileExtension in extensions {
+            let type = try #require(UTType(filenameExtension: fileExtension))
+            #expect(
+                SessionImportMediaPolicy.allowedContentTypes.contains {
+                    type.conforms(to: $0)
+                },
+                "Picker does not accept .\(fileExtension)"
+            )
+        }
+        let text = try #require(UTType(filenameExtension: "txt"))
+        #expect(
+            !SessionImportMediaPolicy.allowedContentTypes.contains {
+                text.conforms(to: $0)
+            }
         )
     }
 

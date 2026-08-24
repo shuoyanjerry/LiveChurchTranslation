@@ -8,11 +8,16 @@ public protocol AudioImporting: Sendable {
         sessionTitle: String?
     ) async throws
     func cancelImport() async
+    func shutdown() async
 }
 
 extension AudioImporting {
     public func importAudio(from url: URL, mode: TranslationMode) async throws {
         try await importAudio(from: url, mode: mode, sessionTitle: nil)
+    }
+
+    public func shutdown() async {
+        await cancelImport()
     }
 }
 
@@ -27,16 +32,16 @@ public enum AudioImportError: LocalizedError, Equatable, Sendable {
         case .cancelled:
             nil
         case .liveSessionRunning:
-            "请先停止当前现场会话，再导入并听抄音频文件。"
+            "请先停止当前现场会话，再导入并听抄媒体文件。"
         case .savedWithIncompleteTranscript:
             "录音已保存，听抄未完整。"
         case .transcriptionFailed(let message):
-            "音频听抄失败：\(message)"
+            "媒体听抄失败：\(message)"
         }
     }
 
     public var description: String {
-        errorDescription ?? "音频听抄已取消。"
+        errorDescription ?? "媒体听抄已取消。"
     }
 
     public var debugDescription: String { description }

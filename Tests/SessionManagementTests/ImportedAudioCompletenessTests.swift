@@ -47,7 +47,7 @@ import TranscriptAPI
             Issue.record("Expected an incomplete import to fail explicitly")
             return
         }
-        #expect(message.contains("音频听抄未完成"))
+        #expect(message.contains("媒体听抄未完成"))
         #expect(snapshot.finalizationOutcome == .savedWithUnresolvedUtterances(count: 40))
         #expect((await harness.asr.receivedRequests()).count == 1)
         #expect((await harness.recoveryStore.pendingRecords()).count == frames.count)

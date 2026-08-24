@@ -55,6 +55,32 @@ public actor HTTPModelDownloader: ModelDownloadProvider {
     }
 
     public func ensureAvailable(_ descriptor: ModelDescriptor) async throws -> URL {
+        try Task.checkCancellation()
+        let manifest = try await validatedManifest(for: descriptor)
+        try Task.checkCancellation()
+        if let active = activeDownloads[descriptor.id] {
+            return try await active.task.value
+        }
+
+        try Task.checkCancellation()
+        let token = UUID()
+        let task = Task { [installer, manifest] in
+            try await installer.install(manifest)
+        }
+        activeDownloads[descriptor.id] = ActiveDownload(token: token, task: task)
+        do {
+            let location = try await task.value
+            removeDownload(for: descriptor.id, matching: token)
+            return location
+        } catch {
+            removeDownload(for: descriptor.id, matching: token)
+            throw error
+        }
+    }
+
+    private func validatedManifest(
+        for descriptor: ModelDescriptor
+    ) async throws -> ModelDownloadManifest {
         guard let manifest = manifests[descriptor.id] else {
             let error = ModelDownloadError.downloadFailed(
                 "No manifest is registered for \(descriptor.id.rawValue)."
@@ -72,23 +98,7 @@ public actor HTTPModelDownloader: ModelDownloadProvider {
             )
             throw ModelDownloadError.invalidArtifact
         }
-        if let active = activeDownloads[descriptor.id] {
-            return try await active.task.value
-        }
-
-        let token = UUID()
-        let task = Task { [installer, manifest] in
-            try await installer.install(manifest)
-        }
-        activeDownloads[descriptor.id] = ActiveDownload(token: token, task: task)
-        do {
-            let location = try await task.value
-            removeDownload(for: descriptor.id, matching: token)
-            return location
-        } catch {
-            removeDownload(for: descriptor.id, matching: token)
-            throw error
-        }
+        return manifest
     }
 
     public func cancelDownload(for modelID: ModelID) async {
