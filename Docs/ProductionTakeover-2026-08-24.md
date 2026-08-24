@@ -36,7 +36,7 @@ is authorized. A green build is not permission to publish a Release.
 ## Verified baseline
 
 The repository already provides continuous PCM16 CAF recording, crash-safe pre-inference staging,
-JSONL and Markdown transcripts, a searchable session library, recording playback, bidirectional
+source-only JSONL and Markdown transcripts, a searchable session library, recording playback, bidirectional
 mode selection, multi-format AVFoundation import, and token-protected LAN Safari reading.
 
 The 2026-08-24 local quality run on commit `42db090` passed the 103-target architecture and

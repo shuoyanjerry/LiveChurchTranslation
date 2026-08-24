@@ -43,10 +43,14 @@ import TranscriptAPI
 
     private func expectFinishedImportedMarkdown(_ markdown: String) {
         #expect(markdown.contains("- 标题：Sunday message\\.mp3"))
-        #expect(markdown.contains("- 翻译方向：英文 → 简体中文"))
+        #expect(markdown.contains("- 识别语言：英文"))
+        #expect(!markdown.contains("翻译方向"))
         #expect(markdown.contains("- 开始时间："))
         #expect(!markdown.contains("- 结束时间：进行中"))
         #expect(markdown.contains("## 片段 7 · 01:01:01.004–01:01:03.250"))
+        #expect(markdown.contains("**识别文字**\n\nThe Lord is my shepherd\\."))
+        #expect(!markdown.contains("耶和华是我的牧者"))
+        #expect(!markdown.contains("**译文**"))
         #expect(markdown.contains("## 记录状态\n\n会议记录完整。"))
     }
 
@@ -56,8 +60,10 @@ import TranscriptAPI
         #expect(markdown.contains("\\# forged heading"))
         #expect(markdown.contains("\\> forged quote"))
         #expect(markdown.contains("\\`\\`\\`"))
-        #expect(markdown.contains("\\_emphasis\\_"))
         #expect(markdown.contains("&lt;div\\>"))
+        #expect(!markdown.contains("forged translation"))
+        #expect(!markdown.contains("https://example\\.com"))
+        #expect(!markdown.contains("emphasis"))
         #expect(!lines.contains("# forged heading"))
         #expect(!lines.contains("> forged quote"))
         #expect(!lines.contains("```"))

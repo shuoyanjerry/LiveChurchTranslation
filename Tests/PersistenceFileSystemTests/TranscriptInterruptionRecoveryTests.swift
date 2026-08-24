@@ -46,6 +46,25 @@ import TranscriptAPI
         #expect(summary.integrity == .active)
     }
 
+    @Test func partialSourceMigrationCanRecoverBeforeManifestCommit() async throws {
+        let fixture = TranscriptRecoveryFixture()
+        defer { fixture.remove() }
+        try await fixture.stagePartiallyMigratedInterruptedTranscript()
+        let restarted = FileTranscriptStore(root: fixture.root)
+
+        let result = try await restarted.recoverInterruptedSession(
+            sessionID: fixture.session.id
+        )
+
+        guard case .recovered(let recovered) = result else {
+            Issue.record("Expected the partially migrated transcript to recover")
+            return
+        }
+        #expect(recovered.entryCount == 2)
+        try await fixture.assertRecoveredState(recovered, in: restarted)
+        try fixture.assertRecoveredArtifacts()
+    }
+
     @Test func malformedJSONLinesFailWithoutCommittingAFalseRecovery() async throws {
         let fixture = TranscriptRecoveryFixture()
         defer { fixture.remove() }

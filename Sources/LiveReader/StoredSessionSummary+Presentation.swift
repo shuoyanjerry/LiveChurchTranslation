@@ -8,11 +8,8 @@ extension StoredSessionSummary {
             ?? startedAt.formatted(date: .abbreviated, time: .shortened)
     }
 
-    var languagePair: String {
-        if let mode = storedTranslationMode {
-            return mode.displayName
-        }
-        return "\(sourceLanguage.localizedLanguageName) → \(targetLanguage.localizedLanguageName)"
+    var recognitionLanguage: String {
+        "识别语言：\(sourceLanguage.recognitionLanguageName)"
     }
 
     var storedTranslationMode: TranslationMode? {
@@ -34,6 +31,17 @@ extension StoredSessionSummary {
 
 extension String {
     fileprivate var nonEmpty: String? { isEmpty ? nil : self }
+
+    fileprivate var recognitionLanguageName: String {
+        let normalized = lowercased().replacingOccurrences(of: "_", with: "-")
+        if normalized == "zh" || normalized == "zh-hans" || normalized.hasPrefix("zh-hans-") {
+            return "普通话"
+        }
+        if normalized == "en" || normalized.hasPrefix("en-") {
+            return "英语"
+        }
+        return localizedLanguageName
+    }
 
     fileprivate var localizedLanguageName: String {
         Locale(identifier: "zh-Hans").localizedString(forLanguageCode: self) ?? self

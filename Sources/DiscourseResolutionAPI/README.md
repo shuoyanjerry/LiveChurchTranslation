@@ -6,8 +6,9 @@ It has no dependency on session, transcript, UI, or model-runtime types.
 injection.
 
 `DiscourseResolutionRequest` carries the current sequence and text plus at most
-two preceding persisted, validator-approved turns. Persistence proves storage
-and translation success, not co-reference confirmation. Sequence numbers are
+two preceding validator-approved turns from the current process whose source records
+were durably committed. A source commit and successful translation do not prove
+co-reference. Sequence numbers are
 part of the contract: the implementation applies a two-turn TTL and does not
 infer recency from array position.
 

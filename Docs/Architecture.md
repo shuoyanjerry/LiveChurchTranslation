@@ -9,7 +9,7 @@ selected microphone or imported audio
   → language-scoped speech segmentation and ASR
   → Mandarin-only conservative source correction and discourse evidence, when applicable
   → faithful translation into English or Simplified Chinese
-  → durable transcript and continuous reader
+  → source-only durable transcript + bilingual continuous reader
 ```
 
 It does not summarize, generate sermon content, mix audio, render worship slides, or
@@ -59,7 +59,7 @@ files over 200 lines.
 | `GlossaryAPI` | `GlossaryCore`, `GlossaryFileSystem` | Editable terminology, aliases, accepted targets, enforcement, validation, and atomic JSON storage |
 | `TranslationAPI` | `TranslationHyMT2`, optional `TranslationApple` | Translation requests/results, two-entry context values, Hy-MT2 runtime and integrity guards |
 | `TranscriptAPI` | `TranscriptCore` | Immutable raw/normalized/audited bilingual entries and actor-owned live buffer |
-| `PersistenceAPI` | `PersistenceFileSystem` | Replaceable store and append-only JSONL/Markdown session adapter |
+| `PersistenceAPI` | `PersistenceFileSystem` | Replaceable source-only JSONL/Markdown session adapter with legacy-content migration |
 | `AudioImportAPI` | `AudioImportSessionAdapter` | File-import lifecycle, direction-scoped settings, completion validation, and cancellation |
 
 ### Models, settings, and operations
@@ -147,7 +147,7 @@ The speech-segment path is ordered deliberately:
    `TranscriptEntry`; ambiguity causes abstention, not a guess.
 4. Hy-MT2 receives the complete recognized text for the current VAD segment in one
    request, matched glossary terms, and at most the latest two prior finalized,
-   validator-approved, durably appended pairs. Context is marked as non-output background;
+   validator-approved pairs from the current process. Context is marked as non-output background;
    only the separately delimited current source may be translated. Occurrence-level,
    request-nonce-bound proof blocks carry verified pronoun decisions through initial and
    strict-retry output. Fail-closed parsers reject missing, duplicated, forged, residual, or
@@ -160,9 +160,10 @@ The speech-segment path is ordered deliberately:
    Scripture-reference, and pronoun findings trigger one strict retry; a safe non-empty candidate
    is still returned in full with backend-only review codes. These checks are defect detectors,
    not substitutes for bilingual review.
-6. The complete safe translation is appended as one entry and synchronized before publication.
-   Only entries without review
-   findings enter the rolling translation context; review metadata is never rendered to readers.
+6. The source text, source audit, identity, order, and timing are synchronized to the source-only
+   archive before the full in-memory entry is published to local and LAN readers. Translated text,
+   translation review, and translation duration are never written to the session library. Only
+   current-process entries without review findings enter rolling translation context.
 7. The recovery record is marked complete. A crash before this step causes idempotent
    replay on the next preparation; unreadable artifacts move to quarantine and surface as
    recoverable issues.

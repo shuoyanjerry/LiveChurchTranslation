@@ -3,7 +3,8 @@
 ## Purpose
 
 Defines the replaceable durable transcript-store boundary and the summary value
-used to enumerate saved sessions.
+used to enumerate saved sessions. The production filesystem adapter projects live
+bilingual entries to source-only records at this boundary.
 
 ## Public API
 

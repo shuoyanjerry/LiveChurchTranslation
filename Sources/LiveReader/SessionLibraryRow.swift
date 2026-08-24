@@ -13,7 +13,7 @@ struct SessionLibraryRow: View {
                 .lineLimit(2)
             HStack(spacing: 7) {
                 Image(systemName: summary.kind == .live ? "mic.fill" : "waveform")
-                Text(summary.languagePair)
+                Text(summary.recognitionLanguage)
                 Text("·")
                 Text("\(summary.entryCount) 段")
             }

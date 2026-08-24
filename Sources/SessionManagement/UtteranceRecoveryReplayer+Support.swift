@@ -38,7 +38,12 @@ extension UtteranceRecoveryReplayer {
             return SequencedRecoveryEntry(sourceSequence: sequence, entry: entry)
         }
         .sorted(by: recoverySourceOrder)
-        let recentApproved = earlier.filter { $0.entry.translationReview == nil }.suffix(2)
+        let recentApproved = earlier.filter {
+            $0.entry.translationReview == nil
+                && !$0.entry.targetText.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ).isEmpty
+        }.suffix(2)
         return RecoveryProcessingContext(
             presentationSequence: recoveredPresentationSequence(
                 in: entries,

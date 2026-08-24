@@ -107,7 +107,7 @@ struct SessionLibraryDetail: View {
                 .font(.system(size: 23, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            Text(summary.languagePair)
+            Text(summary.recognitionLanguage)
                 .font(.callout)
                 .foregroundStyle(ChurchTheme.muted)
         }

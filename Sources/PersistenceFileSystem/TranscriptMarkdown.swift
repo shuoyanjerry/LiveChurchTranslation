@@ -9,8 +9,7 @@ enum TranscriptMarkdown {
     ) -> String {
         var metadata = [
             "- 类型：\(session.kind.markdownName)",
-            "- 翻译方向：\(languageName(session.sourceLanguage)) → "
-                + languageName(session.targetLanguage),
+            "- 识别语言：\(languageName(session.sourceLanguage))",
             "- 开始时间：\(dateTime(session.startedAt))",
             "- 结束时间：\(session.endedAt.map(dateTime) ?? "进行中")",
             "- 记录状态：\(integrity.markdownLabel)",
@@ -26,8 +25,7 @@ enum TranscriptMarkdown {
     static func entry(_ entry: TranscriptEntry) -> String {
         let interval = "\(timestamp(entry.startedMilliseconds))–\(timestamp(entry.endedMilliseconds))"
         return "## 片段 \(entry.sequence) · \(interval)\n\n"
-            + "**译文**\n\n\(safeText(entry.targetText))\n\n"
-            + "**识别原文**\n\n\(safeText(entry.sourceText))\n\n"
+            + "**识别文字**\n\n\(safeText(entry.sourceText))\n\n"
     }
 
     private static func dateTime(_ date: Date) -> String {

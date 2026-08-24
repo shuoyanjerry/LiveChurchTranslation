@@ -28,9 +28,9 @@ import Testing
         let requests = await harness.translator.receivedRequests()
         #expect(requests.map(\.sourceText) == [source])
         #expect(requests[0].context.isEmpty)
-        let persisted = await harness.store.persistedEntries()
-        #expect(persisted.map(\.sourceText) == [source])
-        #expect(persisted.map(\.targetText) == [target])
+        let appended = await harness.store.appendedEntries()
+        #expect(appended.map(\.sourceText) == [source])
+        #expect(appended.map(\.targetText) == [target])
         let visibility = try #require(
             try await visibilityEvents(harness, expectedCount: 1).first
         )

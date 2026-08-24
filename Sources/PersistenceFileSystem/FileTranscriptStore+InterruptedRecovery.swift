@@ -32,7 +32,7 @@ extension FileTranscriptStore {
     ) throws -> InterruptedTranscriptRecoveryResult {
         let manifest = try validatedRecoveryManifest(sessionID: sessionID)
         guard manifest.requiresInterruptionRecovery else { return .notRequired }
-        let entries = try readRecoveryEntries(sessionID: sessionID)
+        let entries = try readRecoveryEntries(sessionID: sessionID, manifest: manifest)
         let endedAt = try recoveredEndDate(manifest: manifest, entries: entries)
         let recovered = recoveredSession(manifest: manifest, entries: entries, endedAt: endedAt)
         let recoveredFinalization = interruptionFinalization(from: finalization)
@@ -95,10 +95,10 @@ extension FileTranscriptStore {
         _ session: TranscriptSession,
         finalization: TranscriptFinalization
     ) throws {
-        try completeMarkdown(for: session, finalization: finalization).write(
-            to: markdownURL(session.id),
-            atomically: true,
-            encoding: .utf8
+        try writeEntries(session.entries, sessionID: session.id)
+        try writeMarkdown(
+            completeMarkdown(for: session, finalization: finalization),
+            sessionID: session.id
         )
         try writeManifest(for: session, finalization: finalization)
         try enforcePrivatePermissions(sessionID: session.id)

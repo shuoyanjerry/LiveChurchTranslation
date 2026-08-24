@@ -90,7 +90,9 @@ extension PersistenceFileSystemTests {
 
         #expect(reloaded?.entries.count == 1)
         #expect(reloaded?.entries.first?.sourceText == source)
-        #expect(reloaded?.entries.first?.targetText == target)
+        #expect(reloaded?.entries.first?.targetText.isEmpty == true)
+        #expect(reloaded?.entries.first?.translationReview == nil)
+        #expect(reloaded?.entries.first?.translationMilliseconds == 0)
         #expect(reloaded?.entries.first?.id == entry.id)
     }
 }
@@ -135,17 +137,21 @@ extension PersistenceFileSystemTests {
         let lines = contents.split(whereSeparator: \Character.isNewline)
         let line = try #require(lines.first.map(String.init))
         #expect(lines.count == 1)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let persisted = try decoder.decode(TranscriptEntry.self, from: Data(line.utf8))
-        #expect(persisted.rawSourceText == "嗯典")
-        #expect(persisted.sourceCorrections.count == 1)
+        let persisted = try #require(
+            try JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any]
+        )
+        #expect(persisted["rawSourceText"] as? String == "嗯典")
+        #expect((persisted["sourceCorrections"] as? [[String: Any]])?.count == 1)
+        #expect(persisted["targetText"] == nil)
+        #expect(persisted["translationReview"] == nil)
+        #expect(persisted["translationMilliseconds"] == nil)
         let markdown = try String(contentsOf: fixture.markdownURL, encoding: .utf8)
-        #expect(markdown.contains("grace"))
+        #expect(!markdown.contains("grace"))
         #expect(markdown.components(separatedBy: "## 片段 1 · 00:00:00.000–00:00:01.000").count == 2)
-        #expect(markdown.contains("**译文**\n\ngrace"))
-        #expect(markdown.contains("**识别原文**\n\n恩典"))
-        #expect(markdown.contains("- 翻译方向：简体中文 → 英文"))
+        #expect(!markdown.contains("**译文**"))
+        #expect(markdown.contains("**识别文字**\n\n恩典"))
+        #expect(markdown.contains("- 识别语言：简体中文"))
+        #expect(!markdown.contains("翻译方向"))
         #expect(markdown.contains("- 结束时间："))
         #expect(markdown.contains("- 记录状态：完整"))
     }

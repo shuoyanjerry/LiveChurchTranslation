@@ -31,7 +31,7 @@ public final class SessionLibraryViewModel: ObservableObject {
         guard !query.isEmpty else { return sessions }
         return sessions.filter {
             $0.displayTitle.localizedStandardContains(query)
-                || $0.languagePair.localizedStandardContains(query)
+                || $0.recognitionLanguage.localizedStandardContains(query)
         }
     }
 

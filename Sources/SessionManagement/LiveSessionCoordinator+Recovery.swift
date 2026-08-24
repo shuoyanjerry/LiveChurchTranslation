@@ -53,7 +53,7 @@ extension LiveSessionCoordinator {
             throw UtteranceProcessingFailure(
                 stage: .persistence,
                 message: error.localizedDescription,
-                pendingEntry: outcome.lastPersistedEntry
+                pendingEntry: outcome.lastCommittedEntry
             )
         }
         recordTerminalRejections(outcome.rejections, segment: record.segment)

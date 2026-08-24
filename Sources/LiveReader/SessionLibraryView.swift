@@ -44,7 +44,7 @@ struct SessionLibraryView: View {
             }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("听抄稿、翻译和完整录音将从此 Mac 删除，且无法恢复。")
+            Text(SessionLibraryPresentation.deletionMessage)
         }
     }
 
@@ -114,4 +114,8 @@ struct SessionLibraryView: View {
             set: { id in Task { await viewModel.select(id) } }
         )
     }
+}
+
+enum SessionLibraryPresentation {
+    static let deletionMessage = "听抄稿和完整录音将从此 Mac 删除，且无法恢复。"
 }

@@ -73,7 +73,7 @@ actor FakeTranscriptStore: TranscriptStore {
     func begunSessions() -> [TranscriptSession] { begun }
     func seed(_ entry: TranscriptEntry) { appended.append(entry) }
     func attemptedAppendCount() -> Int { appendAttempts }
-    func persistedEntries() -> [TranscriptEntry] { appended }
+    func appendedEntries() -> [TranscriptEntry] { appended }
     func finishedSessions() -> [TranscriptSession] { finished }
     func transcriptFinalizations() -> [TranscriptFinalization] { finalizations }
 }

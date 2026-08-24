@@ -42,7 +42,7 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `ScriptureQualificationSupportTests` | 15 synthetic tests for exact ESV 2025/CUNPSS-Shen 1988 identity, independent manifest/source-declaration/source hashes, private containment, declared non-weight adjustment, no-training/no-redistribution enforcement, development/sealed partitions, reading-kind alignment, strict JSON, and punctuation fidelity without report text |
 | `test_ephemeral_scripture_qualification.sh` | Deterministic success, preflight-failure, and termination-signal lifecycle checks proving that the owner-only temporary corpus is removed and no workspace corpus is created |
 | `TranscriptCoreTests` | Ordered lifecycle, raw/normalized source audit, append events, and compatibility decoding |
-| `PersistenceFileSystemTests` | JSONL sessions, synchronized append, structured direction-aware and injection-safe Markdown, loading, source audit/timing persistence, and non-bypassable active-recording deletion guards |
+| `PersistenceFileSystemTests` | Source-only JSONL sessions, synchronized append/finalization, legacy translation removal, injection-safe source Markdown, loading, source audit/timing preservation, and non-bypassable active-recording deletion guards |
 | `LoggingOSLogTests` | Deterministic payload formatting plus a source policy that keeps all dynamic message and metadata text private |
 | `DiagnosticsCoreTests` | Bounded in-memory retention, privacy-preserving export permissions, and atomic replacement |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
@@ -107,8 +107,8 @@ count, duration, crash/hang result, and relevant redacted diagnostics. A single 
 connection is only a smoke test.
 
 Status for the corrected tree on 2026-08-24: **the complete command-line gate passed**. It covered
-103 architecture targets, strict formatting and 1,239 SwiftLint-clean Swift files, four endpoint
-packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,138 Swift tests, and the
+103 architecture targets, strict formatting and 1,251 SwiftLint-clean Swift files, four endpoint
+packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,157 Swift tests, and the
 dead-code pass. Full-Xcode and physical-device results are not recorded yet. The repeated Safari
 matrix above remains mandatory before the LAN incident can be closed for release.
 
@@ -370,7 +370,7 @@ Score separately:
 - Required/preferred terminology accuracy and accepted grammatical variants.
 - Translation omissions, additions, altered negation/numbers/references, and hallucination.
 - Blinded bilingual human review for fidelity, naturalness, and theological terminology.
-- Human-labelled final-syllable-to-ASR, translation, persistence, and reader latency percentiles.
+- Human-labelled final-syllable-to-ASR, translation, source-record commit, and reader latency percentiles.
 - Pronoun-correction precision, abstention/coverage, evidence age, and forbidden
   gender/deity rewrite count; any wrong automatic gender/deity rewrite fails the gate.
 - Non-speech publish rate with and without hotwords across silence, music, singing,
@@ -378,8 +378,8 @@ Score separately:
   reaching the transcript fails the gate.
 
 Automated validators are narrow defect detectors, not a substitute for bilingual human
-review. Any safe, non-empty candidate is shown in full and marked only in the persisted backend
-record when a validator warns; it is excluded from translation context but never hidden from the
+review. Any safe, non-empty candidate is shown in full; validator warnings remain current-process
+backend metadata. Warned output is excluded from translation context but never hidden from the
 listener. Empty output, exact source echo, explicit model refusal, and internal prompt/protocol
 text remain recoverable failures because none is a translation.
 

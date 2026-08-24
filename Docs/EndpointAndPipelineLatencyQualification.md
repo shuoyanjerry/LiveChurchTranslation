@@ -9,7 +9,7 @@ current build meets the one-to-three second speech-end target.
 ## One Correlation ID, One Monotonic Timeline
 
 Every finalized `SpeechSegment.id` is the correlation ID through ASR,
-normalization, discourse resolution, translation, persistence, local rendering,
+normalization, discourse resolution, translation, source-record commit, local rendering,
 and remote projection. Durations use one injected monotonic clock. `Date` may be
 recorded for operator correlation, but wall-clock subtraction is forbidden.
 

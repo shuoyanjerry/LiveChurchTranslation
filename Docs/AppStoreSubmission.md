@@ -187,8 +187,8 @@ separate:
 The current production architecture processes microphone audio, imported audio,
 speech recognition, translation, transcripts, glossary terms, diagnostics, and saved
 meeting recordings on the Mac. It has no account system, analytics SDK, advertising,
-tracking domain, or developer-operated content server. Opt-in LAN sharing sends the
-live translation only to explicitly paired devices on the same network. The seven
+tracking domain, or developer-operated content server. Opt-in LAN sharing sends live
+recognized source text and translation only to explicitly paired devices on the same network. The seven
 revision-pinned model files are sealed into the signed app and load locally; the submitted
 release does not download model data on first use. Debug source builds may use the pinned
 Hugging Face installer, but that development behavior is not part of the submitted binary.
@@ -210,6 +210,7 @@ policy URL. Suggested short disclosure:
 > and saved meeting recordings locally on your Mac. It does not use ads, analytics,
 > or tracking. Live LAN sharing is off until you enable it and pair a device. The speech
 > and translation models are bundled with the app; your audio and transcript are not uploaded.
+> The Library retains recordings and recognized source text, not translations.
 
 The current `ITSAppUsesNonExemptEncryption=false` declaration is based on the app
 using Apple-provided HTTPS/network security and one-way hashes rather than shipping
@@ -229,7 +230,8 @@ Paste and adapt this text for the exact submitted build:
 > will be saved. A persistent red recording indicator remains visible until capture
 > stops, while a separate small status shows Preparing, Listening, Recognizing, Translating,
 > Finishing, or Incomplete. Passage timestamps are visible by default and may be hidden without
-> deleting their stored offsets. The Library screen plays and deletes locally saved sessions and imports
+> deleting their stored offsets. The Library retains recognized source text, not translations.
+> It plays and deletes locally saved sessions and imports
 > system-readable audio through the macOS file picker with read-only access. Optional
 > LAN sharing is off by default; when enabled, Bonjour advertises
 > `_churchtranslate._tcp` and only explicitly paired devices receive the live reader.

@@ -107,12 +107,12 @@ extension UtteranceProcessor {
     func recoveryInputs(
         for inputs: [RecognizedInput],
         record: PendingUtteranceRecord,
-        persistedEntries: [TranscriptEntry]
+        archivedEntries: [TranscriptEntry]
     ) throws -> [RecognizedInput] {
         guard record.processingTopology == .unversionedV1 else { return inputs }
         let legacyInputs = legacyRecoveryInputs(for: inputs)
         let compatibleIDs = Set(legacyInputs.map(\.utterance.sourceSegmentID))
-        let segmentEntries = persistedEntries.filter {
+        let segmentEntries = archivedEntries.filter {
             $0.sourceSegmentSequence == record.id.sequenceNumber
                 || compatibleIDs.contains($0.id)
         }

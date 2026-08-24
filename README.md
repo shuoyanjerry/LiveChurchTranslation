@@ -9,8 +9,8 @@ and can share a read-only live view with paired devices on a trusted local netwo
 ## Features
 
 - On-device speech recognition and translation with no cloud inference.
-- Selectable audio input, complete local recording, crash recovery, and a searchable session
-  library.
+- Selectable audio input, complete local recording, crash recovery, and a searchable
+  source-transcript library.
 - Import of WAV, AIFF/AIFC, AAC/M4A, and CAF recordings.
 - Editable terminology glossaries and automated output validation.
 - A continuous reader with quiet processing status, optional source text and timestamps, and
@@ -41,8 +41,9 @@ Existing recordings can be imported from **Library** for transcription.
 
 ## Privacy and local sharing
 
-Speech recognition and translation run locally. Recordings, transcripts, glossaries, and recovery
-data stay in the app's Application Support directory within its sandbox container.
+Speech recognition and translation run locally. The library retains recordings and recognized
+source text, but not translations. Glossaries and recovery data also stay in the app's sandboxed
+Application Support directory.
 
 LAN sharing is off by default and gives viewers no control over recording or app settings. The
 current reader transport uses authenticated HTTP/WebSocket without TLS, so enable it only on a

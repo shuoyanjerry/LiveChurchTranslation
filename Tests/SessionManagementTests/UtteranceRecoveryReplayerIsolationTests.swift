@@ -70,7 +70,7 @@ import VADAPI
         )
     }
 
-    @Test func reviewedRecoveryPersistsButNeverFeedsLaterTranslationContext() async throws {
+    @Test func reviewedRecoveryCommitsSourceButNeverFeedsLaterTranslationContext() async throws {
         let harness = SessionTestHarness(
             recognizedTexts: ["第一句。", "第二句。"],
             translationReviewedRequestIndices: [0]
@@ -85,7 +85,7 @@ import VADAPI
         let requests = await harness.translator.receivedRequests()
         #expect(requests.count == 2)
         #expect(requests[1].context.isEmpty)
-        let entries = await harness.store.persistedEntries()
+        let entries = await harness.store.appendedEntries()
         #expect(entries.count == 2)
         #expect(entries[0].translationReview?.issueCodes == ["quality.pronoun_alignment"])
         #expect(entries[1].translationReview == nil)

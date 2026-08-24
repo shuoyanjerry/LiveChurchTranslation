@@ -58,12 +58,19 @@ extension FileTranscriptStore {
             hasUnrecoverableFailure: finalization.hasUnrecoverableFailure
         )
         try jsonEncoder.encode(manifest).write(to: manifestURL(session.id), options: .atomic)
+        try setPrivateFilePermission(manifestURL(session.id))
     }
 
     func readSummary(_ directory: URL) throws -> StoredSessionSummary? {
+        guard let sessionID = UUID(uuidString: directory.lastPathComponent),
+            try isSafeSessionDirectory(directory)
+        else { return nil }
         let url = directory.appending(path: "session.json")
         guard fileManager.fileExists(atPath: url.path) else { return nil }
-        let manifest = try decoder().decode(SessionManifest.self, from: Data(contentsOf: url))
+        let manifest = try recoveryManifest(sessionID: sessionID)
+        guard manifest.id == sessionID, manifest.storesSourceOnlyEntries else {
+            throw TranscriptMigrationError.legacyContentNotMigrated(sessionID)
+        }
         return StoredSessionSummary(
             id: manifest.id,
             startedAt: manifest.startedAt,

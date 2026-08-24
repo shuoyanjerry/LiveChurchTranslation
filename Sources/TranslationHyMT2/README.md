@@ -13,7 +13,10 @@ runtime.
 - `HyMT2Configuration`: immutable helper, inference, timeout, and resource limits.
 - `HyMT2Error`: explicit model, helper, startup, transport, input-guard, and output-validation failures.
 
-Each request may carry prior validator-approved `TranslationContextEntry` pairs. The prompt includes only the two newest pairs, labels them as non-output background, and keeps the current source in a separate delimiter. Callers remain responsible for admitting only finalized, persisted translations into this context.
+Each request may carry prior validator-approved `TranslationContextEntry` pairs from the current process.
+The prompt includes only the two newest pairs, labels them as non-output background, and keeps the current
+source in a separate delimiter. Callers remain responsible for admitting only finalized in-memory
+translations; archived transcripts intentionally contain no translated text.
 
 Each request may also carry occurrence-level `TranslationPronounGuidance`.
 The protected-pronoun contract below applies only to Mandarin-source, English-target requests;

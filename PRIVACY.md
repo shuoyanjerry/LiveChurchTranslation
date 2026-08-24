@@ -1,6 +1,6 @@
 # Live Church Translation Privacy Policy
 
-Effective: August 22, 2026
+Effective: August 24, 2026
 
 Live Church Translation processes microphone audio, imported audio, transcripts, and
 translations locally on the user's Mac. The app does not create an account, include
@@ -9,11 +9,17 @@ advertising or tracking, or send meeting content to the developer or an AI servi
 ## Data stored on the Mac
 
 When a user starts a meeting, the app saves the complete audio recording, recognized
-source text, translation, timestamps, and correction audit in the app's sandboxed
-Application Support container. Imported audio is decoded and processed locally. Model
+source text, timestamps, and source-correction audit in the app's sandboxed Application
+Support container. Translations remain available to live readers but are not retained in
+the session library. Imported audio is decoded and processed locally. Model
 weights are sealed into the signed release app, verified by size and SHA-256 before use,
 and loaded locally without a first-run download. Meeting content remains until the user
 deletes the meeting or removes the app's data.
+
+When this storage policy is first applied, the app rewrites legacy app-managed transcript
+files to remove previously retained translation text and review metadata. Copies outside the
+app container, including user exports, backups, and filesystem snapshots, remain under their
+owner's control.
 
 ## Local network sharing
 

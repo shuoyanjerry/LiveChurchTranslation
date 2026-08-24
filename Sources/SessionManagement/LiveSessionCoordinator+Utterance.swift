@@ -11,7 +11,7 @@ struct TerminalSentenceRejection: Sendable {
 }
 
 struct SegmentProcessingOutcome: Sendable {
-    let lastPersistedEntry: TranscriptEntry?
+    let lastCommittedEntry: TranscriptEntry?
     let rejections: [TerminalSentenceRejection]
 }
 
@@ -92,7 +92,7 @@ extension LiveSessionCoordinator {
             throw terminalRecognitionFailure(.noProcessableSentences)
         }
         return SegmentProcessingOutcome(
-            lastPersistedEntry: finalEntry,
+            lastCommittedEntry: finalEntry,
             rejections: rejections
         )
     }

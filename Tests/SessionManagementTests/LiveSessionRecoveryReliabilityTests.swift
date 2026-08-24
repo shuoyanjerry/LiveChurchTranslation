@@ -92,9 +92,9 @@ extension LiveSessionRecoveryReliabilityTests {
             sourceSegmentID: fixture.segment.id,
             ordinal: 1
         )
-        let persisted = await harness.store.persistedEntries()
-        #expect(persisted.filter { $0.id == fixture.segment.id }.count == 1)
-        #expect(persisted.filter { $0.id == expectedSecondID }.count == 1)
+        let appended = await harness.store.appendedEntries()
+        #expect(appended.filter { $0.id == fixture.segment.id }.count == 1)
+        #expect(appended.filter { $0.id == expectedSecondID }.count == 1)
         let prior = try #require(
             await harness.store.finishedSessions().first { $0.id == fixture.sessionID }
         )

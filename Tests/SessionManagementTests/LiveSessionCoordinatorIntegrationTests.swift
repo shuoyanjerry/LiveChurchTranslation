@@ -5,7 +5,7 @@ import Testing
 import TranslationAPI
 
 @Suite struct LiveSessionCoordinatorIntegrationTests {
-    @Test func audioFrameFlowsThroughPipelineAndPublishesPersistedEntry() async throws {
+    @Test func audioFrameFlowsThroughPipelineAndPublishesAfterSourceCommit() async throws {
         let harness = SessionTestHarness()
 
         let events = try await harness.run()
@@ -23,7 +23,7 @@ import TranslationAPI
         try await verifyRecognitionRequest(from: harness)
         try await verifyTranslationRequest(from: harness)
 
-        #expect(await harness.store.persistedEntries() == [published])
+        #expect(await harness.store.appendedEntries() == [published])
         #expect(await harness.store.attemptedAppendCount() == 1)
         #expect((await harness.store.finishedSessions()).count == 1)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
@@ -56,7 +56,7 @@ import TranslationAPI
         #expect(snapshot.transcript.isEmpty)
     }
 
-    @Test func translationFailureDoesNotPublishOrPersistEntry() async throws {
+    @Test func translationFailureDoesNotPublishOrCommitSourceEntry() async throws {
         let harness = SessionTestHarness(translationFails: true)
 
         let events = try await harness.run()
@@ -69,7 +69,7 @@ import TranslationAPI
         #expect((await harness.asr.receivedRequests()).count == 1)
         #expect((await harness.translator.receivedRequests()).count == 1)
         #expect(await harness.store.attemptedAppendCount() == 0)
-        #expect((await harness.store.persistedEntries()).isEmpty)
+        #expect((await harness.store.appendedEntries()).isEmpty)
         let bufferSnapshot = try #require(await harness.transcript.snapshot())
         #expect(bufferSnapshot.entries.isEmpty)
         let controllerSnapshot = await harness.coordinator.currentSnapshot()
@@ -96,7 +96,7 @@ import TranslationAPI
             })
         #expect((await harness.translator.receivedRequests()).count == 1)
         #expect(await harness.store.attemptedAppendCount() == 1)
-        #expect((await harness.store.persistedEntries()).isEmpty)
+        #expect((await harness.store.appendedEntries()).isEmpty)
         let bufferSnapshot = try #require(await harness.transcript.snapshot())
         #expect(bufferSnapshot.entries.isEmpty)
         let controllerSnapshot = await harness.coordinator.currentSnapshot()
@@ -128,7 +128,7 @@ extension LiveSessionCoordinatorIntegrationTests {
         #expect(rejections.first?.1.first?.sentenceOrdinal == 0)
         #expect(rejections.first?.1.first?.stage == .recognition)
         #expect(rejections.first?.1.first?.failureCode == "asr.prompt_only_hallucination")
-        #expect((await harness.store.persistedEntries()).isEmpty)
+        #expect((await harness.store.appendedEntries()).isEmpty)
         let snapshot = await harness.coordinator.currentSnapshot()
         #expect(snapshot.phase == .idle)
         #expect(snapshot.statusMessage == "听抄稿已保存，其中 1 段未通过质量校验")
@@ -146,7 +146,7 @@ extension LiveSessionCoordinatorIntegrationTests {
         )
     }
 
-    @Test func observedQwenErrorsAreNormalizedBeforeTranslationAndPersistence() async throws {
+    @Test func observedQwenErrorsAreNormalizedBeforeTranslationAndSourceCommit() async throws {
         let raw = "休恩、恩典、因信生义、圣灵，并在圣灵里承受。"
         let expected = "救恩、恩典、因信称义、圣灵，并在圣灵里承受。"
         let harness = SessionTestHarness(recognizedText: raw)
@@ -157,7 +157,7 @@ extension LiveSessionCoordinatorIntegrationTests {
         #expect(events.appendedEntries.first?.rawSourceText == raw)
         #expect(events.appendedEntries.first?.sourceCorrections.count == 2)
         #expect(await harness.translator.receivedRequests().first?.sourceText == expected)
-        #expect(await harness.store.persistedEntries().first?.sourceText == expected)
+        #expect(await harness.store.appendedEntries().first?.sourceText == expected)
     }
 
     @Test func glossaryRecognitionAliasIsNormalizedBeforeTermMatching() async throws {

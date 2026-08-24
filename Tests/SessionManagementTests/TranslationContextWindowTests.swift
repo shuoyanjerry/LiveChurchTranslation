@@ -3,7 +3,7 @@ import Testing
 import TranslationAPI
 
 @Suite struct TranslationContextWindowTests {
-    @Test func retainsOnlyTheLatestTwoPersistedTranslations() {
+    @Test func retainsOnlyTheLatestTwoFinalizedInMemoryTranslations() {
         var window = TranslationContextWindow()
 
         window.append(entry("一", "One"))

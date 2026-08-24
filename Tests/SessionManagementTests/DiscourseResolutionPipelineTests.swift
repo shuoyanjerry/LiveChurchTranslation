@@ -44,7 +44,7 @@ import TranslationAPI
         #expect(asrRequests[0].contextPrompt == asrRequests[1].contextPrompt)
         #expect(!asrRequests[1].contextPrompt.contains("那位姐妹"))
         #expect(!asrRequests[1].contextPrompt.contains("她后来"))
-        #expect(await harness.store.persistedEntries().last == entry)
+        #expect(await harness.store.appendedEntries().last == entry)
     }
 
     @Test func unresolvedSpokenTaReachesTranslatorWithoutTrustingGlyph() async throws {
@@ -55,11 +55,11 @@ import TranslationAPI
         let request = await harness.translator.receivedRequests().last
         #expect(request?.pronounGuidance.count == 1)
         #expect(request?.pronounGuidance.first?.resolution == .unresolvedSpokenMandarin)
-        let persisted = await harness.store.persistedEntries().last
-        #expect(persisted?.rawSourceText == "他继续分享。")
-        #expect(persisted?.sourceText == "他继续分享。")
+        let appended = await harness.store.appendedEntries().last
+        #expect(appended?.rawSourceText == "他继续分享。")
+        #expect(appended?.sourceText == "他继续分享。")
         #expect(
-            persisted?.sourcePronounDecisions.first?.resolution
+            appended?.sourcePronounDecisions.first?.resolution
                 == .unresolvedSpokenMandarin
         )
     }
@@ -81,7 +81,7 @@ import TranslationAPI
             await harness.translator.receivedRequests().last?.pronounGuidance.first?.resolution
                 == .unresolvedSpokenMandarin
         )
-        #expect(await harness.store.persistedEntries().last == entry)
+        #expect(await harness.store.appendedEntries().last == entry)
     }
 
     private static let frames = [

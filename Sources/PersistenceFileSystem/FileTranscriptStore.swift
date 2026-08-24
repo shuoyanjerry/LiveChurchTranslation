@@ -9,6 +9,7 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
     let jsonEncoder: JSONEncoder
     var entryIDs: [UUID: Set<UUID>] = [:]
     var activeSessionIDs: Set<UUID> = []
+    var successfulMigrationScanCompleted = false
 
     public init(
         root: URL,
@@ -30,12 +31,9 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
             try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             try writeManifest(for: session, integrity: .active)
-            try markdownHeader(for: session).write(
-                to: markdownURL(session.id),
-                atomically: true,
-                encoding: .utf8
-            )
+            try writeMarkdown(markdownHeader(for: session), sessionID: session.id)
             try Data().write(to: jsonLinesURL(session.id), options: .atomic)
+            try setPrivateFilePermission(jsonLinesURL(session.id))
             try enforcePrivatePermissions(sessionID: session.id)
             entryIDs[session.id] = []
             activeSessionIDs.insert(session.id)
@@ -49,9 +47,12 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
             throw TranscriptStoreError.sessionNotFound
         }
         do {
+            if !activeSessionIDs.contains(sessionID) {
+                try migrateLegacySessionToSourceOnly(sessionID: sessionID)
+            }
             let existing = try loadEntryIDsIfNeeded(sessionID: sessionID)
             guard !existing.contains(entry.id) else { return }
-            let encoded = try lineEncoder().encode(entry) + Data([0x0A])
+            let encoded = try lineEncoder().encode(StoredSourceTranscriptEntry(entry)) + Data([0x0A])
             try append(encoded, to: jsonLinesURL(sessionID))
             entryIDs[sessionID, default: []].insert(entry.id)
         } catch {
@@ -70,13 +71,9 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
                 current: finalization
             )
             try writeEntries(session.entries, sessionID: session.id)
-            try completeMarkdown(
-                for: session,
-                finalization: committedFinalization
-            ).write(
-                to: markdownURL(session.id),
-                atomically: true,
-                encoding: .utf8
+            try writeMarkdown(
+                completeMarkdown(for: session, finalization: committedFinalization),
+                sessionID: session.id
             )
             try writeManifest(for: session, finalization: committedFinalization)
             try enforcePrivatePermissions(sessionID: session.id)
@@ -89,8 +86,9 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
         let manifest = manifestURL(sessionID)
         guard fileManager.fileExists(atPath: manifest.path) else { return nil }
         do {
-            let stored = try decoder().decode(SessionManifest.self, from: Data(contentsOf: manifest))
-            let entries = try readEntries(sessionID: sessionID)
+            try migrateLegacySessionToSourceOnly(sessionID: sessionID)
+            let stored = try recoveryManifest(sessionID: sessionID)
+            let entries = try readEntries(sessionID: sessionID, manifest: stored)
             entryIDs[sessionID] = Set(entries.map(\.id))
             return TranscriptSession(
                 id: stored.id,
@@ -109,6 +107,7 @@ public actor FileTranscriptStore: TranscriptStore, InterruptedTranscriptRecovery
 
     public func recentSessions(limit: Int) async throws -> [StoredSessionSummary] {
         do {
+            try migrateLegacySessionsToSourceOnly()
             let urls = try fileManager.contentsOfDirectory(
                 at: root,
                 includingPropertiesForKeys: nil,

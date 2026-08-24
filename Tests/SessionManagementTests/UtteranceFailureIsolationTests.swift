@@ -26,7 +26,7 @@ import Testing
         let translations = await harness.translator.receivedRequests()
         #expect(translations.map(\.sourceText) == ["第一句。", "第二句。"])
         #expect(translations[1].context.isEmpty)
-        #expect((await harness.store.persistedEntries()).map(\.sourceText) == ["第二句。"])
+        #expect((await harness.store.appendedEntries()).map(\.sourceText) == ["第二句。"])
         #expect((await harness.recoveryStore.pendingRecords()).map(\.id.sequenceNumber) == [1])
         #expect((await harness.recoveryStore.completedIDs()).map(\.sequenceNumber) == [2])
         let rejected = await harness.recoveryStore.terminalRejections()
@@ -57,14 +57,14 @@ import Testing
         let translations = await harness.translator.receivedRequests()
         #expect(translations.map(\.sourceText) == [source])
         #expect(translations[0].context.isEmpty)
-        #expect((await harness.store.persistedEntries()).isEmpty)
+        #expect((await harness.store.appendedEntries()).isEmpty)
         #expect((await harness.recoveryStore.pendingRecords()).count == 1)
         let rejected = await harness.recoveryStore.terminalRejections()
         #expect(rejected.isEmpty)
         #expect(await harness.coordinator.diskRecoveryMode == nil)
     }
 
-    @Test func reviewedTranslationIsDisplayedPersistedAndDoesNotMarkSessionIncomplete() async throws {
+    @Test func reviewedTranslationIsDisplayedAfterSourceCommitWithoutIncompleteState() async throws {
         let harness = SessionTestHarness(
             recognizedTexts: ["第一句。", "第二句。"],
             translationReviewedRequestIndices: [0],
@@ -77,7 +77,7 @@ import Testing
         let translations = await harness.translator.receivedRequests()
         #expect(translations.count == 2)
         #expect(translations[1].context.isEmpty)
-        let entries = await harness.store.persistedEntries()
+        let entries = await harness.store.appendedEntries()
         #expect(entries.map(\.sourceText) == ["第一句。", "第二句。"])
         #expect(entries[0].translationReview?.issueCodes == ["quality.pronoun_alignment"])
         #expect(entries[1].translationReview == nil)
@@ -98,7 +98,7 @@ import Testing
 
         #expect((await harness.asr.receivedRequests()).count == 2)
         #expect((await harness.translator.receivedRequests()).count == 1)
-        #expect((await harness.store.persistedEntries()).count == 1)
+        #expect((await harness.store.appendedEntries()).count == 1)
         #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
         let rejected = await harness.recoveryStore.terminalRejections()
         #expect(rejected.map { $0.0.sequenceNumber } == [1])

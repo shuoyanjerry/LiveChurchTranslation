@@ -39,7 +39,7 @@ extension UtteranceRecoveryReplayer {
         let inputs = try await processor.recoveryInputs(
             for: recognizedInputs,
             record: record,
-            persistedEntries: entries
+            archivedEntries: entries
         )
         try requireProcessableInputs(inputs)
         var translationContext = context.translation
@@ -150,7 +150,10 @@ extension UtteranceRecoveryReplayer {
         _ entry: TranscriptEntry,
         to context: inout [TranslationContextEntry]
     ) {
-        guard entry.translationReview == nil else { return }
+        guard
+            entry.translationReview == nil,
+            !entry.targetText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
         context.append(
             TranslationContextEntry(
                 sourceText: entry.sourceText,

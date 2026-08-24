@@ -42,8 +42,9 @@ storage, audio, or LAN implementations.
 The interface reduces failures to short actionable messages while protocol and storage layers own technical
 diagnostics. A settings sheet remains open when persistence fails. Sharing failures arrive as presentation
 state; the UI cannot bypass pairing or authorization. Transcript entries remain selectable and are never
-deleted by this module.
-The library describes complete recordings in user terms and does not expose internal storage filenames.
+deleted by this module. The live reader is bilingual; the library presents only recognized source text and
+its source language. It describes complete recordings in user terms and does not expose internal storage
+filenames.
 Language mode and microphone controls are disabled while a session is active, and the recording indicator
 appears only after the capture provider has actually started.
 

@@ -12,7 +12,9 @@ Stable, model-independent values and protocols for faithful source-to-target tra
 - `TranslationContextEntry`: one finalized, validator-approved prior source/target pair.
   `TranslationRequest.context` defaults to empty for source compatibility.
 
-Only finalized and persisted translations may be admitted to context by a session owner. A provider treats context as non-authoritative disambiguation background and must never translate it as current input.
+Only finalized in-memory translations whose source record was durably committed may enter context. A
+provider treats context as non-authoritative disambiguation background and must never translate it as
+current input. Archived transcripts contain no translated text.
 
 ## Dependencies
 

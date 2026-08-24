@@ -17,7 +17,7 @@ import Testing
         #expect(!settings.showSourceText)
     }
 
-    @Test func englishModeFlowsThroughRecognitionTranslationAndPersistence() async throws {
+    @Test func englishModeFlowsThroughRecognitionTranslationAndSourceCommit() async throws {
         let harness = SessionTestHarness(
             recognizedText: "We receive justification by faith through grace.",
             translationMode: .englishToSimplifiedChinese
@@ -53,7 +53,7 @@ import Testing
         _ = try await harness.run()
 
         let request = try #require(await harness.translator.receivedRequests().first)
-        let entry = try #require(await harness.store.persistedEntries().first)
+        let entry = try #require(await harness.store.appendedEntries().first)
         #expect(request.sourceText == source)
         #expect(entry.sourceText == source)
         #expect(entry.sourceCorrections.isEmpty)

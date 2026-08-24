@@ -19,7 +19,7 @@ import VADAPI
         let request = try #require(await harness.translator.receivedRequests().first)
         #expect(request.context.map(\.sourceText) == ["这是先前的信息。"])
         let recovered = try #require(
-            await harness.store.persistedEntries().first { $0.id == pending.id }
+            await harness.store.appendedEntries().first { $0.id == pending.id }
         )
         #expect(recovered.sourceText == "他继续分享。")
         #expect(recovered.sourceSegmentSequence == 7)
@@ -46,7 +46,7 @@ import VADAPI
         let request = try #require(await harness.translator.receivedRequests().first)
         #expect(request.context.isEmpty)
         let recovered = try #require(
-            await harness.store.persistedEntries().first { $0.id == pending.id }
+            await harness.store.appendedEntries().first { $0.id == pending.id }
         )
         #expect(recovered.sourceText == "他继续分享。")
         #expect(recovered.sourcePronounDecisions.first?.resolution == .unresolvedSpokenMandarin)

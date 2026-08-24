@@ -30,6 +30,7 @@ extension FileTranscriptStore {
     }
 
     func recoveryManifest(sessionID: UUID) throws -> SessionManifest {
+        try requireSafeRegularFile(manifestURL(sessionID), sessionID: sessionID)
         let data = try readBoundedData(
             at: manifestURL(sessionID),
             maximumBytes: min(recoveryLimits.maximumTranscriptBytes, 1_024 * 1_024)
@@ -37,32 +38,19 @@ extension FileTranscriptStore {
         return try decoder().decode(SessionManifest.self, from: data)
     }
 
-    func readRecoveryEntries(sessionID: UUID) throws -> [TranscriptEntry] {
+    func readRecoveryEntries(
+        sessionID: UUID,
+        manifest: SessionManifest
+    ) throws -> [TranscriptEntry] {
+        try requireSafeRegularFile(jsonLinesURL(sessionID), sessionID: sessionID)
         let data = try readBoundedData(
             at: jsonLinesURL(sessionID),
             maximumBytes: recoveryLimits.maximumTranscriptBytes
         )
-        let decoder = lineDecoder()
-        var entries: [TranscriptEntry] = []
-        var lineStart = data.startIndex
-        while lineStart < data.endIndex {
-            let lineEnd = data[lineStart...].firstIndex(of: 0x0A) ?? data.endIndex
-            if lineStart < lineEnd {
-                guard entries.count < recoveryLimits.maximumEntriesPerSession else {
-                    throw TranscriptRecoveryFileError.entryLimitExceeded(
-                        recoveryLimits.maximumEntriesPerSession
-                    )
-                }
-                entries.append(
-                    try decoder.decode(
-                        TranscriptEntry.self,
-                        from: Data(data[lineStart..<lineEnd])
-                    )
-                )
-            }
-            lineStart = lineEnd < data.endIndex ? data.index(after: lineEnd) : data.endIndex
+        if manifest.storesSourceOnlyEntries {
+            return try decodeSourceEntries(data, decoder: lineDecoder())
         }
-        return entries
+        return try decodeLegacyOrSourceEntries(data)
     }
 
     func readBoundedData(at url: URL, maximumBytes: Int) throws -> Data {

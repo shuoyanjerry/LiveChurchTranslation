@@ -55,7 +55,7 @@ import VADAPI
         #expect(request.segment.samples.count == 640)
         #expect(request.segment.endReason == .endOfStream)
         #expect((await harness.processor.frames()).count == 2)
-        #expect((await harness.store.persistedEntries()).count == 1)
+        #expect((await harness.store.appendedEntries()).count == 1)
         #expect((await harness.coordinator.currentSnapshot()).finalizationOutcome == .saved)
     }
 

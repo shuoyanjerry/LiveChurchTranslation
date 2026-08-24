@@ -56,6 +56,20 @@ struct TranscriptRecoveryFixture {
         )
     }
 
+    func stagePartiallyMigratedInterruptedTranscript() async throws {
+        try await stageLegacyInterruptedTranscript()
+        var manifest = try #require(
+            try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL))
+                as? [String: Any]
+        )
+        manifest.removeValue(forKey: "schemaVersion")
+        manifest.removeValue(forKey: "contentPolicy")
+        try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys]).write(
+            to: manifestURL,
+            options: .atomic
+        )
+    }
+
     func assertRecoveredState(
         _ recovered: RecoveredTranscriptSession,
         in store: FileTranscriptStore
@@ -83,6 +97,19 @@ struct TranscriptRecoveryFixture {
         #expect(markdown.contains("\n---\n"))
         #expect(markdown.contains("中断后恢复"))
         #expect(!markdown.contains("会议记录完整"))
+        let transcript = try Data(contentsOf: jsonLinesURL)
+        let lines = transcript.split(separator: 0x0A)
+        #expect(lines.count == 2)
+        for line in lines {
+            let object = try #require(
+                try JSONSerialization.jsonObject(with: Data(line)) as? [String: Any]
+            )
+            #expect(object["targetText"] == nil)
+            #expect(object["translationReview"] == nil)
+            #expect(object["translationMilliseconds"] == nil)
+        }
+        let transcriptText = try #require(String(data: transcript, encoding: .utf8))
+        #expect(!transcriptText.contains("grace"))
     }
 
     func remove() {

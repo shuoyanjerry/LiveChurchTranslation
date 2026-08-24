@@ -20,8 +20,8 @@ pairs are bounded translation background instead, while occurrence-level pronoun
 evidence travels as immutable typed guidance.
 
 One finalized VAD segment is one translation and presentation unit. Its complete
-recognized text is sent in one translation request, persisted as one entry, and
-published without punctuation-based splitting. FIFO processing preserves segment
+recognized text is sent in one translation request, projected to a source-only durable
+entry, and published with its transient translation without punctuation-based splitting. FIFO processing preserves segment
 order. A legacy splitter remains isolated to recovery of records partially persisted
 by releases that created multiple sentence entries for one segment. Durable recovery
 schema v1 predates a topology marker, so replay resolves it from already persisted
@@ -60,7 +60,7 @@ loading the next, so a large disk backlog never reconstructs every PCM segment
 in memory at once.
 
 Imported files use a separate completeness policy. File decoding pauses at each
-speech boundary until recognition, translation, transcript persistence, and
+speech boundary until recognition, translation, source-record persistence, and
 recovery acknowledgement finish. This keeps memory bounded without applying
 the live backlog cutoff to an offline source. Any failed segment, non-durable
 segment, cancellation, or early source termination makes the import explicitly
@@ -78,7 +78,9 @@ Live and recovered discourse context is ordered only by `sourceSegmentSequence`;
 the dense transcript presentation sequence is never evidence. Recovery excludes
 future source segments even after filtered or failed gaps. Legacy entries without
 a stable source identity remain readable but are conservatively omitted from
-recovery translation and pronoun context.
+recovery translation and pronoun context. Archived entries have no translation text;
+recovery never constructs a blank context pair, while translations recreated during
+the current replay may seed later segments in memory.
 Every live publication records a content-free segment-tail-to-visible measurement.
 The first completed capture frame anchors the audio timeline to a monotonic clock.
 The realtime target is three seconds from each segment's audio tail to

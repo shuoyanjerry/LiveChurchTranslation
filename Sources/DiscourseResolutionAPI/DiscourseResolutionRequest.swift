@@ -1,6 +1,6 @@
-/// A finalized, durably stored turn that passed the translation validator.
+/// A finalized turn whose source record was committed and whose translation passed validation.
 ///
-/// Persistence verifies storage and translation success only. It does not
+/// A source commit and translation success do not
 /// confirm that a following pronoun refers to an appellation in this turn.
 public struct VerifiedDiscourseTurn: Equatable, Hashable, Sendable {
     public let sequence: Int
