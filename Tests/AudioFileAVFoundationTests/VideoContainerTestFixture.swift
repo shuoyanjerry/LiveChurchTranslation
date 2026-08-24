@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 
 enum VideoFixtureContainer: String, CaseIterable, Sendable {
