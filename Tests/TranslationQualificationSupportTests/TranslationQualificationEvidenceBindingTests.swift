@@ -77,28 +77,6 @@ import TranslationQualificationSupport
             }
         }
     }
-
-    @Test func traceIntegrityCanBeNotApplicableWithoutSingularPronouns() throws {
-        let values = try evidenceValues()
-        let heading = values.corpus.manifest.segments[0]
-        let baseline = values.report.attempts[0]
-        let checks =
-            baseline.preservationChecks.dropLast() + [
-                TranslationQualificationCheck(
-                    kind: "pronounTraceIntegrity",
-                    status: .notApplicable
-                )
-            ]
-        let attempt = SyntheticTranslationAttemptCopy.make(
-            baseline,
-            segment: heading,
-            preservationChecks: Array(checks)
-        )
-
-        #expect(throws: Never.self) {
-            _ = try rebuildEvidence(values, replacing: attempt, at: 0)
-        }
-    }
 }
 
 private func fakeGlossaryAttempt(
@@ -154,14 +132,14 @@ private func fakePronounAttempt(
     )
 }
 
-private struct TranslationEvidenceValues {
+struct TranslationEvidenceValues {
     let corpus: TranslationQualificationCorpus
     let report: TranslationQualificationReport
     let segment: TranslationQualificationSegment
     let attempt: TranslationQualificationAttempt
 }
 
-private func evidenceValues() throws -> TranslationEvidenceValues {
+func evidenceValues() throws -> TranslationEvidenceValues {
     let fixture = try SyntheticTranslationWorkspace()
     let corpus = try fixture.load()
     let report = try SyntheticTranslationReportFactory.build(corpus: corpus)
@@ -173,7 +151,7 @@ private func evidenceValues() throws -> TranslationEvidenceValues {
     )
 }
 
-private func rebuildEvidence(
+func rebuildEvidence(
     _ values: TranslationEvidenceValues,
     replacing attempt: TranslationQualificationAttempt,
     at index: Int = 1

@@ -66,7 +66,10 @@ extension HyMTQualificationReviewEvidenceTests {
             failureCode: nil,
             glossaryTerms: preservation.terms,
             preservationChecks: preservation.checks + [
-                TranslationQualificationCheck(kind: "pronounTraceIntegrity", status: .pass)
+                TranslationQualificationCheck(
+                    kind: "pronounTraceIntegrity",
+                    status: .notApplicable
+                )
             ],
             pronounResults: []
         )
