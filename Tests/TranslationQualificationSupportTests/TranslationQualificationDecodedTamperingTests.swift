@@ -51,12 +51,15 @@ private func changeHypothesis(_ object: inout [String: Any]) throws {
 
 private func changeTraceAndAggregate(_ object: inout [String: Any]) throws {
     var attempts = try #require(object["attempts"] as? [[String: Any]])
-    var checks = try #require(attempts[0]["preservationChecks"] as? [[String: Any]])
+    let singularPronounAttemptIndex = 1
+    var checks = try #require(
+        attempts[singularPronounAttemptIndex]["preservationChecks"] as? [[String: Any]]
+    )
     let traceIndex = checks.count - 1
     #expect(checks[traceIndex]["kind"] as? String == "pronounTraceIntegrity")
     #expect(checks[traceIndex]["status"] as? String == "pass")
     checks[traceIndex]["status"] = "fail"
-    attempts[0]["preservationChecks"] = checks
+    attempts[singularPronounAttemptIndex]["preservationChecks"] = checks
     object["attempts"] = attempts
 
     var aggregate = try #require(object["aggregate"] as? [String: Any])
