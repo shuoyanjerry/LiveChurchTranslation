@@ -23,25 +23,6 @@ extension UtteranceRecoveryReplayer {
         }
     }
 
-    func completeIgnored(
-        _ record: PendingUtteranceRecord
-    ) async -> RecoveryRecordReplayResult {
-        do {
-            try await dependencies.recoveryStore.resolve(record.id, as: .ignored)
-            return .resolvedWithoutIssue
-        } catch is CancellationError {
-            return .blockedWithoutIssue
-        } catch {
-            return blockedResult(
-                issue(
-                    stage: .persistence,
-                    sequence: record.id.sequenceNumber,
-                    message: error.localizedDescription
-                )
-            )
-        }
-    }
-
     func completeTerminalRejection(
         _ record: PendingUtteranceRecord,
         failure: UtteranceProcessingFailure

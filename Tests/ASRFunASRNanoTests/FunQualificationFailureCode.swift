@@ -19,6 +19,7 @@ enum FunQualificationFailureCode {
         case .promptOnlyHallucination: "asr.prompt_only_hallucination"
         case .repetitiveHallucination: "asr.repetitive_hallucination"
         case .noSpeechRecognized: "asr.no_speech_recognized"
+        case .noProcessableSentences: "asr.no_processable_sentences"
         case .inferenceFailed: "asr.inference_failed"
         }
     }

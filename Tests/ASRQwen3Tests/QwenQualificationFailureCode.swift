@@ -16,6 +16,7 @@ enum QwenQualificationFailureCode {
         case .promptOnlyHallucination: return "asr.prompt_only_hallucination"
         case .repetitiveHallucination: return "asr.repetitive_hallucination"
         case .noSpeechRecognized: return "asr.no_speech_recognized"
+        case .noProcessableSentences: return "asr.no_processable_sentences"
         case .inferenceFailed: return "asr.inference_failed"
         }
     }

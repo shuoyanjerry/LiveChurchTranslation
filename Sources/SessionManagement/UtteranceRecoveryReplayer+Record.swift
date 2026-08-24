@@ -1,3 +1,4 @@
+import ASRAPI
 import Foundation
 import SessionManagementAPI
 import TranscriptAPI
@@ -30,8 +31,6 @@ extension UtteranceRecoveryReplayer {
             )
         } catch is CancellationError {
             return .blockedWithoutIssue
-        } catch is IgnoredUtterance {
-            return await completeIgnored(record)
         } catch let failure as UtteranceProcessingFailure {
             return await processingFailureResult(record, failure: failure)
         } catch {
@@ -54,7 +53,7 @@ extension UtteranceRecoveryReplayer {
             discourseContext: context.discourse
         )
         guard !inputs.isEmpty else {
-            throw IgnoredUtterance(message: "未识别到可处理的句子。")
+            throw terminalRecognitionFailure(.noProcessableSentences)
         }
         var translationContext = context.translation
         var rejections: [TerminalSentenceRejection] = []
@@ -79,6 +78,16 @@ extension UtteranceRecoveryReplayer {
             }
         }
         return rejections
+    }
+
+    private func terminalRecognitionFailure(_ error: ASRError) -> UtteranceProcessingFailure {
+        UtteranceProcessingFailure(
+            stage: .recognition,
+            code: error.asrFailureCode,
+            message: error.localizedDescription,
+            pendingEntry: nil,
+            impact: .terminalUtterance
+        )
     }
 
     private func existingEntry(

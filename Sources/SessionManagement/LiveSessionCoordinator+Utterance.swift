@@ -1,3 +1,4 @@
+import ASRAPI
 import Foundation
 import SessionManagementAPI
 import TranscriptAPI
@@ -30,8 +31,6 @@ extension LiveSessionCoordinator {
         do {
             let outcome = try await translate(record, sessionID: sessionID)
             try await completeRecovery(record, outcome: outcome)
-        } catch let ignored as IgnoredUtterance {
-            await discardFiltered(record, reason: ignored.message)
         } catch let failure as UtteranceProcessingFailure {
             await handle(failure, for: record)
         } catch is CancellationError {
@@ -90,11 +89,21 @@ extension LiveSessionCoordinator {
         }
         if let deferredFailure { throw deferredFailure }
         guard finalEntry != nil || !rejections.isEmpty else {
-            throw IgnoredUtterance(message: "未识别到可处理的句子。")
+            throw terminalRecognitionFailure(.noProcessableSentences)
         }
         return SegmentProcessingOutcome(
             lastPersistedEntry: finalEntry,
             rejections: rejections
+        )
+    }
+
+    private func terminalRecognitionFailure(_ error: ASRError) -> UtteranceProcessingFailure {
+        UtteranceProcessingFailure(
+            stage: .recognition,
+            code: error.asrFailureCode,
+            message: error.localizedDescription,
+            pendingEntry: nil,
+            impact: .terminalUtterance
         )
     }
 

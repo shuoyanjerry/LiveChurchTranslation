@@ -73,6 +73,7 @@ public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
     case promptOnlyHallucination
     case repetitiveHallucination
     case noSpeechRecognized
+    case noProcessableSentences
     case inferenceFailed(String)
 
     public var errorDescription: String? {
@@ -83,6 +84,7 @@ public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
         case .promptOnlyHallucination: "识别结果仅包含提示词，已拒绝该句。"
         case .repetitiveHallucination: "识别结果出现异常重复，已拒绝该句。"
         case .noSpeechRecognized: "未识别到语音。"
+        case .noProcessableSentences: "未识别到可处理的句子。"
         case .inferenceFailed(let message): "语音识别失败：\(message)"
         }
     }
@@ -91,10 +93,8 @@ public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
         switch self {
         case .modelNotLoaded, .inferenceFailed:
             .runtime
-        case .filteredNonspeech:
-            .ignoredUtterance
-        case .emptyAudio, .promptOnlyHallucination, .repetitiveHallucination,
-            .noSpeechRecognized:
+        case .emptyAudio, .filteredNonspeech, .promptOnlyHallucination,
+            .repetitiveHallucination, .noSpeechRecognized, .noProcessableSentences:
             .terminalUtterance
         }
     }
@@ -107,6 +107,7 @@ public enum ASRError: LocalizedError, ASRFailureImpactProviding, Sendable {
         case .promptOnlyHallucination: "asr.prompt_only_hallucination"
         case .repetitiveHallucination: "asr.repetitive_hallucination"
         case .noSpeechRecognized: "asr.no_speech_recognized"
+        case .noProcessableSentences: "asr.no_processable_sentences"
         case .inferenceFailed: "asr.inference_failed"
         }
     }

@@ -93,6 +93,37 @@ import VADAPI
         #expect(Set((await harness.recoveryStore.completedIDs()).map(\.sequenceNumber)) == [1, 2])
     }
 
+}
+
+extension UtteranceRecoveryReplayerIsolationTests {
+    @Test func filteredSpeechReplayRetainsTerminalEvidence() async throws {
+        let harness = SessionTestHarness(recognitionError: .filteredNonspeech)
+        let sessionID = UUID()
+        await beginPriorSession(harness, id: sessionID)
+        try await stage(harness, sessionID: sessionID, count: 1)
+
+        let issues = await makeReplayer(harness).replay()
+
+        #expect((await harness.asr.receivedRequests()).count == 1)
+        #expect((await harness.translator.receivedRequests()).isEmpty)
+        #expect(issues.count == 1)
+        #expect(issues.first?.stage == .recognition)
+        #expect(issues.first?.utteranceSequence == 1)
+        #expect(issues.first?.isRecoverable == false)
+        #expect((await harness.recoveryStore.pendingRecords()).isEmpty)
+        #expect((await harness.recoveryStore.completedIDs()).isEmpty)
+        let rejection = try #require(await harness.recoveryStore.terminalRejections().first)
+        #expect(rejection.0.sessionID == sessionID)
+        #expect(rejection.1.map(\.failureCode) == ["asr.filtered_nonspeech"])
+        #expect(rejection.1.map(\.sentenceOrdinal) == [0])
+        #expect(rejection.1.allSatisfy { $0.stage == .recognition })
+        let finalization = try #require(await harness.store.transcriptFinalizations().last)
+        #expect(finalization.integrity == .incomplete)
+        #expect(finalization.rejections.map(\.failureCode) == ["asr.filtered_nonspeech"])
+    }
+}
+
+extension UtteranceRecoveryReplayerIsolationTests {
     private func makeReplayer(
         _ harness: SessionTestHarness
     ) async -> UtteranceRecoveryReplayer {

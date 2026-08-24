@@ -12,6 +12,7 @@ struct QwenQualificationFailureCodeTests {
         #expect(code(.promptOnlyHallucination) == "asr.prompt_only_hallucination")
         #expect(code(.repetitiveHallucination) == "asr.repetitive_hallucination")
         #expect(code(.noSpeechRecognized) == "asr.no_speech_recognized")
+        #expect(code(.noProcessableSentences) == "asr.no_processable_sentences")
         #expect(code(.inferenceFailed("/private/model: secret")) == "asr.inference_failed")
     }
 

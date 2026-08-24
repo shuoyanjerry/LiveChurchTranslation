@@ -1,4 +1,3 @@
-import DiagnosticsAPI
 import Foundation
 import SessionManagementAPI
 import TranscriptAPI
@@ -36,34 +35,6 @@ extension LiveSessionCoordinator {
         publish(.recoverableError(issue.message))
         sessionFinalizer.logRecoverable(failure)
         publishContinuingStatus()
-    }
-
-    func discardFiltered(
-        _ record: PendingUtteranceRecord,
-        reason: String
-    ) async {
-        do {
-            try await dependencies.recoveryStore.resolve(record.id, as: .ignored)
-            await dependencies.diagnostics.record(
-                DiagnosticEvent(
-                    severity: .info,
-                    component: "ASRFilter",
-                    message: reason
-                )
-            )
-        } catch is CancellationError {
-            return
-        } catch {
-            preserve(
-                record.segment,
-                after: UtteranceProcessingFailure(
-                    stage: .persistence,
-                    message: error.localizedDescription,
-                    pendingEntry: nil
-                ),
-                recoveryID: record.id
-            )
-        }
     }
 
     func completeRecovery(

@@ -106,8 +106,8 @@ extension UtteranceProcessor {
             return .pipeline
         }
         switch classified.asrFailureImpact {
-        case .terminalUtterance: return .terminalUtterance
-        case .ignoredUtterance, .runtime: return .pipeline
+        case .ignoredUtterance, .terminalUtterance: return .terminalUtterance
+        case .runtime: return .pipeline
         }
     }
 
