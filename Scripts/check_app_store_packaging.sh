@@ -110,9 +110,22 @@ rg -Fq 'install_name_tool -delete_rpath "$rpath"' "$SCRIPT_DIR/package_release.s
 rg -Fq 'strip -S "$APP/Contents/MacOS/LiveChurchTranslation"' \
   "$SCRIPT_DIR/package_release.sh" \
   || fail "release packaging does not strip private build paths from the app executable"
-rg -Fq "(Live_Church_Translation|LiveChurchTranslation)/'" \
+rg -Fq 'command -v rg >/dev/null 2>&1' "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not require its binary scanner"
+rg -Fq 'rg -a -F -q "$REPOSITORY_ROOT/" "$binary"' \
+  "$SCRIPT_DIR/audit_release_app.sh" \
+  || fail "release app audit does not reject its actual checkout path"
+PROJECT_BUILD_PATH_PATTERN='/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/'
+rg -Fq "'$PROJECT_BUILD_PATH_PATTERN'" \
   "$SCRIPT_DIR/audit_release_app.sh" \
   || fail "release app audit does not reject absolute project build paths"
+printf '%s\n' '/Users/runner/work/LiveChurchTranslation/LiveChurchTranslation/.build/release/App' \
+  | rg -q "$PROJECT_BUILD_PATH_PATTERN" \
+  || fail "release path audit pattern misses the GitHub checkout"
+if printf '%s\n' '/Users/runner/work/onnxruntime-libs/onnxruntime/core/runtime.cc' \
+  | rg -q "$PROJECT_BUILD_PATH_PATTERN"; then
+  fail "release path audit pattern rejects an upstream dependency path"
+fi
 [[ "$(plist_value "$INFO" "CFBundleIdentifier")" == "com.shuoyan.LiveChurchTranslation" ]] \
   || fail "unexpected bundle ID"
 [[ "$(plist_value "$INFO" "CFBundleName")" == "Live Church Translation" ]] \

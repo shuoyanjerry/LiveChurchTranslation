@@ -17,9 +17,10 @@ audit_macho_dependencies() {
   local relative
   local rpath
 
-  if LC_ALL=C rg -a -q \
-    '/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/' \
-    "$binary"; then
+  if LC_ALL=C rg -a -F -q "$REPOSITORY_ROOT/" "$binary" \
+    || LC_ALL=C rg -a -q \
+      '/Users/[^/]+/([^/[:cntrl:]]+/)*(Live_Church_Translation|LiveChurchTranslation)/' \
+      "$binary"; then
     fail "Mach-O contains an absolute project build path: $(basename "$binary")"
   fi
 
@@ -74,6 +75,7 @@ APP="${1:-}"
 IDENTITY="${2:-${DEVELOPER_ID_APPLICATION:--}}"
 RUNTIME_MANIFEST="$REPOSITORY_ROOT/Packaging/LlamaRuntime.sha256"
 
+command -v rg >/dev/null 2>&1 || fail "ripgrep is required for binary path auditing"
 [[ -n "$APP" ]] || fail "usage: $0 /path/to/Application.app [signing-identity-or--]"
 [[ -d "$APP" && ! -L "$APP" && "$APP" == *.app ]] || fail "app bundle is missing or unsafe"
 [[ "$(basename "$APP")" == "Live Church Translation.app" ]] \
