@@ -6,7 +6,7 @@ enum ReaderJavaScriptReader {
           );
           const updateJump = () => {
             jump.hidden = following;
-            unseenLabel.textContent = unseen ? `· ${unseen} 条新内容` : "";
+            unseenLabel.textContent = unseen ? copy.newEntries(unseen) : "";
           };
           const scrollLive = () => {
             main.scrollTop = main.scrollHeight;
@@ -21,6 +21,13 @@ enum ReaderJavaScriptReader {
             const article = document.createElement("article");
             article.className = `entry ${isLatest ? "latest" : ""}`;
             article.dataset.id = entry.id;
+            const timestamp = document.createElement("time");
+            const timestampText = formatTimestamp(entry.startedMilliseconds);
+            timestamp.className = "timestamp";
+            timestamp.textContent = timestampText;
+            timestamp.setAttribute("aria-label", `${copy.timestampA11y} ${timestampText}`);
+            const entryCopy = document.createElement("div");
+            entryCopy.className = "entry-copy";
             const target = document.createElement("p");
             target.className = "target";
             target.textContent = entry.targetText;
@@ -29,7 +36,8 @@ enum ReaderJavaScriptReader {
             source.className = "source";
             source.textContent = entry.sourceText;
             if (entry.sourceLanguage) source.lang = entry.sourceLanguage;
-            article.append(target, source);
+            entryCopy.append(target, source);
+            article.append(timestamp, entryCopy);
             return article;
           };
           const render = () => {
@@ -61,18 +69,17 @@ enum ReaderJavaScriptReader {
               entries.set(entry.id, entry);
               seen.add(`${sessionID}:${entry.id}:${entry.revision}`);
             });
-            setDirectionFromEntries(snapshot.entries);
+            setDirectionFromSnapshot(snapshot);
             render();
-            setConnection(
-              connectionLabel(snapshot.statusMessage, snapshot.phase),
-              connectionState(snapshot.phase)
-            );
+            setConnectionPhase(snapshot.phase);
           };
           const applyEnvelope = envelope => {
             const payload = envelope.payload;
             heartbeatAt = Date.now();
             if (payload.type === "snapshot") return applySnapshot(payload.snapshot);
-            if (payload.type === "resyncRequired") return fetchSnapshot();
+            if (payload.type === "resyncRequired") {
+              return fetchSnapshot().catch(() => setConnectionKey("reconnecting"));
+            }
             if (payload.type === "heartbeat") return;
             revision = Math.max(revision, payload.revision || 0);
             if (payload.type === "stateChanged") {
@@ -80,13 +87,10 @@ enum ReaderJavaScriptReader {
                 sessionID = payload.sessionID;
                 entries.clear();
                 seen.clear();
-                setDirection(null, null);
                 render();
               }
-              setConnection(
-                connectionLabel(payload.message, payload.phase),
-                connectionState(payload.phase)
-              );
+              setDirection(payload.sourceLanguage, payload.targetLanguage);
+              setConnectionPhase(payload.phase);
             }
             if (payload.type === "entryUpsert") {
               const key = `${payload.sessionID}:${payload.entry.id}:${payload.entry.revision}`;

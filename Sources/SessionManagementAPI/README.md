@@ -10,6 +10,8 @@ for a live translation session.
 `LiveSessionController`, `LiveSessionPhase`, `LiveSessionIssueStage`,
 `LiveSessionIssue`, `LiveSessionFinalizationOutcome`, `LiveSessionSnapshot`, and
 `LiveSessionEvent`, plus the model-preparation controller, phase, and snapshot.
+The live snapshot carries the selected source/target language pair and the actual capture-start time
+separately from the processing phase so presentation layers need not conflate recording with inference.
 
 ## Dependencies
 

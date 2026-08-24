@@ -30,8 +30,10 @@ The app does not automatically transmit analytics or crash reports to the develo
 ## User control
 
 The user can stop recording at any time, delete an individual meeting and all associated
-local artifacts, disable local sharing, and revoke paired devices. A host is responsible
-for informing participants and obtaining any consent required by local recording laws.
+local artifacts, disable local sharing, and revoke paired devices. Native and browser readers may hide
+passage timestamps independently, but hiding them changes presentation only and does not delete stored
+timing. A host is responsible for informing participants and obtaining any consent required by local
+recording laws.
 
 ## Changes and contact
 

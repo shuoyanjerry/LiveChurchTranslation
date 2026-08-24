@@ -44,6 +44,10 @@ struct LiveSessionStateMachine {
         captureStartedAt = date
     }
 
+    mutating func markCaptureStopped() {
+        captureStartedAt = nil
+    }
+
     mutating func receive(_ status: ModelRuntimeStatus) {
         setModelStatus(status)
         if phase == .preparingModel, let message = ModelStatusMessage.text(for: status) {

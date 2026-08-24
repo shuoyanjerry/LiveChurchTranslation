@@ -104,7 +104,12 @@ import TranscriptAPI
         #expect(persisted.sourceCorrections.count == 1)
         let markdown = try String(contentsOf: fixture.markdownURL, encoding: .utf8)
         #expect(markdown.contains("grace"))
-        #expect(markdown.components(separatedBy: "## 1").count == 2)
+        #expect(markdown.components(separatedBy: "## 片段 1 · 00:00:00.000–00:00:01.000").count == 2)
+        #expect(markdown.contains("**译文**\n\ngrace"))
+        #expect(markdown.contains("**识别原文**\n\n恩典"))
+        #expect(markdown.contains("- 翻译方向：简体中文 → 英文"))
+        #expect(markdown.contains("- 结束时间："))
+        #expect(markdown.contains("- 记录状态：完整"))
     }
 
     private func finishedSession(from session: TranscriptSession) -> TranscriptSession {

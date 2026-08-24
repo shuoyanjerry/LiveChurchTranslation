@@ -22,6 +22,8 @@ public struct RemoteProjectionEnvelope: Equatable, Codable, Sendable {
             sessionID: UUID?,
             phase: RemoteSessionPhase,
             message: String,
+            sourceLanguage: String?,
+            targetLanguage: String?,
             revision: UInt64
         )
         case resyncRequired(latestRevision: UInt64)
@@ -43,6 +45,14 @@ public struct RemoteProjectionEnvelope: Equatable, Codable, Sendable {
                     sessionID: try values.decodeIfPresent(UUID.self, forKey: .sessionID),
                     phase: try values.decode(RemoteSessionPhase.self, forKey: .phase),
                     message: try values.decode(String.self, forKey: .message),
+                    sourceLanguage: try values.decodeIfPresent(
+                        String.self,
+                        forKey: .sourceLanguage
+                    ),
+                    targetLanguage: try values.decodeIfPresent(
+                        String.self,
+                        forKey: .targetLanguage
+                    ),
                     revision: try values.decode(UInt64.self, forKey: .revision)
                 )
             case .resyncRequired:
@@ -65,11 +75,20 @@ public struct RemoteProjectionEnvelope: Equatable, Codable, Sendable {
                 try values.encode(sessionID, forKey: .sessionID)
                 try values.encode(entry, forKey: .entry)
                 try values.encode(revision, forKey: .revision)
-            case .stateChanged(let sessionID, let phase, let message, let revision):
+            case .stateChanged(
+                let sessionID,
+                let phase,
+                let message,
+                let sourceLanguage,
+                let targetLanguage,
+                let revision
+            ):
                 try values.encode(ProjectionPayloadKind.stateChanged, forKey: .type)
                 try values.encodeIfPresent(sessionID, forKey: .sessionID)
                 try values.encode(phase, forKey: .phase)
                 try values.encode(message, forKey: .message)
+                try values.encodeIfPresent(sourceLanguage, forKey: .sourceLanguage)
+                try values.encodeIfPresent(targetLanguage, forKey: .targetLanguage)
                 try values.encode(revision, forKey: .revision)
             case .resyncRequired(let latestRevision):
                 try values.encode(ProjectionPayloadKind.resyncRequired, forKey: .type)
@@ -97,6 +116,8 @@ private enum ProjectionPayloadCodingKey: String, CodingKey {
     case entry
     case phase
     case message
+    case sourceLanguage
+    case targetLanguage
     case revision
     case latestRevision
 }

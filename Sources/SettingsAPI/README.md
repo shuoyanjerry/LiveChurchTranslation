@@ -7,7 +7,8 @@ store boundary.
 
 ## Public API
 
-`AppSettings`, including `.defaults`, and `SettingsStore`.
+`AppSettings`, including `.defaults`, and `SettingsStore`. `showTimestamps` defaults to `true`; legacy
+encoded settings that predate the field also decode to visible timestamps.
 
 ## Dependencies
 
@@ -25,5 +26,6 @@ are propagated by the implementation.
 
 ## Tests
 
-Session, live-reader, and remote-control tests inject settings-store fakes. The
-API target has no standalone test target.
+Session, live-reader, and remote-control tests inject settings-store fakes. Live-reader tests also cover
+the default, legacy decode, and hidden-value round trip for `showTimestamps`. The API target has no
+standalone test target.

@@ -9,7 +9,8 @@ Stable, model-independent values and protocols for faithful source-to-target tra
 - `TranslationProvider`: replaceable asynchronous model boundary.
 - `TranslationRequest` and `TranslationResult`: immutable request and result values.
 - `TranslationTerm`: required or preferred terminology with semantic aliases and accepted targets.
-- `TranslationContextEntry`: one finalized, validator-approved prior Chinese/English pair. `TranslationRequest.context` defaults to empty for source compatibility.
+- `TranslationContextEntry`: one finalized, validator-approved prior source/target pair.
+  `TranslationRequest.context` defaults to empty for source compatibility.
 
 Only finalized and persisted translations may be admitted to context by a session owner. A provider treats context as non-authoritative disambiguation background and must never translate it as current input.
 

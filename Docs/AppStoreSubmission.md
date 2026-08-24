@@ -221,13 +221,15 @@ for the exact binary; this document is not legal advice.
 Paste and adapt this text for the exact submitted build:
 
 > Live Church Translation is a local-first macOS live transcription and translation
-> tool. No account or test credentials are required. Choose Chinese to English or
+> tool. No account or test credentials are required. Choose Mandarin to English or
 > English to Simplified Chinese on the Live screen. The revision-pinned ASR and translation
 > models are bundled in the signed app, verified before loading, and run locally without a
 > first-use download. Before microphone capture begins, the host must confirm
 > that participants have been informed that complete meeting audio and a transcript
 > will be saved. A persistent red recording indicator remains visible until capture
-> stops. The Library screen plays and deletes locally saved sessions and imports
+> stops, while a separate small status shows Preparing, Listening, Recognizing, Translating,
+> Finishing, or Incomplete. Passage timestamps are visible by default and may be hidden without
+> deleting their stored offsets. The Library screen plays and deletes locally saved sessions and imports
 > system-readable audio through the macOS file picker with read-only access. Optional
 > LAN sharing is off by default; when enabled, Bonjour advertises
 > `_churchtranslate._tcp` and only explicitly paired devices receive the live reader.
@@ -256,10 +258,12 @@ release candidate; do not promise translation perfection or theological infallib
 - [ ] The sandboxed release candidate passes microphone denial/regrant, recording
       consent/indicator, long-session recording, import, playback, delete, app relaunch,
       bundled-model verification/failure, network-disabled first launch, and disk-full/interruption tests.
-- [ ] LAN sharing is off by default and passes pairing, revocation, hostile Host/Origin,
-      network loss, and a real phone/tablet/computer matrix on a trusted network.
+- [ ] LAN sharing is off by default and passes pairing, revocation, hostile Host/Origin, network loss,
+      non-zero-index/coalesced/receive-split WebSocket regressions, heartbeat/reconnect and stop/restart
+      cycles, and a repeated iPhone/iPad/Mac Safari matrix on a trusted network without a host-process crash.
 - [ ] VoiceOver, keyboard-only use, Reduce Motion, Increase Contrast, text scaling,
-      Chinese/English wrapping, and supported window-size checks pass.
+      Chinese/English wrapping, quiet phase changes, separate recording duration, native/browser timestamp
+      toggles, and supported window-size checks pass.
 - [ ] Xcode's privacy report and App Store Connect privacy answers match the submitted
       package; recording law/consent copy has product and legal approval.
 - [ ] Export compliance and content-rights questions are answered by the Account

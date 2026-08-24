@@ -28,6 +28,7 @@ import Testing
         viewModel.settings.translationMode = .englishToSimplifiedChinese
         viewModel.settings.readerFontSize = 36
         viewModel.settings.showSourceText = false
+        viewModel.settings.showTimestamps = false
         viewModel.selectedInputID = AudioInputID(rawValue: "bypass-attempt")
         #expect(await viewModel.saveSettings())
         let persisted = await settings.current()
@@ -35,6 +36,7 @@ import Testing
         #expect(persisted.selectedAudioDeviceID == nil)
         #expect(persisted.readerFontSize == 36)
         #expect(!persisted.showSourceText)
+        #expect(!persisted.showTimestamps)
 
         await viewModel.toggleSession()
         #expect(await controller.startCount() == 0)
@@ -81,9 +83,10 @@ import Testing
 
         #expect(await modelPreparation.prepareCount() == 1)
     }
+
 }
 
-private actor ModelPreparationStub: ModelPreparationController {
+actor ModelPreparationStub: ModelPreparationController {
     private var preparations = 0
 
     func prepareModels() { preparations += 1 }
@@ -100,7 +103,7 @@ private actor ModelPreparationStub: ModelPreparationController {
     func prepareCount() -> Int { preparations }
 }
 
-private actor SessionControllerStub: LiveSessionController {
+actor SessionControllerStub: LiveSessionController {
     private var starts = 0
 
     func start(inputDeviceID _: AudioInputID?) { starts += 1 }
@@ -118,7 +121,7 @@ private actor SessionControllerStub: LiveSessionController {
     func startCount() -> Int { starts }
 }
 
-private struct AudioCaptureStub: AudioCaptureProvider {
+struct AudioCaptureStub: AudioCaptureProvider {
     func authorizationStatus() -> AudioCapturePermission { .authorized }
     func requestPermission() -> AudioCapturePermission { .authorized }
     func availableInputs() -> [AudioInputDevice] { [] }
@@ -130,7 +133,7 @@ private struct AudioCaptureStub: AudioCaptureProvider {
     func stopCapture() {}
 }
 
-private actor GlossaryStub: GlossaryService {
+actor GlossaryStub: GlossaryService {
     func snapshot() -> GlossarySnapshot { GlossarySnapshot(revision: 0, entries: []) }
     func replace(with _: [GlossaryEntry]) {}
     func upsert(_: GlossaryEntry) {}

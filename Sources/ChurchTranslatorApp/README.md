@@ -2,16 +2,19 @@
 
 ## Purpose
 
-Acts only as the macOS entry point and composition root for Live Church Translation.
+Acts only as the macOS composition root for Live Church Translation. Thin Swift Package and Xcode app
+hosts delegate process startup to this library target.
 
 ## Public API
 
-The executable exposes no reusable library API. `LiveChurchTranslationApp` creates scenes through
-`AppComposition`.
+`LiveChurchTranslationApp` creates scenes through the internal `AppComposition` builder.
+`InstallationProbe` exposes the noninteractive packaged-app verification used by the thin CLI host and
+release audits; neither type exposes product business logic.
 
 ## Dependencies
 
-Concrete production adapters and feature targets. No other target may depend on this executable.
+Concrete production adapters and feature targets. Only process-host targets should depend on this
+composition library.
 
 ## Threading Model
 

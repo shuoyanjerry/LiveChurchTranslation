@@ -11,6 +11,8 @@ extension LiveSessionCoordinator {
         let captureStartup = captureStartupTask
         let preparation = preparationTask
         await dependencies.capture.stopCapture()
+        state.markCaptureStopped()
+        publishState()
         _ = await captureStartup?.result
         captureStartupTask = nil
         _ = await preparation?.result

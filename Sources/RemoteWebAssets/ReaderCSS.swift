@@ -1,5 +1,9 @@
 enum ReaderCSS {
-    static let value = ReaderCSSLayout.value + ReaderCSSControls.value
+    static let value =
+        ReaderCSSLayout.value
+        + ReaderCSSReader.value
+        + ReaderCSSStatus.value
+        + ReaderCSSControls.value
 }
 
 private enum ReaderCSSLayout {
@@ -35,18 +39,6 @@ private enum ReaderCSSLayout {
         }
         .brand { display: flex; align-items: center; min-width: 0; }
         .brand strong { font: 600 17px Georgia, serif; }
-        .connection {
-          flex: 0 1 auto;
-          font-size: 13px;
-          color: var(--muted);
-          padding: 8px 12px;
-          border: 1px solid var(--stone);
-          border-radius: 999px;
-          overflow-wrap: anywhere;
-          text-align: center;
-        }
-        .connection.live { color: var(--live); border-color: #b8cbbb; }
-        .connection.error { color: var(--danger); }
         main {
           flex: 1;
           min-height: 0;
@@ -95,33 +87,23 @@ private enum ReaderCSSLayout {
           color: var(--ink);
           font-weight: 600;
         }
+        .text-tools button[aria-pressed="true"] {
+          color: var(--olive);
+          border-color: #b8cbbb;
+          background: #edf2ee;
+        }
         .empty { text-align: center; max-width: 480px; margin: 15vh auto; color: var(--muted); }
         .empty h2 { font: 400 28px Georgia, serif; color: var(--ink); margin: 20px 0 8px; }
-        .transcript { font-family: Georgia, "Times New Roman", serif; }
-        .entry { padding: 28px 0; border-bottom: 1px solid #e9edea; }
-        .entry:last-child { border-bottom: 0; }
-        .target {
-          font-size: var(--reader-size);
-          line-height: 1.5;
-          margin: 0;
-          letter-spacing: -.01em;
-          overflow-wrap: anywhere;
-        }
-        .source {
-          font: 400 14px/1.55 -apple-system, BlinkMacSystemFont, sans-serif;
-          color: var(--muted);
-          margin: 10px 0 0;
-          overflow-wrap: anywhere;
-        }
-        .entry.latest { border-left: 3px solid var(--gold); padding-left: 18px; }
         """#
 }
 
 private enum ReaderCSSControls {
     static let value = #"""
         button { cursor: pointer; }
-        .jump, .operator { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 5; }
         .jump {
+          position: fixed;
+          bottom: calc(20px + env(safe-area-inset-bottom));
+          z-index: 5;
           right: max(20px, env(safe-area-inset-right));
           height: 48px;
           padding: 0 18px;
@@ -131,25 +113,6 @@ private enum ReaderCSSControls {
           border-radius: 999px;
           box-shadow: 0 8px 24px rgba(30, 37, 33, .2);
         }
-        .operator {
-          left: max(20px, env(safe-area-inset-left));
-          display: flex;
-          gap: 8px;
-          padding: 6px;
-          background: white;
-          border: 1px solid var(--stone);
-          border-radius: 999px;
-        }
-        .operator button {
-          height: 40px;
-          min-width: 76px;
-          border: 0;
-          border-radius: 999px;
-          background: #edf2ee;
-          color: var(--ink);
-          font-weight: 700;
-        }
-        .operator #start { background: var(--ink); color: white; }
         .pairing {
           position: fixed;
           inset: auto 20px calc(20px + env(safe-area-inset-bottom));
@@ -171,7 +134,11 @@ private enum ReaderCSSControls {
           .reader h1 { font-size: 34px; }
           .eyebrow { font-size: 9px; }
           .target { line-height: 1.42; }
+          .entry { grid-template-columns: 1fr; gap: 8px; }
+          .timestamp { padding-top: 0; text-align: left; }
         }
-        @media (prefers-reduced-motion: reduce) { main { scroll-behavior: auto; } }
+        @media (prefers-reduced-motion: reduce) {
+          main { scroll-behavior: auto; }
+        }
         """#
 }

@@ -28,10 +28,19 @@ struct LocalSharingPopover: View {
                     .foregroundStyle(ChurchTheme.muted)
             }
             Spacer()
+            statusIndicator
+                .accessibilityLabel(statusLabel)
+        }
+    }
+
+    @ViewBuilder private var statusIndicator: some View {
+        if case .starting = state {
+            ProgressView()
+                .controlSize(.mini)
+        } else {
             Circle()
                 .fill(statusColor)
                 .frame(width: 9, height: 9)
-                .accessibilityLabel(statusLabel)
         }
     }
 

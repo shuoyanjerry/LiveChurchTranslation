@@ -2,10 +2,8 @@ enum ReaderJavaScriptNetwork {
     static let value = #"""
           const fetchSnapshot = async () => {
             const response = await fetch("/api/snapshot", {cache: "no-store"});
-            if (!response.ok) throw new Error("无法获取实时内容");
+            if (!response.ok) throw readerFailure("cannotJoin");
             applySnapshot(await response.json());
-            const role = response.headers.get("X-Remote-Role");
-            operator.hidden = role !== "operator";
           };
           const connect = () => {
             const scheme = location.protocol === "https:" ? "wss" : "ws";
@@ -13,18 +11,21 @@ enum ReaderJavaScriptNetwork {
             socket.onopen = () => {
               retry = 0;
               heartbeatAt = Date.now();
-              setConnection("已连接", "live");
+              connectedAt = Date.now();
+              setConnectionKey("connected");
+              schedulePhasePresentation();
             };
             socket.onmessage = event => {
               try {
                 applyEnvelope(JSON.parse(event.data));
               } catch {
-                fetchSnapshot();
+                fetchSnapshot().catch(() => setConnectionKey("reconnecting"));
               }
             };
             socket.onerror = () => socket.close();
             socket.onclose = () => {
-              setConnection("正在重新连接");
+              clearTimeout(phasePresentationTimer);
+              setConnectionKey("reconnecting");
               const ceiling = Math.min(30000, 500 * (2 ** Math.min(retry++, 6)));
               setTimeout(connect, Math.random() * ceiling);
             };
@@ -38,7 +39,7 @@ enum ReaderJavaScriptNetwork {
               invitationID: match[1],
               fragmentCredential: match[2],
               peerMetadata: {
-                displayName: navigator.platform || "Safari 设备",
+                displayName: navigator.platform || copy.deviceName,
                 userAgentSummary: navigator.userAgent.slice(0, 160)
               }
             };
@@ -48,31 +49,13 @@ enum ReaderJavaScriptNetwork {
               body: JSON.stringify(body)
             });
             if (response.status === 429) {
-              throw new Error("连接人数已满");
+              throw readerFailure("roomFull");
             }
             if (!response.ok) {
-              throw new Error("当前无法加入，请确认 Mac 上已开启听众共享");
+              throw readerFailure("cannotJoin");
             }
             pairing.textContent = "";
             pairing.hidden = true;
-          };
-          const stopOnMac = async () => {
-            pairing.textContent = "";
-            pairing.hidden = true;
-            const response = await fetch("/api/control", {
-              method: "POST",
-              headers: {"Content-Type": "application/json"},
-              body: JSON.stringify({
-                requestID: crypto.randomUUID(),
-                command: "stop",
-                expectedRevision: revision
-              })
-            });
-            if (!response.ok) {
-              pairing.textContent = "暂时无法停止，请重试。";
-              pairing.hidden = false;
-            }
-            await fetchSnapshot();
           };
           const setSize = size => {
             fontSize = Math.max(20, Math.min(56, size));
@@ -85,22 +68,27 @@ enum ReaderJavaScriptNetwork {
             updateJump();
           }, {passive: true});
           jump.addEventListener("click", scrollLive);
-          document.querySelector("#smaller").onclick = () => setSize(fontSize - 2);
-          document.querySelector("#larger").onclick = () => setSize(fontSize + 2);
-          document.querySelector("#stop").onclick = stopOnMac;
+          timestamps.onclick = () => {
+            showTimestamps = !showTimestamps;
+            localStorage.setItem("readerTimestamps", String(showTimestamps));
+            applyTimestampPreference();
+          };
+          smaller.onclick = () => setSize(fontSize - 2);
+          larger.onclick = () => setSize(fontSize + 2);
           setInterval(() => {
             if (socket?.readyState !== WebSocket.OPEN) return;
             if (Date.now() - heartbeatAt > 30000) socket.close();
             else socket.send(JSON.stringify({type: "ping"}));
           }, 10000);
           setSize(fontSize);
+          applyTimestampPreference();
           redeemFragment()
             .then(fetchSnapshot)
             .then(connect)
             .catch(error => {
-              pairing.textContent = error.message;
+              pairing.textContent = failureText(error);
               pairing.hidden = false;
-              setConnection("当前无法加入", "error");
+              setConnectionKey("cannotJoin", "error");
             });
         })();
         """#

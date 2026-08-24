@@ -1,5 +1,7 @@
 # Live Church Translation
 
+[简体中文](README.zh-CN.md) | English
+
 Live Church Translation is a focused macOS tool for live church translation and listening
 notes. It supports Mandarin-to-English and English-to-Simplified-Chinese modes, preserves
 the complete meeting recording and transcript, and serves the live reader to paired
@@ -27,13 +29,13 @@ Ollama, LocalVocal, llama.cpp, or another runtime.
   reference shape, implausible length, and model commentary.
 - Supports an editable theological glossary with source aliases, ASR aliases, accepted
   English variants, and `required` or `preferred` enforcement.
-- Gives Hy-MT2 only the latest two validator-approved and durably appended Chinese/English
+- Gives Hy-MT2 only the latest two validator-approved and durably appended source/target
   pairs as background. The current sentence is delimited separately, and context is never
   treated as text to output.
-- Shows a continuous English reader with optional Chinese, selectable text, timestamps,
-  stable upward reading, an unseen-entry count, and **Jump to Live**.
-- Writes each accepted entry to local JSONL and produces a Markdown transcript for the
-  session.
+- Shows a continuous target-language reader with optional recognized source text, stable
+  upward reading, an unseen-entry count, and **Jump to Live**.
+- Writes each accepted entry to local JSONL and produces a readable Markdown transcript
+  for the session.
 
 Validation catches specific structural defects; it cannot prove that a translation is
 theologically or linguistically correct. Human review remains a release requirement.
@@ -46,9 +48,9 @@ English negator. The parser removes every accepted block and rejects protocol re
 Lexical, additive, concessive, and A-not-A constructions are deliberately left unmarked.
 Shadow assessment records only encoding, occurrence count, and a bounded pass/failure code,
 plus a SHA-256 of each raw UTF-8 model output; it never records source text, prompt text,
-model output text, or cleaned translation.
-This experiment does not change the production prompt, API, or validator, and a structural
-shadow pass does not prove semantic scope or translation fidelity.
+model output text, or cleaned translation. This experiment does not change the production
+prompt, API, or validator, and a structural shadow pass does not prove semantic scope or
+translation fidelity.
 
 The pinned public Q4 A/B qualification uses seed 42, temperature 0, and four threads. Its
 current strict result is 4/11 for the English-placeholder encoding and 3/11 for the
@@ -56,6 +58,25 @@ original-cue encoding; neither encoding preserved a passing two- or three-occurr
 Both remain rejected for production. An unrelated idle Q8 server was resident during the
 run, so the content and structure findings are usable but the recorded latencies are
 explicitly uncontrolled and are not performance-release evidence.
+
+## Quiet progress and timing feedback
+
+The interaction contract keeps long-running work visible without interrupting the reader.
+The Mac and paired browser use a small, persistent status treatment for **Preparing**,
+**Listening**, **Recognizing**, **Translating**, and **Finishing**, followed by native
+**Incomplete** or browser **Paused** when work cannot continue. Recording time is shown separately
+so that it cannot hide the current processing phase. **Connecting**,
+**Connected**, and **Reconnecting** remain distinct sharing states. Transient phases may use a
+restrained activity indicator; ordinary progress is never announced as a surprise alert or inserted
+as transcript text.
+
+Passage timestamps are visible by default and may be hidden independently on the Mac and in the
+browser. Hiding timestamps changes presentation only: recorded offsets remain in JSONL, Markdown,
+and the session library.
+
+On 2026-08-24, the correction tree passed the complete command-line quality gate. Full-Xcode
+Archive/signing checks and repeated real-device Safari verification are still required before these
+interaction changes or the LAN crash correction become release evidence.
 
 ## Crash-safe sentence handoff
 
@@ -85,8 +106,14 @@ policy, and hardened no-cache responses. The current LAN transport is HTTP/WebSo
 Pairing provides authorization, not confidentiality against a hostile network observer; enable
 sharing only on a trusted local network and stop or revoke it after the service.
 
-See [Architecture](Docs/Architecture.md) for the complete trust boundary and dependency
-graph.
+Two macOS 15.5 crash reports from 2026-08-24 showed the distributed engineering build trapping in
+`WebSocketFrameCodec.parseClientFrame(_:)` after Safari connected. They invalidate the earlier
+loopback-only sharing conclusion. The correction removes a zero-origin `Data` indexing assumption;
+release acceptance now requires receive-split and coalesced-frame regressions plus repeated real Safari
+pairing, heartbeat, reconnect, and stop/restart checks without a process crash. See
+[Testing](Docs/Testing.md) for the pending gate.
+
+See [Architecture](Docs/Architecture.md) for the complete trust boundary and dependency graph.
 
 ## Platform and model installation
 
@@ -120,8 +147,9 @@ the only composition root.
 
 - [Architecture and module catalog](Docs/Architecture.md)
 - [Tests and release qualification](Docs/Testing.md)
+- [Production takeover and current gates](Docs/ProductionTakeover-2026-08-24.md)
 - [English ASR production selection](Docs/EnglishASRSelection-2026-08-23.md)
-- [English-to-Chinese theological qualification](Docs/EnglishTranslationQualification-2026-08-22.md)
+- [English-to-Simplified-Chinese theological qualification](Docs/EnglishTranslationQualification-2026-08-22.md)
 - [Scripture terminology and rights gate](Docs/ScriptureStandards.md)
 - [Mac App Store submission runbook](Docs/AppStoreSubmission.md)
 - Per-target `README.md` files document purpose, public API, dependencies, threading,
@@ -136,8 +164,9 @@ Development requires Swift 6.1 and Xcode 16.4, or a compatible newer toolchain.
 ```
 
 The gate checks architecture and cycles, the 200-line project-owned source-file limit,
-formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
-[Testing](Docs/Testing.md) before interpreting a green local gate as release evidence.
+formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. Full Xcode remains
+required for the tracked application project, Archive, signing, and macOS UI/device verification.
+See [Testing](Docs/Testing.md) before interpreting a green local gate as release evidence.
 
 ## Use
 
@@ -147,8 +176,8 @@ formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
 2. Select the language direction, desired input, and glossary if needed.
 3. Choose **Start** and confirm that participants know the meeting is being recorded. Secure
    local recording begins before model loading finishes, so early audio is retained.
-4. Read the continuous translation. Scroll upward freely; choose **Jump to Live**
-   when ready to resume following.
+4. Follow the quiet processing status and read the continuous translation. Scroll upward freely;
+   choose **Jump to Live** when ready to resume following. Show or hide passage timestamps as needed.
 5. Choose **Stop** to flush queued speech and atomically finalize the recording and
    transcript in **Library**.
 6. Optionally open **Share**, enable local sharing, and create a viewer invitation for a
@@ -157,16 +186,17 @@ formatting, SwiftLint, warnings-as-errors builds and tests, and dead code. See
    file, and keep the app open until import finishes.
 
 Application data is stored under
-`~/Library/Application Support/LiveChurchTranslation/`, including development model caches, `Glossary`,
-`Transcripts`, `Diagnostics`, and the hidden pending-utterance recovery directory.
+`~/Library/Application Support/LiveChurchTranslation/`, including development model caches,
+`Glossary`, `Transcripts`, `Diagnostics`, and the hidden pending-utterance recovery directory.
 
 ## Distribution status and licensing
 
 The delivery target is an internal church application engineered to Mac App Store quality
 standards; an actual App Store submission is not required. Build scripts can create engineering
 `.app` and `.dmg` artifacts. Any distributed build still needs its exact model revisions, hashes,
-hardware tests, and quality review recorded; this README does not convert development evidence
-into a release claim.
+hardware tests, and quality review recorded. The current LAN correction and interaction changes
+passed the complete command-line gate on 2026-08-24. They have not yet completed their full-Xcode
+or real-device acceptance gates.
 
 The pinned [GitHub Release workflow](Docs/GitHubRelease.md) defaults to a non-publishing dry run.
 A `vMAJOR.MINOR.PATCH` tag requires Developer ID signing and Apple notarization, then creates only

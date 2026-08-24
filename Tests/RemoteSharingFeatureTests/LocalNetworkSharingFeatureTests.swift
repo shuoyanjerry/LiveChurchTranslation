@@ -70,6 +70,36 @@ struct LocalNetworkSharingFeatureTests {
         #expect(!(await sharing.isEnabled()))
     }
 
+    @Test("A listener failure becomes a fixed presentation state")
+    func listenerFailureIsRedacted() async {
+        let sharing = SharingFake()
+        let feature = makeSharingFeature(
+            sharing: sharing,
+            transport: TransportFake(
+                startError: .listenerFailed("/Users/private/raw-listener-error")
+            )
+        )
+
+        await feature.send(.toggle)
+
+        #expect(await feature.state() == .failed)
+        #expect(!(await sharing.isEnabled()))
+    }
+
+    @Test("A transport event cannot place its message in presentation state")
+    func transportFailureMessageIsRedacted() async {
+        let feature = makeSharingFeature()
+        await feature.send(.toggle)
+
+        await feature.receive(
+            .statusChanged(
+                .failed(message: "/Users/private/raw-transport-error socket=192.168.1.2")
+            )
+        )
+
+        #expect(await feature.state() == .failed)
+    }
+
     @Test("A delayed old failure cannot overwrite a successful retry")
     func staleEnableFailureDoesNotOverwriteRetry() async {
         let sharing = SharingFake()

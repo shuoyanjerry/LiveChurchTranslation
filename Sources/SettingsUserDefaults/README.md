@@ -20,7 +20,8 @@ The store is an actor, serializing loads and saves through one instance.
 ## Failure Modes
 
 A missing value returns `AppSettings.defaults`. Invalid stored data throws a
-decoding error, and encoding failure propagates from `save(_:)`.
+decoding error, and encoding failure propagates from `save(_:)`. Settings encoded before
+`showTimestamps` existed inherit its visible-by-default value when decoded.
 
 ## Tests
 

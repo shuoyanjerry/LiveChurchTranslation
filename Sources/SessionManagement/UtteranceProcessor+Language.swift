@@ -16,9 +16,15 @@ extension UtteranceProcessor {
         entries: [GlossaryEntry],
         mode: TranslationMode
     ) -> (utterance: RecognizedUtterance, audit: TranscriptSourceAudit) {
+        guard mode == .mandarinToEnglish else {
+            return (
+                utterance,
+                TranscriptSourceAudit(rawText: utterance.rawText, corrections: [])
+            )
+        }
         let result = dependencies.asrNormalizer.normalizeWithAudit(
             utterance.text,
-            using: mode == .mandarinToEnglish ? normalizationRules(from: entries) : []
+            using: normalizationRules(from: entries)
         )
         let normalized = RecognizedUtterance(
             id: utterance.id,

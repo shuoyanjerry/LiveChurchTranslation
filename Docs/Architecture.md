@@ -2,13 +2,13 @@
 
 ## Product boundary
 
-Live Church Translation has one primary pipeline:
+Live Church Translation has one language-directed pipeline:
 
 ```text
-selected Chinese audio input
-  → Mandarin speech segmentation and ASR
-  → conservative, audited source correction
-  → faithful English translation
+selected microphone or imported audio
+  → language-scoped speech segmentation and ASR
+  → Mandarin-only conservative source correction and discourse evidence, when applicable
+  → faithful translation into English or Simplified Chinese
   → durable transcript and continuous reader
 ```
 
@@ -115,6 +115,17 @@ idle → preparing → listening ⇄ recognizing → translating → listening �
                          └──── typed failure ─────┴───────────────→ failed
 ```
 
+The user-facing projection preserves these phases instead of collapsing them into a generic
+“Live” or “Recording” state. The Mac and browser present quiet, persistent **Preparing**,
+**Listening**, **Recognizing**, **Translating**, and **Finishing** feedback; the native terminal
+label is **Incomplete** and the browser label is **Paused** when work cannot continue. Recording
+duration is a separate fact. The browser also distinguishes Connecting, Connected, and
+Reconnecting. A restrained activity indicator may accompany transient work, but progress is never
+inserted into transcript text or presented as an unsolicited alert.
+
+Passage time offsets are durable transcript data. Native and browser readers may hide their
+timestamp rail independently; that presentation preference never removes or rewrites stored timing.
+
 The sentence path is ordered deliberately:
 
 1. Capture copies audio; processing emits normalized mono frames to the injected VAD. The
@@ -125,14 +136,15 @@ The sentence path is ordered deliberately:
    the segment; 16.5 seconds is the hard cap. Two raw voiced frames cancel a pending endpoint.
    `AdaptiveEnergyClassifier` remains a functional fallback.
 2. `UtteranceRecoveryStore.stage` durably commits the exact segment before inference.
-3. Qwen3-ASR produces raw Mandarin. The normalizer applies only explicit aliases. The
-   discourse resolver may repair narrowly eligible `他` / `她` spellings only from qualified
-   current-turn evidence; prior human evidence may block or force abstention but never
-   authorizes a later gender rewrite. A unique qualified prior deity anchor may classify an
-   already-written `祂`, but only current-turn deity evidence may authorize a textual deity
-   correction. Stable VAD source-segment identity, rather than dense UI ordinals, orders the
-   bounded context. Both stages carry raw text plus every accepted change and its evidence
-   into `TranscriptEntry`; ambiguity causes abstention, not a guess.
+3. Qwen3-ASR produces raw text in the selected source language. Mandarin input then passes
+   through the literal alias normalizer and discourse resolver. The resolver may repair narrowly
+   eligible `他` / `她` spellings only from qualified current-turn evidence; prior human evidence
+   may block or force abstention but never authorizes a later gender rewrite. A unique qualified
+   prior deity anchor may classify an already-written `祂`, but only current-turn deity evidence
+   may authorize a textual deity correction. English input bypasses Mandarin spelling and pronoun
+   correction. Stable VAD source-segment identity, rather than dense UI ordinals, orders the bounded
+   context. Every path carries raw source text plus any accepted changes and their evidence into
+   `TranscriptEntry`; ambiguity causes abstention, not a guess.
 4. Hy-MT2 receives matched glossary terms and at most the latest two prior finalized,
    validator-approved, durably appended pairs. Context is marked as non-output background;
    only the separately delimited current source may be translated. Occurrence-level,
@@ -189,6 +201,11 @@ Security assumptions and limits are explicit:
   mutation. Queries, ambiguous/oversized requests, chunked bodies, malformed or unmasked
   WebSocket frames, non-local peers, and excess connections are rejected. Responses use
   CSP, `no-store`, `nosniff`, frame denial, no-referrer, and browser permission denial.
+- WebSocket parsing treats byte offsets as relative to `Data.startIndex`; a receive buffer may have
+  a non-zero start index after an earlier frame is consumed. Every header, extended length, mask,
+  and payload access must be bounds-checked before indexing. A supported single frame split across
+  network receives remains buffered; WebSocket message fragmentation is unsupported. Malformed input
+  closes only that peer, and no network byte sequence may trap the host process.
 - This release issues viewer grants only. They can read the live transcript and translation
   but cannot control the meeting. The lower-level control boundary still rejects every remote
   Start request. No remote route exists for input selection, glossary, models, settings,
@@ -209,3 +226,19 @@ boundary. Failures are never silently converted into accepted transcript entries
 To replace capture, ASR, translation, transcript storage, recovery storage, or remote
 transport, implement its API in a new adapter target, run contract tests, and change only
 composition-root wiring. Business and UI callers do not change.
+
+## 2026-08-24 LAN crash boundary
+
+Two independent crash reports from the same macOS 15.5 engineering build, at 09:32:34 and
+09:35:56 local time, ended in `Data._Representation.subscript.getter` from
+`WebSocketFrameCodec.parseClientFrame(_:)`, called by
+`NWRemoteConnectionHandler.processWebSocket(_:)`. The parser combined `Data.startIndex` for its
+first bytes with zero-based integer offsets for later mask and payload access. Once a previously
+consumed buffer no longer had a zero start index, a valid Safari frame could reach an out-of-bounds
+subscript and terminate the whole app with `EXC_BREAKPOINT`.
+
+This evidence invalidates the earlier inference from a successful one-request loopback smoke; it
+does not invalidate that smoke's HTTP header observations. The correction is not qualified until
+the exact final commit passes non-zero-index, receive-split, coalesced, extended-length, malformed,
+heartbeat, and reconnect regressions, followed by repeated iPhone, iPad, and Mac Safari pairing and
+stop/restart checks on a built application. Until then, LAN sharing remains a release blocker.

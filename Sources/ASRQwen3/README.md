@@ -9,11 +9,11 @@ after VAD closes a segment; no network access occurs during inference.
 ## Public API
 
 `Qwen3ASRProvider` and `Qwen3ASRConfiguration` are the only public types.
-Per-request Mandarin language hints and comma-separated hotwords are attached to
-an immutable sherpa stream.
+Per-request source-language hints and comma-separated hotwords are attached to an
+immutable sherpa stream. Production requests currently select Mandarin or English.
 
-`ASRRequest.contextPrompt` is intentionally a **glossary-only** channel. Session
-code supplies enabled source terminology, never prior utterances, guessed gender,
+`ASRRequest.contextPrompt` is intentionally a **glossary-only** channel in both directions. Session
+code supplies enabled terminology for the selected source language, never prior utterances, guessed gender,
 translation output, or an answer-shaped phrase. A held-out sermon experiment found
 that those inputs did not repair an ambiguous *ta* and that prior-turn prose could
 be echoed into recognition. Pronoun evidence is handled after ASR through the

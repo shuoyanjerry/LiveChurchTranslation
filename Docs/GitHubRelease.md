@@ -140,10 +140,12 @@ stapling adds the notarization ticket after Apple accepts the upload. Formal evi
 therefore also re-runs app and DMG ticket validation, final-DMG verification, and both Gatekeeper
 assessments instead of treating the retained JSON as proof that the final files are usable.
 
-The automated report intentionally says that it is packaging evidence only. Human release notes
-must add the exact corpus decisions, review results, soak duration, latency and memory evidence,
-LAN device matrix, privacy review, and clean standard-user Mac acceptance result required by
-`Docs/Testing.md`.
+The automated report intentionally says that it is packaging evidence only. Human release notes must add
+the exact corpus decisions, review results, soak duration, latency and memory evidence, privacy review,
+and clean standard-user Mac acceptance result required by `Docs/Testing.md`. For candidates after the
+2026-08-24 incident, the LAN evidence must name the two crash signatures and record the exact codec,
+heartbeat, reconnect, stop/restart, and repeated real-Safari device matrix; an older loopback smoke is not
+LAN-stability evidence.
 
 ## Local rehearsal
 

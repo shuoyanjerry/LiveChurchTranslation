@@ -46,10 +46,6 @@ extension NWRemoteConnectionHandler {
     }
 
     func processWebSocket(_ session: RemoteSocketSession) async {
-        guard buffer.count <= limits.maximumWebSocketFrameBytes + 14 else {
-            await closeWebSocket(code: 1009)
-            return
-        }
         do {
             while !buffer.isEmpty {
                 let parsed = try components.frameCodec.parseClientFrame(buffer)
@@ -64,9 +60,15 @@ extension NWRemoteConnectionHandler {
             }
             receiveNext()
         } catch RemoteTransportError.incompleteRequest {
-            receiveNext()
+            if buffer.count <= limits.maximumWebSocketFrameBytes + 14 {
+                receiveNext()
+            } else {
+                await closeWebSocket(code: 1009)
+            }
         } catch RemoteTransportError.unauthorized {
             await close()
+        } catch RemoteTransportError.frameTooLarge {
+            await closeWebSocket(code: 1009)
         } catch {
             await closeWebSocket(code: 1002)
         }

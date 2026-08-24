@@ -51,14 +51,21 @@ public actor LiveSessionProjectionAdapter {
         if let sessionID = snapshot.sessionID, sessionID != projectedSessionID {
             projectedSessionID = sessionID
             projectedEntryIDs.removeAll(keepingCapacity: true)
-            await projection.beginSession(id: sessionID, message: "正在准备本地翻译")
+            await projection.beginSession(
+                id: sessionID,
+                message: "正在准备本地翻译",
+                sourceLanguage: snapshot.sourceLanguage,
+                targetLanguage: snapshot.targetLanguage
+            )
         }
         for entry in snapshot.transcript where !projectedEntryIDs.contains(entry.id) {
             await project(entry)
         }
         await projection.updateState(
             phase: RemoteSessionPresentation.phase(snapshot.phase),
-            message: RemoteSessionPresentation.message(snapshot.phase)
+            message: RemoteSessionPresentation.message(snapshot.phase),
+            sourceLanguage: snapshot.sourceLanguage,
+            targetLanguage: snapshot.targetLanguage
         )
     }
 
@@ -72,6 +79,7 @@ public actor LiveSessionProjectionAdapter {
                     sourceText: entry.sourceText,
                     targetText: entry.targetText,
                     createdAt: entry.createdAt,
+                    startedMilliseconds: entry.startedMilliseconds,
                     sourceLanguage: sourceLanguage,
                     targetLanguage: targetLanguage
                 )

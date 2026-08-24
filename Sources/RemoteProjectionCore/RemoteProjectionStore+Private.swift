@@ -7,7 +7,9 @@ extension RemoteProjectionStore {
             revision: revision,
             phase: phase,
             statusMessage: statusMessage,
-            entries: entries.values.sorted(by: entryOrder)
+            entries: entries.values.sorted(by: entryOrder),
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage
         )
     }
 

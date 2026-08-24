@@ -30,13 +30,13 @@ publisher channels. Name **ESV Text Edition: 2025** and describe the exact reque
 - authoritative text and narration identity;
 - temporary local storage and deletion;
 - segmentation, speech-to-text, WER/CER, and regression evaluation;
-- ESV-to-Chinese bilingual alignment or translation evaluation;
+- ESV-to-Simplified-Chinese bilingual alignment or translation evaluation;
 - any runtime display, export, publication, or distribution;
 - separate permission for prompt inclusion, retrieval, training, or fine-tuning;
 - required copyright notice, attribution, device/user limits, expiry, and reporting.
 
 Crossway's standard policy expressly restricts translating ESV into another language, so
-an exact ESV-to-Chinese workflow must not be described as authorized or compliant without
+an exact ESV-to-Simplified-Chinese workflow must not be described as authorized or compliant without
 the rights holder's explicit permission.
 
 ## Hong Kong Bible Society request

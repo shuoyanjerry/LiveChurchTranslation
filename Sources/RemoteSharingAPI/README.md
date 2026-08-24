@@ -10,6 +10,12 @@ transport, persistence, models, or the local session implementation.
 `RemoteRole`, `RemotePeer`, `RemoteProjectionSnapshot`, `RemoteProjectionEnvelope`,
 `RemoteProjectionProviding`, and `RemoteSharingControlling`.
 
+Projection snapshots and live state updates carry the session language pair independently of transcript
+entries, allowing every listener to receive the correct target-language presentation before the first
+sentence is ready.
+Each projected entry may also carry `startedMilliseconds`, a session-relative passage offset. The field is
+optional for wire compatibility; presentation code may hide it without changing the authoritative entry.
+
 ## Dependencies
 
 Foundation only. No other project target.
@@ -26,4 +32,5 @@ boundary.
 
 ## Tests
 
-Codable round trips are covered through projection and transport tests.
+Codable round trips, language metadata, and optional timestamp transport are covered through projection,
+adapter, and transport tests.

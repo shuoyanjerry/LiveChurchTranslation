@@ -2,9 +2,9 @@
 
 ## Scope
 
-This document defines how endpoint and Chinese-to-English display latency must
-be measured. It does not claim that the current build meets the one-to-three
-second sentence-end target.
+This document defines how endpoint and source-to-target display latency must be measured for both
+supported directions: Mandarin-to-English and English-to-Simplified-Chinese. It does not claim that the
+current build meets the one-to-three second sentence-end target.
 
 ## One Correlation ID, One Monotonic Timeline
 
@@ -36,7 +36,7 @@ For each segment record:
 
 1. acoustic pause candidate and VAD boundary emission;
 2. ASR queued, started, completed, or failed;
-3. normalization and discourse-resolution completed;
+3. Mandarin normalization and discourse resolution completed, when the selected source requires them;
 4. translation queued, started, validated, completed, or failed;
 5. persistence commit completed or failed;
 6. transcript-buffer append;
@@ -66,13 +66,13 @@ unsafe-cut proxy until those labels exist.
 
 The product latency target is measured as:
 
-`first stable English render - human final-syllable time`
+`first stable target-language render - human final-syllable time`
 
 Also report these components independently:
 
 - endpoint decision;
 - ASR queue wait and inference;
-- normalization/discourse processing;
+- Mandarin normalization/discourse processing, when applicable;
 - translation queue wait, inference, and validation/retry;
 - persistence and local render;
 - remote transport and viewer render.
@@ -86,11 +86,11 @@ failed slow item and call the remaining p95 an SLA.
 
 ## Qualification Matrix
 
-Run cold and warm sessions on the minimum supported M-series configuration,
-including an 8 GB M1 if it remains supported. Cover quiet close-mic speech,
-church PA/reverberation, music and applause, long rhetorical pauses, code-switching,
-device changes, permission denial, model-load failure, memory pressure, thermal
-pressure, and a multi-hour session.
+Run cold and warm sessions in each supported direction on the minimum supported M-series configuration,
+including an 8 GB M1 if it remains supported. Stratify endpoint, completion, and render percentiles by
+source/target direction rather than pooling Mandarin and English. Cover quiet close-mic speech, church
+PA/reverberation, music and applause, long rhetorical pauses, code-switching, device changes, permission
+denial, model-load failure, memory pressure, thermal pressure, and a multi-hour session.
 
 Sample resident/peak memory and thermal state at one hertz. Report each model and
 policy revision/hash, corpus hashes, app commit, macOS build, hardware, power

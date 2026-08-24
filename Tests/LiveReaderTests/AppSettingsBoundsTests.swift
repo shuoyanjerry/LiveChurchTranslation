@@ -12,4 +12,17 @@ import Testing
         let decoded = try JSONDecoder().decode(AppSettings.self, from: oversized)
         #expect(decoded.readerFontSize == 44)
     }
+
+    @Test func timestampPreferenceDefaultsOnAndSurvivesPersistence() throws {
+        let legacy = Data(#"{"readerFontSize":28}"#.utf8)
+        let legacySettings = try JSONDecoder().decode(AppSettings.self, from: legacy)
+        #expect(legacySettings.showTimestamps)
+
+        let hidden = AppSettings(showTimestamps: false)
+        let roundTripped = try JSONDecoder().decode(
+            AppSettings.self,
+            from: JSONEncoder().encode(hidden)
+        )
+        #expect(!roundTripped.showTimestamps)
+    }
 }

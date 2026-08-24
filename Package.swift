@@ -235,11 +235,13 @@ let package = Package(
         .executableTarget(
             name: "ChurchTranslatorCLI",
             dependencies: ["ChurchTranslatorApp"],
+            exclude: ["README.md"],
             swiftSettings: strict
         ),
         .executableTarget(
             name: "ScriptureQualificationTool",
             dependencies: ["ScriptureQualificationSupport"],
+            exclude: ["README.md"],
             swiftSettings: strict
         ),
         test("AudioProcessingCoreTests", dependencies: ["AudioCaptureAPI", "AudioProcessingCore"]),

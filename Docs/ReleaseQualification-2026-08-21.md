@@ -172,6 +172,39 @@ gates above must still pass independently.
   They remain historical packaging diagnostics and are not current release artifacts. A
   fresh package, signature, notarization, stapling, and clean-Mac acceptance run is required.
 
+### 2026-08-24 real-Safari contradiction and LAN requalification
+
+The loopback observation above remains a record that one local HTTP request received the expected
+headers and that the listener could be stopped in that limited exercise. It is not stability
+evidence for a paired browser or WebSocket traffic.
+
+Two later crash reports from the installed `0.0.0 (24)` engineering build on macOS 15.5
+(`24F74`) recorded process termination at 09:32:34 and 09:35:56 local time on 2026-08-24. Both
+were `EXC_BREAKPOINT (SIGTRAP)` failures with the same application stack:
+
+```text
+Data._Representation.subscript.getter
+Data.subscript.getter
+WebSocketFrameCodec.parseClientFrame(_:) (WebSocketFrameCodec.swift:27)
+NWRemoteConnectionHandler.processWebSocket(_:)
+```
+
+The duplicate signature makes the former loopback-only conclusion insufficient and moves LAN
+sharing back to **NO-GO**. The reports' anonymous UUIDs, user identifier, complete process listing,
+and unrelated thread details are intentionally not copied into the repository.
+
+Source review identified the failure mechanism: the parser read its first bytes relative to
+`Data.startIndex` but treated later mask and payload offsets as absolute zero-based indices. After
+an earlier frame was consumed from a receive buffer, a valid subsequent Safari frame could be
+backed by `Data` whose start index was not zero, causing an out-of-bounds subscript instead of a
+typed incomplete/invalid-frame result.
+
+The correction and its related quiet progress states and hideable timestamp controls are changes
+after the evidence recorded in this historical snapshot. Their qualification is **pending**. The
+exact final commit must pass the codec/transport matrix and the repeated iPhone, iPad, and Mac
+Safari matrix in [Testing](Testing.md). No successful run is recorded here, and neither the older
+gate result nor the ad-hoc DMG hash may be reused for the corrected tree.
+
 Passing these fixtures means only that their outputs met the asserted expected terms and
 guards. It does not establish general translation quality, absence of omissions or
 hallucinations, naturalness across speakers, or a 1–3 second end-to-end service level.

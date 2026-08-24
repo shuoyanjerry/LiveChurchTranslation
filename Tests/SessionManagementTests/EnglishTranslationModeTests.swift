@@ -43,6 +43,22 @@ import Testing
         #expect(session.targetLanguage == "zh-Hans")
     }
 
+    @Test func englishModeBypassesMandarinNormalizationForCodeSwitching() async throws {
+        let source = "The speaker quoted 因信生义 while explaining the recognition error."
+        let harness = SessionTestHarness(
+            recognizedText: source,
+            translationMode: .englishToSimplifiedChinese
+        )
+
+        _ = try await harness.run()
+
+        let request = try #require(await harness.translator.receivedRequests().first)
+        let entry = try #require(await harness.store.persistedEntries().first)
+        #expect(request.sourceText == source)
+        #expect(entry.sourceText == source)
+        #expect(entry.sourceCorrections.isEmpty)
+    }
+
     @Test func requiredEnglishHotwordsOutrankLongPreferredTerms() {
         let preferred = (0..<60).map { index in
             GlossaryEntry(

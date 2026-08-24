@@ -49,7 +49,7 @@ extension LocalNetworkSharingFeature {
                 return
             }
             suspendLocalEndpoint()
-            setState(.failed(message: "局域网共享已中断，请重试"))
+            setState(.failed)
         case .starting:
             setState(.starting)
         case .running(let activeEndpoint):
@@ -60,10 +60,10 @@ extension LocalNetworkSharingFeature {
             await sharing.setEnabled(false)
             suspendLocalEndpoint()
             setState(.localNetworkPermissionDenied)
-        case .failed(let message):
+        case .failed:
             await sharing.setEnabled(false)
             suspendLocalEndpoint()
-            setState(.failed(message: String(message.prefix(180))))
+            setState(.failed)
         }
     }
 

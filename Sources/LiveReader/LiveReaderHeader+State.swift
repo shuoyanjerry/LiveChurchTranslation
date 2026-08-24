@@ -1,5 +1,6 @@
 import AudioCaptureAPI
 import RemoteSharingFeatureAPI
+import SessionManagementAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -68,7 +69,7 @@ extension LiveReaderHeader {
         case .off:
             nil
         case .starting:
-            ChurchTheme.warning
+            nil
         case .on:
             ChurchTheme.live
         case .localNetworkPermissionDenied, .failed:
@@ -76,19 +77,34 @@ extension LiveReaderHeader {
         }
     }
 
+    var sharingShowsProgress: Bool {
+        guard case .starting = sharingState else { return false }
+        return true
+    }
+
     var modelStatusText: String {
-        if viewModel.recordingStartedAt != nil { return "正在录音" }
         if let finalizationStatusText { return finalizationStatusText }
-        if case .failed = viewModel.snapshot.phase { return "未完成" }
-        switch viewModel.modelPreparationSnapshot.phase {
-        case .idle, .ready: return "可以开始"
-        case .checking, .downloading, .loading, .retrying: return "准备中"
-        case .failed: return "无法开始"
+        if case .idle = viewModel.snapshot.phase {
+            switch viewModel.modelPreparationSnapshot.phase {
+            case .idle, .ready: return "可以开始"
+            case .checking, .downloading, .loading, .retrying: return "准备中"
+            case .failed: return "无法开始"
+            }
         }
+        return LiveSessionStatusPresentation.label(for: viewModel.snapshot.phase)
+    }
+
+    var statusIndicatorStyle: StatusPillIndicatorStyle {
+        if case .idle = viewModel.snapshot.phase {
+            return switch viewModel.modelPreparationSnapshot.phase {
+            case .checking, .downloading, .loading, .retrying: .progress
+            case .idle, .ready, .failed: .dot
+            }
+        }
+        return LiveSessionStatusPresentation.indicatorStyle(for: viewModel.snapshot.phase)
     }
 
     var statusColor: Color {
-        if viewModel.recordingStartedAt != nil { return ChurchTheme.danger }
         if let finalizationStatusColor { return finalizationStatusColor }
         if case .failed = viewModel.snapshot.phase { return ChurchTheme.danger }
         if !viewModel.isRunning {

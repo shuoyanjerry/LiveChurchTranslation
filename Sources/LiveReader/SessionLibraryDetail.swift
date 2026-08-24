@@ -55,8 +55,8 @@ struct SessionLibraryDetail: View {
                     )
                     Divider().overlay(ChurchTheme.stone)
                 }
-                if let audioURL = viewModel.recordingURL(for: summary) {
-                    LibraryAudioPlayer(viewModel: player, url: audioURL)
+                if viewModel.recordingURL(for: summary) != nil {
+                    LibraryAudioPlayer(viewModel: player)
                     Divider().overlay(ChurchTheme.stone)
                 }
                 transcriptEntries(session)

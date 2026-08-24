@@ -3,7 +3,6 @@ import UIDesignSystem
 
 struct LibraryAudioPlayer: View {
     @ObservedObject var viewModel: AudioPlayerViewModel
-    let url: URL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -11,7 +10,7 @@ struct LibraryAudioPlayer: View {
                 Label("完整音频", systemImage: "waveform")
                     .font(.headline)
                 Spacer()
-                Text(url.lastPathComponent)
+                Text(LibraryAudioPresentation.storageLabel)
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
             }
@@ -53,4 +52,8 @@ struct LibraryAudioPlayer: View {
         let seconds = max(0, Int(interval.rounded(.down)))
         return String(format: "%02d:%02d:%02d", seconds / 3_600, seconds / 60 % 60, seconds % 60)
     }
+}
+
+enum LibraryAudioPresentation {
+    static let storageLabel = "已保存在这台 Mac 上"
 }

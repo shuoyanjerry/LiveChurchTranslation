@@ -36,7 +36,10 @@ same IPv4 identity. This avoids intermittent authorization failures without weak
 
 ## Failure Modes
 
-Parsing rejects oversized, ambiguous, chunked, fragmented, unmasked, or malformed input before routing.
+Parsing rejects oversized, ambiguous, chunked, unmasked, or malformed input before routing. WebSocket
+message fragmentation (`FIN = 0` or continuation opcodes) is unsupported and rejected, but an otherwise
+valid single frame split across Network.framework receives is buffered until complete. Multiple complete
+frames coalesced into one receive buffer are consumed in order.
 All peers must be loopback, RFC1918, IPv4 link-local, IPv6 ULA, or IPv6 link-local. Host is an exact
 allowlist match; mutations and WebSocket upgrades also require an exact same-origin match. HTTP and WS use
 the same HttpOnly grant-cookie extractor. Grants are scoped to the normalized client address observed by the
@@ -53,10 +56,21 @@ observer or active attacker. It is limited to explicitly enabled, paired use on 
 be port-forwarded. IPv6-only LANs are unsupported. Interface-change recovery and multi-device Safari
 endurance remain release-qualification work.
 
+Two macOS 15.5 crash reports from the `0.0.0 (24)` engineering app on 2026-08-24 supersede the earlier
+loopback-only LAN-stability conclusion. Both trapped in `Data._Representation.subscript.getter` through
+`WebSocketFrameCodec.parseClientFrame(_:)` and `NWRemoteConnectionHandler.processWebSocket(_:)`. The
+parser had mixed indices relative to `Data.startIndex` with zero-based offsets after an earlier frame was
+consumed. Frame parsing now uses one bounds-checked cursor relative to the current data view for the base
+header, 16/64-bit extended length, mask, and payload. This implementation statement is not physical-device
+qualification; repeated Safari heartbeat, reconnect, and stop/restart evidence remains required by
+`Docs/Testing.md`.
+
 ## Tests
 
 Tests cover request/header/body/frame bounds, origin and DNS-rebinding defenses, cookie parity, WebSocket
 handshake rules, continuous grant authorization, silent/partial-client deadlines, viewer mutation denial,
 secure response headers, and a real ephemeral localhost listener serving an asset plus snapshot/live
-WebSocket data. Lifetime tests distinguish transient failure from explicit-stop revocation and session
-cookies from expiring operator cookies.
+WebSocket data. Codec regressions cover non-zero-index data views, coalesced masked frames, extended-length
+headers, and 16-bit frames truncated at every byte boundary. Lifetime tests distinguish transient failure
+from explicit-stop revocation and session cookies from expiring operator cookies. These automated tests do
+not replace the real-device matrix.

@@ -42,27 +42,75 @@ evidence only; it is not model-quality, soak, signing, notarization, or clean-Ma
 | `ScriptureQualificationSupportTests` | 15 synthetic tests for exact ESV 2025/CUNPSS-Shen 1988 identity, independent manifest/source-declaration/source hashes, private containment, declared non-weight adjustment, no-training/no-redistribution enforcement, development/sealed partitions, reading-kind alignment, strict JSON, and punctuation fidelity without report text |
 | `test_ephemeral_scripture_qualification.sh` | Deterministic success, preflight-failure, and termination-signal lifecycle checks proving that the owner-only temporary corpus is removed and no workspace corpus is created |
 | `TranscriptCoreTests` | Ordered lifecycle, raw/normalized source audit, append events, and compatibility decoding |
-| `PersistenceFileSystemTests` | JSONL/Markdown sessions, synchronized append, loading, source audit persistence, and non-bypassable active-recording deletion guards |
+| `PersistenceFileSystemTests` | JSONL sessions, synchronized append, structured direction-aware and injection-safe Markdown, loading, source audit/timing persistence, and non-bypassable active-recording deletion guards |
 | `LoggingOSLogTests` | Deterministic payload formatting plus a source policy that keeps all dynamic message and metadata text private |
 | `DiagnosticsCoreTests` | Bounded in-memory retention, privacy-preserving export permissions, and atomic replacement |
 | `UtteranceRecoveryFileSystemTests` | Stage/restart/complete lifecycle, cross-session ordering, bounds, tombstones, and quarantine |
 | `ModelDownloadHTTPTests` | Manifest validation, hashing, exact sizes, shared disk-space preflight/reservations, atomic install, cancellation, and deduplication |
 | `AudioImportSessionAdapterTests` | Completion outcomes, imported-session direction isolation, concurrent-import rejection, and cancellation races before events, during start, and after capture begins |
 | `SessionManagementTests` | Fake-provider end-to-end pipeline, launch-time model-preparation single-flight/retry/cancellation, capture-before-model lifecycle, current-session recovery exclusion, stage-before-inference, stop draining, partial preservation, context, replay, and persistence failures |
-| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
+| `LiveReaderTests` | Follow intent, unseen counts, transcript formatting, calm phase/status mapping, separate recording state, visible-by-default/legacy-compatible timestamp preference persistence, automatic model-preparation presentation, microphone guidance/refresh, sharing presentation contracts, and live-session control locking |
 | `RemotePairingCoreTests` | Session-lived reusable viewer links and grants, bounded operator expiry, races, role enforcement, hashing, revocation, and audit redaction |
 | `RemoteControlCoreTests` | Viewer denial, closed command authorization, stale revisions, concurrent races, replay, and target failure |
 | `RemoteControlSessionAdapterTests` | Remote Start fail-closed policy and authorized stop-only forwarding |
-| `RemoteProjectionCoreTests` | Snapshot/live barrier, revisions, late entries, bounds, slow-peer resync, and default-off switch |
-| `RemoteProjectionSessionAdapterTests` | Session/entry mapping, resets, delta publication, and error redaction |
+| `RemoteProjectionCoreTests` | Pre-entry language metadata, optional timestamp wire round trips, snapshot/live barrier, revisions, late entries, bounds, slow-peer resync, and default-off switch |
+| `RemoteProjectionSessionAdapterTests` | Session language/entry timing mapping, resets, delta publication, and error redaction |
 | `RemoteSharingFeatureTests` | Enable/disable, invitations, presentation state, peers, and revocation with protocol fakes |
 | `RemoteDiscoveryBonjourTests` | Fixed service type and credential-free, bounded metadata |
-| `RemoteWebAssetsTests` | Asset allowlist, no third-party URLs, and Safari reader security assumptions |
-| `RemoteTransportNetworkTests` | Bounded HTTP/WebSocket parsing, Host/Origin policy, cookie parity, headers, viewer denial, exact Bonjour local-network policy-denial classification, and a real localhost listener/snapshot/delta smoke test |
+| `RemoteWebAssetsTests` | Asset allowlist, no third-party URLs, target-language chrome, bilingual fixed phase/connection copy, visible-by-default browser timestamp and `localStorage` wiring, read-only controls, and Safari reader security assumptions |
+| `RemoteTransportNetworkTests` | Bounded HTTP/WebSocket parsing including non-zero-index, coalesced masked, extended-length, and every-byte truncation regressions; Host/Origin policy, cookie parity, headers, viewer denial, exact Bonjour local-network policy-denial classification, and a real localhost listener/snapshot/delta smoke test |
 
 Most tests use protocol fakes and temporary directories. The default gate does not
 download model weights, use a real microphone, or launch Safari. The network suite does
 open an ephemeral loopback `NWListener`; it is not a multi-device or hostile-network test.
+
+## 2026-08-24 LAN crash and progress-feedback gate — automated pass, device gate pending
+
+Two macOS 15.5 crash reports from the `0.0.0 (24)` engineering application ended at
+`WebSocketFrameCodec.parseClientFrame(_:)` while Safari traffic was being processed. Both reports
+show `Data._Representation.subscript.getter` followed by
+`NWRemoteConnectionHandler.processWebSocket(_:)`; the observations occurred at 09:32:34 and
+09:35:56 local time on 2026-08-24. This repeated real-client evidence supersedes only the earlier
+claim that a loopback request was sufficient LAN stability evidence. The older HTTP header and
+listener-lifecycle observations remain historical facts.
+
+Source review found a mixed indexing model: the first frame bytes used `Data.startIndex`, while
+later mask and payload accesses used integer offsets as though every `Data` began at zero. Consuming
+one frame can leave a non-zero start index, so a later valid frame could trap instead of returning a
+typed parse result. The exact correction commit must pass all of the following before LAN sharing
+can be called fixed:
+
+- valid masked text, ping, pong, and close frames backed by `Data` with a deliberately non-zero
+  `startIndex`;
+- two or more coalesced frames consumed in order from one receive buffer;
+- headers, extended lengths, mask keys, and payloads split at every relevant byte boundary across
+  receives, returning incomplete rather than trapping;
+- 7-bit, 16-bit, and 64-bit length boundaries, configured maximums, empty payloads, invalid UTF-8,
+  unmasked input, reserved bits/opcodes, and overflow-shaped lengths;
+- malformed or oversized input closing only the offending peer with the expected protocol result,
+  while the app and other listeners remain alive;
+- repeated snapshot, client heartbeat, reconnect, invitation reuse, revocation, and sharing
+  stop/restart flows through the real transport server;
+- exact bilingual browser copy and accessibility semantics for Connecting, Connected,
+  Reconnecting, Preparing, Listening, Recognizing, Translating, Finishing, and Paused, without raw
+  transport or session messages reaching the page;
+- native and browser timestamp controls defaulting to visible, remaining independently hideable,
+  and never deleting or changing the stored passage offsets; and
+- a separate recording-duration indicator that never replaces the current processing phase.
+
+Automated success is still insufficient because the previous automated loopback path did not
+exercise Safari's frame sequence. On the built final application, repeat pairing, live updates,
+at least two heartbeat intervals, forced Wi-Fi interruption/reconnect, and sharing stop/restart with
+iPhone Safari, iPad Safari, and Mac Safari. Run repeated cycles on macOS 15.5 and the latest
+supported macOS 15.x available. Record app commit/version/build, OS and device versions, cycle
+count, duration, crash/hang result, and relevant redacted diagnostics. A single successful
+connection is only a smoke test.
+
+Status for the corrected tree on 2026-08-24: **the complete command-line gate passed**. It covered
+103 architecture targets, strict formatting and 1,239 SwiftLint-clean Swift files, four endpoint
+packet tests, 17 notarization-evidence tests, a warnings-as-errors build, 1,138 Swift tests, and the
+dead-code pass. Full-Xcode and physical-device results are not recorded yet. The repeated Safari
+matrix above remains mandatory before the LAN incident can be closed for release.
 
 The audio-import format suite uses `/usr/bin/say` and `/usr/bin/afconvert` at test time with
 short, original phrases (`Grace and peace.` and `愿你平安。`). It commits no audio and validates
@@ -361,10 +409,18 @@ diagnostic partition—not an acceptance oracle or production replacement.
 ## UI, accessibility, and privacy qualification
 
 Native visual QA must compare the built app at the supported window sizes and verify empty,
-preparing, listening, translating, failure, long-transcript, scrolled-up, sharing, glossary,
-and settings states. Run keyboard-only navigation, VoiceOver, Increase Contrast, Reduce
+preparing, listening, recognizing, translating, finishing, failure, long-transcript, scrolled-up,
+sharing, glossary, and settings states. Run keyboard-only navigation, VoiceOver, Increase Contrast, Reduce
 Motion, text selection, and long-English/Chinese wrapping checks. A rendered screenshot or
 unit test alone is not clean-Mac UI evidence.
+
+The phase treatment must remain small and calm while still changing text for Listening,
+Recognizing, and Translating; recording time must remain separately visible. Verify reduced-motion
+behavior for any activity indicator and confirm that repeated phase changes do not steal focus or
+produce alert-like VoiceOver interruptions. With timestamps visible, check hour-long offsets,
+alignment, selection, and both language directions. Hide them in the native app and browser,
+reload/reopen as defined by each preference, and confirm that transcript storage and exported
+Markdown retain the original offsets.
 
 Verify that normal operation sends no audio, transcript, glossary, or diagnostics off the
 Mac. A signed release must load its bundled models with the network disabled and must not contact
@@ -380,6 +436,11 @@ arm64 binary/app/DMG hashes and sizes, macOS and Mac model/RAM, automated result
 corpus identity, human review results, soak duration, latency percentiles, peak memory,
 LAN device matrix, Developer ID identity, notarization request ID, stapling validation,
 and Gatekeeper launch on a clean standard-user account.
+
+For a candidate after the 2026-08-24 incident, the report must additionally identify the two crash
+signatures as the regression source, list the codec and transport cases above, and include the real
+Safari cycle matrix. Omitting the incident or citing only the older loopback smoke is a release-gate
+failure.
 
 If credentials or clean hardware are unavailable, packaging scripts may produce an
 unsigned or ad-hoc engineering artifact. Label it explicitly. Do not call it notarized,

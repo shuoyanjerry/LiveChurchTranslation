@@ -39,7 +39,7 @@ extension LocalNetworkSharingFeature {
             await sharing.setEnabled(false)
             guard revision == operationRevision else { return }
             suspendLocalEndpoint()
-            setState(.failed(message: bounded(error)))
+            setState(.failed)
         }
     }
 

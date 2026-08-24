@@ -4,8 +4,9 @@
 
 Orchestrates the live audio-to-transcript pipeline as an explicit session state
 machine. It prepares models, captures and segments audio, recognizes and
-normalizes and conservatively resolves Chinese, translates with glossary context, persists entries, replays
-recoverable utterances, and drains work during stop.
+translates with glossary context, persists entries, replays recoverable utterances, and drains work during
+stop. Mandarin source text additionally passes through literal normalization and conservative discourse
+resolution; English source text bypasses those Mandarin-only correction stages.
 
 ## Public API
 

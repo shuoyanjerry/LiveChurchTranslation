@@ -36,6 +36,8 @@ public final class LiveReaderViewModel: ObservableObject {
     private var eventTask: Task<Void, Never>?
     private var modelEventTask: Task<Void, Never>?
     private var modelPreparationTask: Task<Void, Never>?
+    var settingsSaveTail: Task<Void, Never>?
+    var settingsSaveGeneration = 0
 
     public init(
         controller: any LiveSessionController,
@@ -55,6 +57,7 @@ public final class LiveReaderViewModel: ObservableObject {
         eventTask?.cancel()
         modelEventTask?.cancel()
         modelPreparationTask?.cancel()
+        settingsSaveTail?.cancel()
     }
 
     public var isRunning: Bool {
@@ -139,14 +142,20 @@ extension LiveReaderViewModel {
             guard UserDefaults.standard.bool(forKey: "LiveChurchTranslationDesignPreview") else {
                 return false
             }
+            let phase = DesignQAPreviewFixture.phase
+            let captureStartedAt = DesignQAPreviewFixture.captureStartedAt(for: phase)
             settings = AppSettings(readerFontSize: 30, showSourceText: false)
             snapshot = LiveSessionSnapshot(
-                sessionID: nil,
-                phase: .idle,
+                sessionID: DesignQAPreviewFixture.sessionID(for: phase),
+                phase: phase,
                 transcript: DesignQAPreviewFixture.transcript,
+                captureStartedAt: captureStartedAt,
+                sourceLanguage: "zh-Hans",
+                targetLanguage: "en",
                 modelStatus: nil,
-                statusMessage: "听抄稿已保存"
+                statusMessage: DesignQAPreviewFixture.statusMessage(for: phase)
             )
+            recordingStartedAt = captureStartedAt
             return true
         }
 

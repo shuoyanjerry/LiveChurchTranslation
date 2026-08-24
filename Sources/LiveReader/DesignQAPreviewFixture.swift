@@ -1,7 +1,49 @@
 #if DEBUG
+    import Foundation
+    import SessionManagementAPI
     import TranscriptAPI
 
     enum DesignQAPreviewFixture {
+        static var phase: LiveSessionPhase {
+            switch UserDefaults.standard.string(
+                forKey: "LiveChurchTranslationDesignPreviewPhase"
+            ) {
+            case "preparing": .preparingModel
+            case "listening": .listening
+            case "recognizing": .recognizing
+            case "translating": .translating
+            case "stopping": .stopping
+            case "failed": .failed(message: "Design QA")
+            default: .idle
+            }
+        }
+
+        static func captureStartedAt(for phase: LiveSessionPhase) -> Date? {
+            guard phase.keepsPreviewCaptureActive else { return nil }
+            let elapsed = UserDefaults.standard.double(
+                forKey: "LiveChurchTranslationDesignPreviewRecordingSeconds"
+            )
+            return elapsed > 0 ? Date().addingTimeInterval(-elapsed) : nil
+        }
+
+        static func sessionID(for phase: LiveSessionPhase) -> UUID? {
+            guard phase.keepsPreviewSessionActive else { return nil }
+            return UUID(uuidString: "00000000-0000-0000-0000-000000000024")
+        }
+
+        static func statusMessage(for phase: LiveSessionPhase) -> String {
+            switch phase {
+            case .idle: "听抄稿已保存"
+            case .preparingModel: "正在准备"
+            case .listening: "正在聆听"
+            case .recognizing: "正在识别"
+            case .translating: "正在翻译"
+            case .stopping: "正在完成"
+            case .failed: "听抄未完整保存"
+            case .requestingPermission: "正在等待麦克风权限"
+            }
+        }
+
         static var transcript: [TranscriptEntry] {
             passages.enumerated().map { index, passage in
                 TranscriptEntry(
@@ -52,5 +94,26 @@
     private struct Passage {
         let source: String
         let target: String
+    }
+
+    extension LiveSessionPhase {
+        fileprivate var keepsPreviewSessionActive: Bool {
+            switch self {
+            case .requestingPermission, .preparingModel, .listening, .recognizing,
+                .translating, .stopping:
+                true
+            case .idle, .failed:
+                false
+            }
+        }
+
+        fileprivate var keepsPreviewCaptureActive: Bool {
+            switch self {
+            case .preparingModel, .listening, .recognizing, .translating:
+                true
+            case .idle, .requestingPermission, .stopping, .failed:
+                false
+            }
+        }
     }
 #endif

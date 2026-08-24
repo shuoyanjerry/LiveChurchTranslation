@@ -3,7 +3,7 @@ import Foundation
 import ModelRuntimeAPI
 import SherpaOnnx
 
-/// Sentence-level Mandarin ASR backed by Qwen3-ASR INT8 and sherpa-onnx.
+/// Language-scoped Mandarin and English ASR backed by Qwen3-ASR INT8 and sherpa-onnx.
 public actor Qwen3ASRProvider: ASRProvider, ModelRuntimeHealthChecking {
     public nonisolated let identifier = "qwen.qwen3-asr.sherpa-onnx"
 

@@ -1,4 +1,4 @@
-# English-to-Chinese translation qualification — 2026-08-22
+# English-to-Simplified-Chinese translation qualification — 2026-08-22
 
 ## Scope
 
@@ -19,8 +19,8 @@ swift test --filter HyMT2RealModelSmokeTests
 
 ## Result
 
-The final 2026-08-22 run passed all 24 English-to-Chinese fixtures and all existing
-Mandarin-to-English/pronoun cases. Sentence inference for the English-to-Chinese set was
+The final 2026-08-22 run passed all 24 English-to-Simplified-Chinese fixtures and all existing
+Mandarin-to-English/pronoun cases. Sentence inference for the English-to-Simplified-Chinese set was
 approximately 0.39–1.07 seconds on the observed Apple Silicon host. The accepted output
 preserved required theological relationships, negation, Arabic chapter-and-verse
 numbers, and Simplified Chinese output. Contextually appropriate `祂` remained intact.

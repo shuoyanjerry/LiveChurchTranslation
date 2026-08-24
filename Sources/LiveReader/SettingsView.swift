@@ -58,6 +58,7 @@ struct SettingsView: View {
                         .frame(width: 48)
                 }
                 Toggle("在译文下方显示识别原文", isOn: $draftSettings.showSourceText)
+                Toggle("显示段落时间", isOn: $draftSettings.showTimestamps)
             }
             Section("隐私") {
                 LabeledContent("数据位置", value: "仅此 Mac")

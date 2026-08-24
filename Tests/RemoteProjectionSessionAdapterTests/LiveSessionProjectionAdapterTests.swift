@@ -35,9 +35,13 @@ struct LiveSessionProjectionAdapterTests {
         try await waitUntil { await projection.messages().last == "已暂停" }
 
         #expect(await projection.sessions() == [sessionID])
+        let languagePair = try #require(await projection.languagePairs().first)
+        #expect(languagePair.0 == "zh-Hans")
+        #expect(languagePair.1 == "en")
         #expect(await projection.entries().first?.targetText == "Salvation is by grace.")
         #expect(await projection.entries().first?.sourceLanguage == "zh-Hans")
         #expect(await projection.entries().first?.targetLanguage == "en")
+        #expect(await projection.entries().first?.startedMilliseconds == 0)
         #expect((await projection.messages()).contains("直播中"))
         #expect(!(await projection.messages()).contains { $0.contains("/Users/") })
     }
@@ -67,6 +71,7 @@ struct LiveSessionProjectionAdapterTests {
             }
         )
     }
+
 }
 
 extension LiveSessionProjectionAdapterTests {

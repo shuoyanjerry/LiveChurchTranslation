@@ -14,6 +14,9 @@ buffer events, and the replaceable live transcript-buffer boundary.
 and unresolved, verified-human, or verified-deity evidence state without rewriting
 ambiguous raw Chinese.
 
+Sessions retain the selected source/target language pair. Every entry retains session-relative start and
+end milliseconds regardless of whether a native or browser reader chooses to hide its timestamp rail.
+
 `TranscriptEntry.sequence` is the dense presentation order. The optional
 `sourceSegmentSequence` is the stable VAD order within the containing session and
 is the only transcript sequence permitted for discourse evidence. Old JSON without

@@ -35,7 +35,7 @@ struct LiveTranscriptReader: View {
             liveFollow.userDidScroll(isAtLiveEdge: newViewport.isAtLiveEdge)
         }
         .onScrollPhaseChange { _, phase in
-            userIsScrolling = isUserDriven(phase)
+            userIsScrolling = phase.isUserDriven
         }
         .onChange(of: viewModel.snapshot.transcript.last?.id) {
             guard liveFollow.contentDidAppend() else { return }
@@ -104,27 +104,49 @@ extension LiveTranscriptReader {
             .labelsHidden()
             .frame(width: 220)
             .disabled(viewModel.sessionControlsLocked)
-            Button {
-                let previousSettings = viewModel.settings
-                viewModel.settings.showSourceText.toggle()
-                Task {
-                    if !(await viewModel.saveSettings()) {
-                        viewModel.settings = previousSettings
-                    }
-                }
-            } label: {
-                HStack(spacing: 7) {
-                    Text("识别原文")
-                    Image(
-                        systemName: viewModel.settings.showSourceText
-                            ? "checkmark.circle.fill" : "circle"
-                    )
-                }
-                .frame(minHeight: 44)
+            sourceTextButton
+            timestampButton
+        }
+    }
+
+    private var sourceTextButton: some View {
+        Button {
+            toggleReaderSetting(\.showSourceText)
+        } label: {
+            readerSettingLabel("识别原文", isOn: viewModel.settings.showSourceText)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(ChurchTheme.olive)
+        .accessibilityValue(viewModel.settings.showSourceText ? "已显示" : "已隐藏")
+    }
+
+    private var timestampButton: some View {
+        Button {
+            toggleReaderSetting(\.showTimestamps)
+        } label: {
+            readerSettingLabel("时间戳", isOn: viewModel.settings.showTimestamps)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(ChurchTheme.olive)
+        .accessibilityValue(viewModel.settings.showTimestamps ? "已显示" : "已隐藏")
+        .help("显示或隐藏每段翻译的时间")
+    }
+
+    private func readerSettingLabel(_ title: String, isOn: Bool) -> some View {
+        HStack(spacing: 7) {
+            Text(title)
+            Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+        }
+        .frame(minHeight: 44)
+    }
+
+    private func toggleReaderSetting(_ keyPath: WritableKeyPath<AppSettings, Bool>) {
+        let previousSettings = viewModel.settings
+        viewModel.settings[keyPath: keyPath].toggle()
+        Task {
+            if !(await viewModel.saveSettings()) {
+                viewModel.settings = previousSettings
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(ChurchTheme.olive)
-            .accessibilityValue(viewModel.settings.showSourceText ? "已显示" : "已隐藏")
         }
     }
 
@@ -149,16 +171,4 @@ extension LiveTranscriptReader {
         guard liveFollow.unseenEntryCount > 0 else { return "回到最新" }
         return "回到最新 · \(liveFollow.unseenEntryCount) 条新内容"
     }
-
-    private func isUserDriven(_ phase: ScrollPhase) -> Bool {
-        switch phase {
-        case .tracking, .interacting, .decelerating: true
-        case .idle, .animating: false
-        }
-    }
-}
-
-private struct ReaderViewport: Equatable {
-    let offsetY: CGFloat
-    let isAtLiveEdge: Bool
 }

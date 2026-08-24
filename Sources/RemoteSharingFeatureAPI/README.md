@@ -18,7 +18,8 @@ The feature is `Sendable`; state is delivered through an `AsyncStream`.
 
 ## Failure Modes
 
-Transport failures are bounded presentation messages. Credentials are never exposed as state.
+All implementation failures collapse to a fixed, payload-free presentation state. Raw errors, transport
+messages, paths, and credentials are never exposed as state.
 
 ## Tests
 

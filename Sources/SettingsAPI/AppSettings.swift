@@ -6,25 +6,29 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var translationMode: TranslationMode
     public var readerFontSize: Double
     public var showSourceText: Bool
+    public var showTimestamps: Bool
 
     public init(
         selectedAudioDeviceID: String? = nil,
         asrModelID: String = "qwen3-asr-0.6b-int8-2026-03-25",
         translationMode: TranslationMode = .mandarinToEnglish,
         readerFontSize: Double = 28,
-        showSourceText: Bool = true
+        showSourceText: Bool = true,
+        showTimestamps: Bool = true
     ) {
         self.selectedAudioDeviceID = selectedAudioDeviceID
         self.asrModelID = asrModelID
         self.translationMode = translationMode
         self.readerFontSize = Self.clampReaderFontSize(readerFontSize)
         self.showSourceText = showSourceText
+        self.showTimestamps = showTimestamps
     }
 
     public static let defaults = AppSettings()
 
     private enum CodingKeys: String, CodingKey {
         case selectedAudioDeviceID, asrModelID, translationMode, readerFontSize, showSourceText
+        case showTimestamps
     }
 
     public init(from decoder: any Decoder) throws {
@@ -48,6 +52,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         showSourceText =
             try values.decodeIfPresent(Bool.self, forKey: .showSourceText)
             ?? Self.defaults.showSourceText
+        showTimestamps =
+            try values.decodeIfPresent(Bool.self, forKey: .showTimestamps)
+            ?? Self.defaults.showTimestamps
     }
 
     private static func clampReaderFontSize(_ value: Double) -> Double {

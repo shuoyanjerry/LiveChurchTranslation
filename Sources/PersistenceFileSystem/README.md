@@ -5,6 +5,13 @@
 Implements durable, append-oriented transcript storage in per-session
 directories with a manifest, JSON Lines source of truth, and readable Markdown.
 
+The generated `transcript.md` uses Chinese-localized structural labels but is direction-neutral. Its header
+identifies the live meeting or imported audio, includes the optional session title, selected source/target
+languages, start and end times, and integrity state. Every passage has a precise time range and explicit
+`译文` and `识别原文` labels in either supported direction. Session titles, recognized source text, and
+translations are escaped before Markdown rendering so their content cannot create headings, quotations,
+lists, fenced blocks, links, or raw HTML.
+
 ## Public API
 
 `FileTranscriptStore`, an actor implementing `TranscriptStore` and initialized
@@ -33,5 +40,6 @@ or partial audio artifact, including checks performed through a separate store i
 ## Tests
 
 `PersistenceFileSystemTests` covers session creation, restart-safe idempotent
-append, loading, Markdown generation, ordering, and filesystem failures.
+append, loading, structured and injection-safe Markdown generation, ordering, and
+filesystem failures.
 They also prove that active and recoverable recording artifacts cannot be deleted.

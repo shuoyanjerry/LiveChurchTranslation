@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Defines the replaceable speech-recognition boundary and immutable Mandarin recognition values.
+Defines the replaceable speech-recognition boundary and immutable, language-scoped recognition values.
+`ASRRequest.languageCode` selects the source language; the production app currently supplies Mandarin
+or English.
 
 ## Public API
 

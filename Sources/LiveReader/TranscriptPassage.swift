@@ -11,11 +11,13 @@ struct TranscriptPassage: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 26) {
-            Text(timestamp)
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                .foregroundStyle(ChurchTheme.muted.opacity(0.78))
-                .frame(width: 70, alignment: .trailing)
-                .accessibilityLabel("时间点 \(timestamp)")
+            if settings.showTimestamps {
+                Text(timestamp)
+                    .font(.system(size: 13, weight: .regular, design: .monospaced))
+                    .foregroundStyle(ChurchTheme.muted.opacity(0.78))
+                    .frame(width: 70, alignment: .trailing)
+                    .accessibilityLabel("时间点 \(timestamp)")
+            }
             VStack(alignment: .leading, spacing: 10) {
                 Text(entry.targetText)
                     .font(.system(size: settings.readerFontSize, weight: .regular, design: .serif))

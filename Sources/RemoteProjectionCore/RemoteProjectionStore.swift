@@ -6,6 +6,8 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
     var sessionID: UUID?
     var phase = RemoteSessionPhase.idle
     var statusMessage = "等待 Mac 开始"
+    var sourceLanguage: String?
+    var targetLanguage: String?
     var revision: UInt64 = 0
     var entries: [UUID: RemoteTranscriptEntry] = [:]
     var outboxes: [RemotePeerID: PeerOutbox] = [:]
@@ -34,13 +36,45 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
     public func snapshot() -> RemoteProjectionSnapshot { makeSnapshot() }
 
     public func beginSession(id: UUID, message: String = "正在准备本地翻译") {
+        beginSession(
+            id: id,
+            message: message,
+            sourceLanguage: nil,
+            targetLanguage: nil
+        )
+    }
+
+    public func beginSession(
+        id: UUID,
+        message: String,
+        sourceLanguage: String?,
+        targetLanguage: String?
+    ) {
         sessionID = id
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
         entries.removeAll(keepingCapacity: true)
         updateState(phase: .preparing, message: message)
     }
 
     public func updateState(phase newPhase: RemoteSessionPhase, message: String) {
+        updateState(
+            phase: newPhase,
+            message: message,
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage
+        )
+    }
+
+    public func updateState(
+        phase newPhase: RemoteSessionPhase,
+        message: String,
+        sourceLanguage: String?,
+        targetLanguage: String?
+    ) {
         phase = newPhase
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
         statusMessage = String(message.prefix(256))
         revision &+= 1
         broadcast(
@@ -49,6 +83,8 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
                     sessionID: sessionID,
                     phase: phase,
                     message: statusMessage,
+                    sourceLanguage: sourceLanguage,
+                    targetLanguage: targetLanguage,
                     revision: revision
                 )))
     }
@@ -68,6 +104,7 @@ public actor RemoteProjectionStore: RemoteProjectionProviding, RemoteProjectionU
             sourceText: input.sourceText,
             targetText: input.targetText,
             createdAt: input.createdAt,
+            startedMilliseconds: input.startedMilliseconds,
             sourceLanguage: input.sourceLanguage,
             targetLanguage: input.targetLanguage
         )

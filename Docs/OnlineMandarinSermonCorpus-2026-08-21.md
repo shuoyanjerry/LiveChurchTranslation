@@ -91,7 +91,7 @@ This satisfies only the structural 12-sermon, eight-hour, and six-speaker floor.
 
 ## Best Qualification Order
 
-1. Argyle 2025 for ASR, punctuation, and human Chinese-to-English comparison; Argyle 2023 for female antecedent chains and cross-sentence pronoun recovery.
+1. Argyle 2025 for ASR, punctuation, and human Mandarin-to-English comparison; Argyle 2023 for female antecedent chains and cross-sentence pronoun recovery.
 2. Friendship Nancy and Caleb for alternating interpretation, code switching, speaker variation, and long-session endpointing.
 3. ECBC and Living Spring for independent female voices, low-bitrate stress, and endpoint-only evaluation.
 4. WLACBC and REM for male voices, joint-service conditions, theological terms, and one-hour recovery tests.

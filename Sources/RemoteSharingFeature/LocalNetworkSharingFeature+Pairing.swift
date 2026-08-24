@@ -34,7 +34,7 @@ extension LocalNetworkSharingFeature {
             )
             publishOnState()
         } catch {
-            setState(.failed(message: bounded(error)))
+            setState(.failed)
         }
     }
 
@@ -79,7 +79,4 @@ extension LocalNetworkSharingFeature {
         role == .viewer ? .viewer : .operator
     }
 
-    func bounded(_ error: any Error) -> String {
-        String(String(describing: error).prefix(180))
-    }
 }

@@ -17,6 +17,7 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
     public let sourceText: String
     public let targetText: String
     public let createdAt: Date
+    public let startedMilliseconds: Int64?
     public let sourceLanguage: String?
     public let targetLanguage: String?
 
@@ -27,6 +28,7 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
         sourceText: String,
         targetText: String,
         createdAt: Date,
+        startedMilliseconds: Int64? = nil,
         sourceLanguage: String? = nil,
         targetLanguage: String? = nil
     ) {
@@ -36,6 +38,7 @@ public struct RemoteTranscriptEntry: Identifiable, Equatable, Codable, Sendable 
         self.sourceText = sourceText
         self.targetText = targetText
         self.createdAt = createdAt
+        self.startedMilliseconds = startedMilliseconds
         self.sourceLanguage = sourceLanguage
         self.targetLanguage = targetLanguage
     }
@@ -47,18 +50,24 @@ public struct RemoteProjectionSnapshot: Equatable, Codable, Sendable {
     public let phase: RemoteSessionPhase
     public let statusMessage: String
     public let entries: [RemoteTranscriptEntry]
+    public let sourceLanguage: String?
+    public let targetLanguage: String?
 
     public init(
         sessionID: UUID?,
         revision: UInt64,
         phase: RemoteSessionPhase,
         statusMessage: String,
-        entries: [RemoteTranscriptEntry]
+        entries: [RemoteTranscriptEntry],
+        sourceLanguage: String? = nil,
+        targetLanguage: String? = nil
     ) {
         self.sessionID = sessionID
         self.revision = revision
         self.phase = phase
         self.statusMessage = statusMessage
         self.entries = entries
+        self.sourceLanguage = sourceLanguage
+        self.targetLanguage = targetLanguage
     }
 }

@@ -29,8 +29,9 @@ is authorized. A green build is not permission to publish a Release.
 5. Cloud providers may be evaluated later behind the existing provider contracts, but only as an
    explicit privacy/cost choice. They are not required for the offline product and are not a hidden
    fallback.
-6. Listener-facing screens contain ordinary Chinese product language. Model names, error codes,
-   queues, transports, stack messages, and review metadata stay behind the presentation boundary.
+6. The Mac operator interface uses ordinary Chinese product language; the paired reader localizes fixed
+   chrome to the selected target language. Model names, error codes, queues, transports, stack messages,
+   and review metadata stay behind the presentation boundary.
 
 ## Verified baseline
 
@@ -44,8 +45,8 @@ warnings-as-errors build, static dead-code analysis, 17 notarization tests, 4 en
 tests, and 1,112 Swift tests. Full-Xcode-only project checks remain pending because this machine
 currently exposes Command Line Tools rather than Xcode.
 
-The real Hy-MT2 smoke lane on `42db090` passed four Chinese-to-English theological fixtures,
-three Chinese-to-English pronoun fixtures, and twenty-four English-to-Chinese theological
+The real Hy-MT2 smoke lane on `42db090` passed four Mandarin-to-English theological fixtures,
+three Mandarin-to-English pronoun fixtures, and twenty-four English-to-Simplified-Chinese theological
 fixtures. The agreement-safe repair now renders an unresolved spoken Mandarin subject as singular
 `they` only when the following verb form is provably number-invariant; it refuses unsafe repairs
 such as `is`, `was`, `has`, `does`, and `continues`.
@@ -112,6 +113,36 @@ prove Gatekeeper acceptance after download on another Mac. The supported install
 remains Apple Silicon M1 or newer with macOS 15.0 or newer. Developer ID signing, notarization,
 stapling, GitHub quarantine download, and the clean standard-user Mac matrix remain mandatory.
 
+## Post-baseline LAN incident — 2026-08-24
+
+The DMG rehearsal above did not pair a real Safari client or exercise a sequence of masked
+WebSocket frames. Two later reports from that `0.0.0 (24)` engineering application on macOS 15.5
+showed repeatable `EXC_BREAKPOINT` termination after LAN sharing was used. Both crashed in
+`Data._Representation.subscript.getter` from `WebSocketFrameCodec.parseClientFrame(_:)`, reached
+through `NWRemoteConnectionHandler.processWebSocket(_:)`.
+
+The parser mixed offsets relative to the start of a frame with absolute `Data` indices. A buffer
+whose first frame had already been consumed could have a non-zero `startIndex`; later mask and
+payload subscripts then addressed the wrong index space and trapped the whole process. This is an
+application defect, not an operating-system-update prerequisite. The earlier loopback listener
+check remains useful HTTP/header evidence but is explicitly superseded as LAN stability evidence.
+The rehearsal DMG must not be distributed.
+
+The product correction also makes waiting legible without adding alarming pop-ups. Native and
+browser readers preserve the processing sequence as small persistent states: Preparing, Listening,
+Recognizing, Translating, and Finishing; an interrupted native session becomes Incomplete and the
+browser becomes Paused. Sharing additionally distinguishes Connecting, Connected, and Reconnecting.
+Recording duration is separate from the processing phase. Passage
+timestamps remain recorded and visible by default but may be hidden independently in each reader;
+hiding them never changes persisted timing.
+
+The corrected tree passed the complete command-line gate on 2026-08-24, including non-zero `Data`
+index, receive-split/coalesced frame, extended-length, malformed-frame, heartbeat, reconnect,
+revocation, sharing stop/restart, progress-presentation, and timestamp-persistence automation.
+Qualification remains **pending** for a full-Xcode build and repeated iPhone, iPad, and Mac Safari
+cycles on that built app. Until those results are recorded, this incident remains a release blocker;
+no previous packaging or loopback result transfers to the corrected tree.
+
 ## Release gates
 
 A production claim requires current evidence on the exact protected commit:
@@ -124,6 +155,8 @@ A production claim requires current evidence on the exact protected commit:
 - twenty independent three-hour meetings with zero recording frame loss and zero unrecoverable
   transcript gaps after stop, restart, and network interruption;
 - real iPhone Safari, iPad Safari, and Mac browser acceptance on a trusted LAN;
+- the 2026-08-24 WebSocket crash regression matrix, including repeated real-browser heartbeat,
+  reconnect, and stop/restart cycles with zero host-process traps;
 - WAV, AIFF, AAC, M4A, CAF, and a redistributable rights-safe MP3 fixture through the release
   import qualification;
 - clean standard-user Mac install, launch, microphone permission, recording, import, sharing,

@@ -10,8 +10,12 @@ extension LiveReaderHeader {
             } else {
                 StatusPill(
                     text: modelStatusText,
-                    color: statusColor
+                    color: statusColor,
+                    indicatorStyle: statusIndicatorStyle
                 )
+            }
+            if let startedAt = viewModel.recordingStartedAt {
+                RecordingIndicator(startedAt: startedAt)
             }
             Spacer(minLength: 8)
             compactSharingButton
@@ -66,6 +70,10 @@ extension LiveReaderHeader {
                         .padding(.horizontal, 5)
                         .frame(minHeight: 18)
                         .background(ChurchTheme.live.opacity(0.14), in: Capsule())
+                } else if sharingShowsProgress {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .accessibilityHidden(true)
                 } else if let indicatorColor = compactSharingIndicatorColor {
                     Image(systemName: "circle.fill")
                         .font(.system(size: 6, weight: .semibold))

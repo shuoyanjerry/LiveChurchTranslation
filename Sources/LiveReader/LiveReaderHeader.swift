@@ -25,7 +25,8 @@ struct LiveReaderHeader: View {
             title
             StatusPill(
                 text: modelStatusText,
-                color: statusColor
+                color: statusColor,
+                indicatorStyle: statusIndicatorStyle
             )
             if viewModel.modelPreparationSnapshot.canRetry, !viewModel.isRunning {
                 Button("重试", systemImage: "arrow.clockwise") {
@@ -65,7 +66,11 @@ struct LiveReaderHeader: View {
         Button {
             showsSharing.toggle()
         } label: {
-            Label(sharingLabel, systemImage: "antenna.radiowaves.left.and.right")
+            HStack(spacing: 7) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                Text(sharingLabel)
+                sharingStatusIndicator
+            }
         }
         .buttonStyle(ChurchSecondaryButtonStyle())
         .popover(isPresented: $showsSharing, arrowEdge: .bottom) {
@@ -75,6 +80,19 @@ struct LiveReaderHeader: View {
         .accessibilityValue(sharingAccessibilityValue)
         .accessibilityHint("打开共享设置")
         .help("让听众查看实时字幕")
+    }
+
+    @ViewBuilder private var sharingStatusIndicator: some View {
+        if sharingShowsProgress {
+            ProgressView()
+                .controlSize(.mini)
+                .accessibilityHidden(true)
+        } else if let color = compactSharingIndicatorColor {
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
+        }
     }
 
     private var inputMenu: some View {

@@ -37,5 +37,5 @@ public enum LocalSharingViewState: Equatable, Sendable {
         invitation: LocalSharingInvitation?,
         peers: [LocalSharingPeer]
     )
-    case failed(message: String)
+    case failed
 }

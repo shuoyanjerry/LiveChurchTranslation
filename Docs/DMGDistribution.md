@@ -55,10 +55,19 @@ and a newer M-series Mac. Cover macOS 15.0 and the latest supported 15.x release
 
 - verify Gatekeeper acceptance, drag copy, eject, offline launch, and bundled-model readiness;
 - approve microphone access and record a saved meeting;
-- run one Chinese-to-English and one English-to-Chinese live segment;
+- run one Mandarin-to-English and one English-to-Simplified-Chinese live segment;
 - import a supported audio file and reopen its transcript and recording;
 - quit, relaunch, and repeat model preparation without a download;
-- enable sharing and open the listener page from iPhone, iPad, and another Mac on the LAN.
+- confirm the native quiet phases, separate recording duration, and visible-by-default timestamp toggle in
+  both directions;
+- enable sharing and open the listener page from iPhone, iPad, and another Mac on the LAN; verify localized
+  Preparing/Listening/Recognizing/Translating/Finishing/Paused and connection states plus the independent
+  browser timestamp toggle; and
+- replay the 2026-08-24 WebSocket incident matrix: repeated pairing/live updates, coalesced and receive-split
+  frames, at least two heartbeat intervals, forced Wi-Fi reconnect, revocation, and sharing stop/restart
+  without an app crash or hang.
 
-Record the DMG SHA-256, app version/build, Mac model/RAM, macOS version, signing team, notarization
-request IDs, and results. Any failure keeps the GitHub Release in draft.
+Record the DMG SHA-256, app version/build, Mac model/RAM, macOS version, signing team, notarization request
+IDs, browser-device/OS versions, cycle counts, durations, crash/hang result, and results. Any failure keeps
+the GitHub Release in draft. A single successful listener connection is only a smoke test and does not
+supersede the two macOS 15.5 crash reports.

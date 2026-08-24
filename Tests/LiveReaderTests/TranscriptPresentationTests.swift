@@ -1,6 +1,7 @@
 import Foundation
 @testable import LiveReader
 import RemoteSharingFeatureAPI
+import SessionManagementAPI
 import Testing
 
 @Suite struct TranscriptPresentationTests {
@@ -11,6 +12,18 @@ import Testing
 
     @Test func timestampClampsInvalidNegativeOffsets() {
         #expect(TranscriptTimestamp.format(milliseconds: -1_000) == "00:00:00")
+    }
+
+    @Test func liveStatusDescribesTheCurrentPipelineStage() {
+        #expect(LiveSessionStatusPresentation.label(for: .listening) == "正在聆听")
+        #expect(LiveSessionStatusPresentation.label(for: .recognizing) == "正在识别")
+        #expect(LiveSessionStatusPresentation.label(for: .translating) == "正在翻译")
+        #expect(LiveSessionStatusPresentation.label(for: .stopping) == "正在完成")
+    }
+
+    @Test func libraryAudioUsesAUserFacingStorageDescription() {
+        #expect(LibraryAudioPresentation.storageLabel == "已保存在这台 Mac 上")
+        #expect(!LibraryAudioPresentation.storageLabel.contains("recording.caf"))
     }
 
     @Test func sharingStateCarriesOnlyImmutablePresentationValues() {

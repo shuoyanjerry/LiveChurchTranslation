@@ -2,7 +2,10 @@
 
 ## Purpose
 
-Infrastructure adapter for faithful local Chinese-to-English translation with Tencent Hy-MT2 1.8B GGUF. It owns a bundled `llama-server` child process and talks only to its authenticated IPv4 loopback endpoint. The app user does not install llama.cpp or another runtime.
+Infrastructure adapter for faithful local Mandarin-to-English and English-to-Simplified-Chinese
+translation with Tencent Hy-MT2 1.8B GGUF. It owns a bundled `llama-server` child process and talks
+only to its authenticated IPv4 loopback endpoint. The app user does not install llama.cpp or another
+runtime.
 
 ## Public API
 
@@ -13,6 +16,8 @@ Infrastructure adapter for faithful local Chinese-to-English translation with Te
 Each request may carry prior validator-approved `TranslationContextEntry` pairs. The prompt includes only the two newest pairs, labels them as non-output background, and keeps the current source in a separate delimiter. Callers remain responsible for admitting only finalized, persisted translations into this context.
 
 Each request may also carry occurrence-level `TranslationPronounGuidance`.
+The protected-pronoun contract below applies only to Mandarin-source, English-target requests;
+English-source requests do not receive Mandarin occurrence guidance.
 Unresolved spoken *ta* is explicitly neutral even when ASR wrote `他` or `她`;
 verified male/female decisions come only from the upstream evidence policy.
 Verified Christian-deity identity is a separate non-biological decision. Every

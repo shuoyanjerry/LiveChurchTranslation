@@ -22,21 +22,24 @@ extension FileTranscriptStore {
         entryIDs[sessionID] = Set(entries.map(\.id))
     }
 
-    func markdownHeader(for session: TranscriptSession) -> String {
-        "# Live Church Translation\n\n开始时间：\(session.startedAt.formatted())\n\n"
+    func markdownHeader(
+        for session: TranscriptSession,
+        integrity: StoredTranscriptIntegrity = .active
+    ) -> String {
+        TranscriptMarkdown.header(for: session, integrity: integrity)
     }
 
     func markdown(for entry: TranscriptEntry) -> String {
-        "## \(entry.sequence)\n\n\(entry.targetText)\n\n> \(entry.sourceText)\n\n"
+        TranscriptMarkdown.entry(entry)
     }
 
     func completeMarkdown(
         for session: TranscriptSession,
         finalization: TranscriptFinalization
     ) -> String {
-        markdownHeader(for: session)
+        markdownHeader(for: session, integrity: finalization.integrity)
             + session.entries.map(markdown).joined()
-            + "\n---\n\(finalization.markdownNotice)\n"
+            + "---\n\n## 记录状态\n\n\(finalization.markdownNotice)\n"
     }
 
     func loadEntryIDsIfNeeded(sessionID: UUID) throws -> Set<UUID> {
