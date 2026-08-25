@@ -37,8 +37,11 @@ public struct AppWorkspaceView: View {
             VStack(alignment: .leading, spacing: 0) {
                 brand
                 List(WorkspaceSection.allCases, selection: $selection) { section in
-                    Label(section.title, systemImage: section.icon)
-                        .tag(section)
+                    Label(
+                        liveViewModel.settings.displayLanguage.interfaceText(section.title),
+                        systemImage: section.icon
+                    )
+                    .tag(section)
                 }
                 .listStyle(.sidebar)
                 .scrollContentBackground(.hidden)
@@ -62,6 +65,8 @@ public struct AppWorkspaceView: View {
             }
         }
         .frame(minWidth: 900, minHeight: 600)
+        .environment(\.interfaceDisplayLanguage, liveViewModel.settings.displayLanguage)
+        .environment(\.locale, liveViewModel.settings.displayLanguage.locale)
         .task { await permissionCoordinator.load() }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }

@@ -7,12 +7,12 @@ store boundary.
 
 ## Public API
 
-`AppSettings`, including `.defaults`, and `SettingsStore`. `showTimestamps` defaults to `true`; legacy
-encoded settings that predate the field also decode to visible timestamps.
+`AppSettings`, `DisplayLanguage`, `TranslationMode`, and `SettingsStore`. Display language is independent
+of the two translation directions and defaults to Simplified Chinese for legacy settings.
 
 ## Dependencies
 
-Swift standard library only.
+Foundation.
 
 ## Threading Model
 
@@ -26,6 +26,5 @@ are propagated by the implementation.
 
 ## Tests
 
-Session, live-reader, and remote-control tests inject settings-store fakes. Live-reader tests also cover
-the default, legacy decode, and hidden-value round trip for `showTimestamps`. The API target has no
-standalone test target.
+`SettingsAPITests` covers display conversion, defaults, compatibility decoding, round trips, and the
+two-direction invariant. Session, live-reader, and remote-control tests inject settings-store fakes.

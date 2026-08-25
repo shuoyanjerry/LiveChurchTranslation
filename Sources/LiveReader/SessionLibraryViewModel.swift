@@ -26,15 +26,6 @@ public final class SessionLibraryViewModel: ObservableObject {
         self.recoveryArtifacts = recoveryArtifacts
     }
 
-    public var filteredSessions: [StoredSessionSummary] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return sessions }
-        return sessions.filter {
-            $0.displayTitle.localizedStandardContains(query)
-                || $0.recognitionLanguage.localizedStandardContains(query)
-        }
-    }
-
     public var selectedSummary: StoredSessionSummary? {
         sessions.first { $0.id == selectedSessionID }
     }

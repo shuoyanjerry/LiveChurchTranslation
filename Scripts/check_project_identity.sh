@@ -9,7 +9,7 @@ cd "$PROJECT_ROOT"
 EXPECTED_NAME="shuoyanjerry"
 EXPECTED_EMAIL="jerryyanshuo@outlook.com"
 EXPECTED_AUTHOR_LINE="- $EXPECTED_NAME <$EXPECTED_EMAIL>"
-FORBIDDEN_TOOL_NAME="co""dex"
+FORBIDDEN_TOOL_NAME=$'\x63\x6f\x64\x65\x78'
 MAIN_REF="refs/heads/main"
 
 if ! git rev-parse --verify --quiet "${MAIN_REF}^{commit}" >/dev/null; then

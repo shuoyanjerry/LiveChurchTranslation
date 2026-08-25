@@ -8,30 +8,41 @@ struct TranscriptPassage: View {
     let entry: TranscriptEntry
     let settings: AppSettings
     let isLatest: Bool
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 26) {
             if settings.showTimestamps {
-                Text(timestamp)
+                Text(verbatim: timestamp)
                     .font(.system(size: 13, weight: .regular, design: .monospaced))
                     .foregroundStyle(ChurchTheme.muted.opacity(0.78))
                     .frame(width: 70, alignment: .trailing)
-                    .accessibilityLabel("时间点 \(timestamp)")
+                    .accessibilityLabel(
+                        Text(
+                            verbatim: displayLanguage.interfaceText("时间点")
+                                + " \(timestamp)"
+                        )
+                    )
             }
             VStack(alignment: .leading, spacing: 10) {
-                Text(entry.targetText)
+                Text(verbatim: entry.targetText)
                     .font(.system(size: settings.readerFontSize, weight: .regular, design: .serif))
                     .foregroundStyle(ChurchTheme.ink)
                     .lineSpacing(7)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if settings.showSourceText {
-                    Text(entry.sourceText)
+                    Text(verbatim: entry.sourceText)
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(ChurchTheme.muted)
                         .lineSpacing(3)
                         .textSelection(.enabled)
-                        .accessibilityLabel("识别原文：\(entry.sourceText)")
+                        .accessibilityLabel(
+                            Text(
+                                verbatim: displayLanguage.interfaceText("识别原文：")
+                                    + entry.sourceText
+                            )
+                        )
                 }
             }
         }
@@ -44,7 +55,13 @@ struct TranscriptPassage: View {
                     .accessibilityHidden(true)
             }
         }
-        .accessibilityValue(isLatest ? "最新翻译" : "")
+        .accessibilityValue(
+            Text(
+                verbatim: isLatest
+                    ? displayLanguage.interfaceText("最新翻译")
+                    : ""
+            )
+        )
     }
 
     private var timestamp: String {

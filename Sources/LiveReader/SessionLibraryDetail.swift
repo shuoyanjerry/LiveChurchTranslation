@@ -1,9 +1,11 @@
 import PersistenceAPI
+import SettingsAPI
 import SwiftUI
 import TranscriptAPI
 import UIDesignSystem
 
 struct SessionLibraryDetail: View {
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
     @ObservedObject var viewModel: SessionLibraryViewModel
     @Binding var confirmsDeletion: Bool
     let onRetranscribe: (StoredSessionSummary) -> Void
@@ -19,9 +21,9 @@ struct SessionLibraryDetail: View {
                     }
             } else {
                 ContentUnavailableView(
-                    "选择一个项目",
+                    displayLanguage.interfaceText("选择一个项目"),
                     systemImage: "text.alignleft",
-                    description: Text("在左侧选择录音或听抄稿。")
+                    description: Text(displayLanguage.interfaceText("在左侧选择录音或听抄稿。"))
                 )
             }
         }
@@ -71,9 +73,9 @@ struct SessionLibraryDetail: View {
     @ViewBuilder private func transcriptEntries(_ session: TranscriptSession) -> some View {
         if session.entries.isEmpty {
             ContentUnavailableView(
-                "尚无听抄内容",
+                displayLanguage.interfaceText("尚无听抄内容"),
                 systemImage: "quote.bubble",
-                description: Text("处理完成的文字会显示在这里。")
+                description: Text(displayLanguage.interfaceText("处理完成的文字会显示在这里。"))
             )
             .frame(maxWidth: .infinity, minHeight: 320)
         } else {
@@ -103,11 +105,11 @@ struct SessionLibraryDetail: View {
 
     private func summaryTitle(_ summary: StoredSessionSummary) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(summary.displayTitle)
+            Text(verbatim: summary.displayTitle)
                 .font(.system(size: 23, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            Text(summary.recognitionLanguage)
+            Text(summary.recognitionLanguage(displayLanguage: displayLanguage))
                 .font(.callout)
                 .foregroundStyle(ChurchTheme.muted)
         }
@@ -115,16 +117,17 @@ struct SessionLibraryDetail: View {
 
     private var detailActions: some View {
         HStack(spacing: 12) {
-            Button("在访达中显示", systemImage: "folder") {
+            Button(displayLanguage.interfaceText("在访达中显示"), systemImage: "folder") {
                 viewModel.revealSelected()
             }
-            Button("删除", systemImage: "trash", role: .destructive) {
+            Button(displayLanguage.interfaceText("删除"), systemImage: "trash", role: .destructive) {
                 confirmsDeletion = true
             }
             .disabled(viewModel.selectedSessionIsActive || viewModel.isImporting)
             .help(
                 viewModel.selectedSessionIsActive || viewModel.isImporting
-                    ? "请先等待当前处理完成。" : "删除这场会议"
+                    ? displayLanguage.interfaceText("请先等待当前处理完成。")
+                    : displayLanguage.interfaceText("删除这场会议")
             )
         }
     }

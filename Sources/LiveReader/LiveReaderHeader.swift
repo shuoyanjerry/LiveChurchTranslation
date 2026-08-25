@@ -1,4 +1,5 @@
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -9,6 +10,7 @@ struct LiveReaderHeader: View {
     @Binding var showsSharing: Bool
     let sharingState: LocalSharingViewState
     let onSharingIntent: LocalSharingIntentHandler
+    @Environment(\.interfaceDisplayLanguage) var displayLanguage
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -100,10 +102,7 @@ struct LiveReaderHeader: View {
             microphonePicker
         } label: {
             InlineMenuLabel(
-                title: MicrophoneControlPresentation.title(
-                    selectedInputName: selectedInputName,
-                    expanded: true
-                ),
+                title: microphoneControlTitle(expanded: true),
                 systemImage: "mic"
             )
         }
@@ -111,8 +110,14 @@ struct LiveReaderHeader: View {
         .buttonStyle(ChurchSecondaryButtonStyle())
         .fixedSize(horizontal: true, vertical: false)
         .disabled(viewModel.sessionControlsLocked)
-        .accessibilityLabel(MicrophoneControlPresentation.settingsTitle)
-        .accessibilityValue(selectedInputName)
+        .accessibilityLabel(
+            Text(
+                verbatim: displayLanguage.interfaceText(
+                    MicrophoneControlPresentation.settingsTitle
+                )
+            )
+        )
+        .accessibilityValue(Text(verbatim: selectedInputName))
         .help(selectedInputName)
     }
 }

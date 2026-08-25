@@ -1,7 +1,9 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct MicrophonePermissionGuidanceView: View {
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
     @ObservedObject var coordinator: MicrophonePermissionCoordinator
 
     var body: some View {
@@ -14,10 +16,10 @@ struct MicrophonePermissionGuidanceView: View {
                     .background(ChurchTheme.surfaceWarm, in: Circle())
                     .accessibilityHidden(true)
                 VStack(spacing: 8) {
-                    Text(title)
+                    Text(displayLanguage.interfaceText(title))
                         .font(.system(size: 23, weight: .semibold, design: .rounded))
                         .foregroundStyle(ChurchTheme.ink)
-                    Text(message)
+                    Text(displayLanguage.interfaceText(message))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(ChurchTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -28,7 +30,7 @@ struct MicrophonePermissionGuidanceView: View {
             .padding(.bottom, 28)
             Divider().overlay(ChurchTheme.stone)
             HStack(spacing: 12) {
-                Button("稍后") { coordinator.deferGuidance() }
+                Button(displayLanguage.interfaceText("稍后")) { coordinator.deferGuidance() }
                     .buttonStyle(ChurchSecondaryButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 primaryButton
@@ -48,18 +50,22 @@ struct MicrophonePermissionGuidanceView: View {
                 if coordinator.isRequesting {
                     ProgressView().controlSize(.small)
                 } else {
-                    Label("允许麦克风", systemImage: "mic.fill")
+                    Label(displayLanguage.interfaceText("允许麦克风"), systemImage: "mic.fill")
                 }
             }
             .buttonStyle(ChurchPrimaryButtonStyle())
             .disabled(coordinator.isRequesting)
             .keyboardShortcut(.defaultAction)
-            .accessibilityLabel(coordinator.isRequesting ? "正在请求麦克风权限" : "允许麦克风")
+            .accessibilityLabel(
+                displayLanguage.interfaceText(
+                    coordinator.isRequesting ? "正在请求麦克风权限" : "允许麦克风"
+                )
+            )
         case .denied, .restricted:
             Button {
                 coordinator.openSystemSettings()
             } label: {
-                Label("打开系统设置", systemImage: "gear")
+                Label(displayLanguage.interfaceText("打开系统设置"), systemImage: "gear")
             }
             .buttonStyle(ChurchPrimaryButtonStyle())
             .keyboardShortcut(.defaultAction)

@@ -1,5 +1,6 @@
 import AppKit
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -25,7 +26,7 @@ extension LocalSharingPopover {
         Button {
             onIntent(intent)
         } label: {
-            Label(title, systemImage: icon)
+            Label(displayLanguage.interfaceText(title), systemImage: icon)
         }
         .buttonStyle(ChurchSecondaryButtonStyle())
     }
@@ -41,13 +42,15 @@ extension LocalSharingPopover {
     }
 
     var statusLabel: String {
-        switch state {
-        case .off: "共享已关闭"
-        case .starting: "正在启动共享"
-        case .on: "共享已开启"
-        case .localNetworkPermissionDenied: "未获得本地网络权限"
-        case .failed: "共享失败"
-        }
+        let simplifiedText =
+            switch state {
+            case .off: "共享已关闭"
+            case .starting: "正在启动共享"
+            case .on: "共享已开启"
+            case .localNetworkPermissionDenied: "未获得本地网络权限"
+            case .failed: "共享失败"
+            }
+        return displayLanguage.interfaceText(simplifiedText)
     }
 
     func openLocalNetworkSettings() {

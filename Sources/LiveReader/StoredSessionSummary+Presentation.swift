@@ -9,7 +9,12 @@ extension StoredSessionSummary {
     }
 
     var recognitionLanguage: String {
-        "识别语言：\(sourceLanguage.recognitionLanguageName)"
+        recognitionLanguage(displayLanguage: .simplifiedChinese)
+    }
+
+    func recognitionLanguage(displayLanguage: DisplayLanguage) -> String {
+        let prefix = displayLanguage.interfaceText("识别语言：")
+        return prefix + sourceLanguage.recognitionLanguageName(displayLanguage: displayLanguage)
     }
 
     var storedRecognitionMode: TranslationMode? {
@@ -43,15 +48,17 @@ extension String {
         return nil
     }
 
-    fileprivate var recognitionLanguageName: String {
+    fileprivate func recognitionLanguageName(displayLanguage: DisplayLanguage) -> String {
         switch recognitionMode {
-        case .mandarinToEnglish: "普通话"
-        case .englishToSimplifiedChinese: "英语"
-        case nil: localizedLanguageName
+        case .mandarinToEnglish:
+            return displayLanguage.interfaceText("普通话")
+        case .englishToSimplifiedChinese:
+            return displayLanguage.interfaceText("英语")
+        case nil:
+            let simplifiedName =
+                Locale(identifier: "zh-Hans")
+                .localizedString(forLanguageCode: self) ?? self
+            return displayLanguage.interfaceText(simplifiedName)
         }
-    }
-
-    fileprivate var localizedLanguageName: String {
-        Locale(identifier: "zh-Hans").localizedString(forLanguageCode: self) ?? self
     }
 }

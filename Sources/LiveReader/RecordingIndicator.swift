@@ -1,8 +1,10 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct RecordingIndicator: View {
     let startedAt: Date
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
 
     var body: some View {
         TimelineView(.periodic(from: startedAt, by: 1)) { context in
@@ -10,13 +12,15 @@ struct RecordingIndicator: View {
                 Circle()
                     .fill(ChurchTheme.danger)
                     .frame(width: 7, height: 7)
-                Text(elapsed(at: context.date))
+                Text(verbatim: elapsed(at: context.date))
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundStyle(ChurchTheme.muted)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("正在录音")
-            .accessibilityValue(elapsed(at: context.date))
+            .accessibilityLabel(
+                Text(verbatim: displayLanguage.interfaceText("正在录音"))
+            )
+            .accessibilityValue(Text(verbatim: elapsed(at: context.date)))
         }
     }
 

@@ -9,11 +9,11 @@ struct LibraryTranscriptEntry: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 22) {
-            Text(TranscriptTimestamp.format(milliseconds: entry.startedMilliseconds))
+            Text(verbatim: TranscriptTimestamp.format(milliseconds: entry.startedMilliseconds))
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(ChurchTheme.muted)
                 .frame(width: 68, alignment: .trailing)
-            Text(displayText)
+            Text(verbatim: displayText)
                 .font(.system(size: 22, design: .serif))
                 .lineSpacing(5)
                 .foregroundStyle(ChurchTheme.ink)

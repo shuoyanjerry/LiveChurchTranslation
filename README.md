@@ -9,6 +9,8 @@ and can share a read-only live view with paired devices on a trusted local netwo
 ## Features
 
 - On-device speech recognition and translation with no cloud inference.
+- A Simplified or Traditional Chinese app interface, selectable independently of the translation
+  direction.
 - Selectable audio input, complete local recording, crash recovery, and a searchable
   source-transcript library.
 - Source-language transcription from WAV, AIFF/AIFC, CAF, AAC/M4A, MP3, FLAC, MOV, MP4, and M4V;

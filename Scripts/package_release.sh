@@ -133,6 +133,8 @@ ditto "$REPOSITORY_ROOT/Packaging/PrivacyInfo.xcprivacy" \
   "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
 ditto "$REPOSITORY_ROOT/Packaging/zh-Hans.lproj" \
   "$APP/Contents/Resources/zh-Hans.lproj"
+ditto "$REPOSITORY_ROOT/Packaging/zh-Hant.lproj" \
+  "$APP/Contents/Resources/zh-Hant.lproj"
 ditto "$REPOSITORY_ROOT/Packaging/Licenses" \
   "$APP/Contents/Resources/Licenses"
 ditto --clone "$MODELS" "$APP/Contents/Resources/Models"

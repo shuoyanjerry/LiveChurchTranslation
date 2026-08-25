@@ -22,7 +22,9 @@ MODEL_SHA_MANIFEST="$REPOSITORY_ROOT/Packaging/ProductionModels.sha256"
 MODEL_SIZE_MANIFEST="$REPOSITORY_ROOT/Packaging/ProductionModels.sizes"
 LICENSE_MANIFEST="$REPOSITORY_ROOT/Packaging/LicenseFiles.sha256"
 LICENSE_ROOT="$REPOSITORY_ROOT/Packaging/Licenses"
-ZH_INFO="$REPOSITORY_ROOT/Packaging/zh-Hans.lproj/InfoPlist.strings"
+ZH_HANS_INFO="$REPOSITORY_ROOT/Packaging/zh-Hans.lproj/InfoPlist.strings"
+ZH_HANT_INFO="$REPOSITORY_ROOT/Packaging/zh-Hant.lproj/InfoPlist.strings"
+ZH_HANT_LOCALIZABLE="$REPOSITORY_ROOT/Packaging/zh-Hant.lproj/Localizable.strings"
 ICON="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation.icns"
 ICON_SOURCE="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation-1024.png"
 ICON_MASTER="$REPOSITORY_ROOT/Assets/AppIconLiveChurchTranslation-master.png"
@@ -165,12 +167,19 @@ rg -Fq 'shasum -a 256 -c "$(basename "$DSYM_CHECKSUM")"' \
   || fail "CFBundleDisplayName must be Live Church Translation"
 [[ "$(plist_value "$INFO" "CFBundleDevelopmentRegion")" == "zh-Hans" ]] \
   || fail "Simplified Chinese must be the development language"
-[[ -f "$ZH_INFO" ]] || fail "Simplified Chinese InfoPlist localization is missing"
-plutil -lint "$ZH_INFO" >/dev/null || fail "Simplified Chinese InfoPlist localization is invalid"
-[[ "$(plist_value "$ZH_INFO" "CFBundleName")" == "Live Church Translation" ]] \
+[[ -f "$ZH_HANS_INFO" ]] || fail "Simplified Chinese InfoPlist localization is missing"
+[[ -f "$ZH_HANT_INFO" ]] || fail "Traditional Chinese InfoPlist localization is missing"
+[[ -f "$ZH_HANT_LOCALIZABLE" ]] || fail "Traditional Chinese interface localization is missing"
+plutil -lint "$ZH_HANS_INFO" "$ZH_HANT_INFO" "$ZH_HANT_LOCALIZABLE" >/dev/null \
+  || fail "Chinese localization resources are invalid"
+[[ "$(plist_value "$ZH_HANS_INFO" "CFBundleName")" == "Live Church Translation" ]] \
   || fail "localized CFBundleName must preserve the product name"
-[[ "$(plist_value "$ZH_INFO" "CFBundleDisplayName")" == "Live Church Translation" ]] \
+[[ "$(plist_value "$ZH_HANS_INFO" "CFBundleDisplayName")" == "Live Church Translation" ]] \
   || fail "localized CFBundleDisplayName must preserve the product name"
+[[ "$(plist_value "$ZH_HANT_INFO" "CFBundleName")" == "Live Church Translation" ]] \
+  || fail "Traditional Chinese CFBundleName must preserve the product name"
+[[ "$(plist_value "$ZH_HANT_INFO" "CFBundleDisplayName")" == "Live Church Translation" ]] \
+  || fail "Traditional Chinese CFBundleDisplayName must preserve the product name"
 [[ -n "$(plist_value "$INFO" "NSMicrophoneUsageDescription")" ]] \
   || fail "microphone usage description is missing"
 [[ -n "$(plist_value "$INFO" "NSLocalNetworkUsageDescription")" ]] \
@@ -181,12 +190,44 @@ plutil -lint "$ZH_INFO" >/dev/null || fail "Simplified Chinese InfoPlist localiz
 [[ "$(plist_value "$INFO" "NSLocalNetworkUsageDescription")" \
   == "用于向同一网络的听众显示实时字幕。" ]] \
   || fail "local-network usage description must match the reviewed concise copy"
-[[ "$(plist_value "$ZH_INFO" "NSMicrophoneUsageDescription")" \
+[[ "$(plist_value "$ZH_HANS_INFO" "NSMicrophoneUsageDescription")" \
   == "用于实时语音识别、翻译和录音。" ]] \
   || fail "localized microphone usage description differs from the reviewed copy"
-[[ "$(plist_value "$ZH_INFO" "NSLocalNetworkUsageDescription")" \
+[[ "$(plist_value "$ZH_HANS_INFO" "NSLocalNetworkUsageDescription")" \
   == "用于向同一网络的听众显示实时字幕。" ]] \
   || fail "localized local-network usage description differs from the reviewed copy"
+[[ "$(plist_value "$ZH_HANT_INFO" "NSMicrophoneUsageDescription")" \
+  == "用於實時語音識別、翻譯和錄音。" ]] \
+  || fail "Traditional Chinese microphone usage description differs from the reviewed copy"
+[[ "$(plist_value "$ZH_HANT_INFO" "NSLocalNetworkUsageDescription")" \
+  == "用於向同一網絡的聽眾顯示實時字幕。" ]] \
+  || fail "Traditional Chinese local-network usage description differs from the reviewed copy"
+[[ "$(grep -c '^\"' "$ZH_HANT_LOCALIZABLE" | tr -d ' ')" -ge 180 ]] \
+  || fail "Traditional Chinese interface localization is unexpectedly incomplete"
+rg -Fq '"显示" = "顯示";' "$ZH_HANT_LOCALIZABLE" \
+  || fail "Traditional Chinese interface localization lacks representative navigation copy"
+rg -Fq '"正在聆听" = "正在聆聽";' "$ZH_HANT_LOCALIZABLE" \
+  || fail "Traditional Chinese interface localization lacks representative status copy"
+rg -Fq '"隐私与数据" = "隱私與數據";' "$ZH_HANT_LOCALIZABLE" \
+  || fail "Traditional Chinese interface localization lacks representative privacy copy"
+if rg -Fq '"（重新听抄）"' "$ZH_HANT_LOCALIZABLE"; then
+  fail "persistent session-title content must not be included in interface localization"
+fi
+rg -Fq -- '- zh-Hans.lproj/**' \
+  "$REPOSITORY_ROOT/Packaging/XcodeGen/project.yml" \
+  || fail "Xcode project specification does not embed Simplified Chinese resources"
+rg -Fq -- '- zh-Hant.lproj/**' \
+  "$REPOSITORY_ROOT/Packaging/XcodeGen/project.yml" \
+  || fail "Xcode project specification does not embed Traditional Chinese resources"
+rg -Fq '"zh-Hant",' \
+  "$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj/project.pbxproj" \
+  || fail "generated Xcode project does not declare Traditional Chinese support"
+rg -Fq 'isa = PBXVariantGroup;' \
+  "$REPOSITORY_ROOT/LiveChurchTranslation.xcodeproj/project.pbxproj" \
+  || fail "generated Xcode project does not preserve localized InfoPlist variants"
+rg -Fq 'ditto "$REPOSITORY_ROOT/Packaging/zh-Hant.lproj"' \
+  "$SCRIPT_DIR/package_release.sh" \
+  || fail "release packaging does not embed Traditional Chinese resources"
 [[ "$(plutil -extract NSAppTransportSecurity json -o - "$INFO")" \
   == '{"NSAllowsLocalNetworking":true}' ]] \
   || fail "ATS must allow only local networking without broad cleartext exceptions"

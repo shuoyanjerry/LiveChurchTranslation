@@ -29,6 +29,7 @@ import Testing
         viewModel.settings.readerFontSize = 36
         viewModel.settings.showSourceText = false
         viewModel.settings.showTimestamps = false
+        viewModel.settings.displayLanguage = .traditionalChinese
         viewModel.selectedInputID = AudioInputID(rawValue: "bypass-attempt")
         #expect(await viewModel.saveSettings())
         let persisted = await settings.current()
@@ -37,6 +38,7 @@ import Testing
         #expect(persisted.readerFontSize == 36)
         #expect(!persisted.showSourceText)
         #expect(!persisted.showTimestamps)
+        #expect(persisted.displayLanguage == .traditionalChinese)
 
         await viewModel.toggleSession()
         #expect(await controller.startCount() == 0)

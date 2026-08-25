@@ -1,6 +1,7 @@
 import AudioImportAPI
 import Foundation
 @testable import LiveReader
+import SettingsAPI
 import Testing
 import TranscriptAPI
 import UniformTypeIdentifiers

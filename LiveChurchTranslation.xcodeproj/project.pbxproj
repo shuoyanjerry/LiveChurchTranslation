@@ -11,8 +11,9 @@
 		1D0888D5497B55939BB3DD27 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = D0F085E5ED91626733549483 /* PRIVACY.md */; };
 		43BC9F5339BAB94EF85209B3 /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FB5E44EA634F60A283D9710 /* AppIcon.xcassets */; };
 		72F1B80A0FF59CCDB87B14FC /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = AAFF3080F796809B9EDF4A70 /* THIRD_PARTY_NOTICES.md */; };
-		AB4D943FDC0C383A33D8547E /* zh-Hans.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 523605BF38A89C67FFEF5784 /* zh-Hans.lproj */; };
 		BBEABA89E95D7D1F5618071B /* LiveChurchTranslationMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F3479F89AEA99B0EA2ED47 /* LiveChurchTranslationMain.swift */; };
+		BEE68FE6BD0034F12E892E34 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7F6DC01A1BDB3A8796CA944E /* Localizable.strings */; };
+		D4EE684A56044924C338211C /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 15ADF641C0CD82C90D2FE6D9 /* InfoPlist.strings */; };
 		F3282AB418D1810F61D57BB1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5DFF8BC09B836AE3828F6284 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -23,14 +24,16 @@
 		1FB5E44EA634F60A283D9710 /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
 		299CAC13B6BF4E7C63D827A4 /* AppStoreSubmission.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AppStoreSubmission.md; sourceTree = "<group>"; };
 		32F3479F89AEA99B0EA2ED47 /* LiveChurchTranslationMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveChurchTranslationMain.swift; sourceTree = "<group>"; };
+		35AEB3B4E69C815D78FE9FE6 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		3A862E01D12B765FC9F802F5 /* Qwen3-ASR-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Qwen3-ASR-LICENSE.txt"; sourceTree = "<group>"; };
-		523605BF38A89C67FFEF5784 /* zh-Hans.lproj */ = {isa = PBXFileReference; path = "zh-Hans.lproj"; sourceTree = "<group>"; };
 		5DFF8BC09B836AE3828F6284 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		68CCDA3CB75A02F37C34CE71 /* Live Church Translation.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Live Church Translation.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6DA66DBBD9ECD0F527A9BF2B /* Helper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Helper.entitlements; sourceTree = "<group>"; };
 		74D5A10FF0383E7A7E4D635D /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
 		764FD4043598C163B7A03FA6 /* LlamaRuntime.sha256 */ = {isa = PBXFileReference; path = LlamaRuntime.sha256; sourceTree = "<group>"; };
+		7F6DC01A1BDB3A8796CA944E /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		7F77B69B889AF5755FC63E8B /* sherpa-onnx-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "sherpa-onnx-LICENSE.txt"; sourceTree = "<group>"; };
+		9283408321B0AE6C0696B02A /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		9CDBB86A6D369112D0156E9E /* Qwen3-ASR-NOTICE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Qwen3-ASR-NOTICE.txt"; sourceTree = "<group>"; };
 		AAFF3080F796809B9EDF4A70 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 		B8BCDEC486704E3FA546CE9B /* LicenseFiles.sha256 */ = {isa = PBXFileReference; path = LicenseFiles.sha256; sourceTree = "<group>"; };
@@ -150,11 +153,12 @@
 				B8BCDEC486704E3FA546CE9B /* LicenseFiles.sha256 */,
 				DB695D7EF2D86BD463ABA6DC /* LiveChurchTranslation.entitlements */,
 				764FD4043598C163B7A03FA6 /* LlamaRuntime.sha256 */,
+				7F6DC01A1BDB3A8796CA944E /* Localizable.strings */,
 				5DFF8BC09B836AE3828F6284 /* PrivacyInfo.xcprivacy */,
 				01639A3445A2ADA6CF03C919 /* ProductionModels.sha256 */,
 				F3E029CA6EBCC5ABD3C13FFA /* ProductionModels.sizes */,
-				523605BF38A89C67FFEF5784 /* zh-Hans.lproj */,
 				70C4FB8F50DE18CDE745EBBF /* AppHost */,
+				15ADF641C0CD82C90D2FE6D9 /* InfoPlist.strings */,
 				3E6E411E319ED9EC611193FE /* Licenses */,
 				2284089A3CE33FE1ADDE1427 /* XcodeGen */,
 			);
@@ -206,6 +210,7 @@
 			knownRegions = (
 				Base,
 				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = 41644B66180A51174FA4659E;
 			minimizedProjectReferenceProxies = 1;
@@ -228,10 +233,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				43BC9F5339BAB94EF85209B3 /* AppIcon.xcassets in Resources */,
+				D4EE684A56044924C338211C /* InfoPlist.strings in Resources */,
+				BEE68FE6BD0034F12E892E34 /* Localizable.strings in Resources */,
 				1D0888D5497B55939BB3DD27 /* PRIVACY.md in Resources */,
 				F3282AB418D1810F61D57BB1 /* PrivacyInfo.xcprivacy in Resources */,
 				72F1B80A0FF59CCDB87B14FC /* THIRD_PARTY_NOTICES.md in Resources */,
-				AB4D943FDC0C383A33D8547E /* zh-Hans.lproj in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,6 +339,18 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		15ADF641C0CD82C90D2FE6D9 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				35AEB3B4E69C815D78FE9FE6 /* zh-Hans */,
+				9283408321B0AE6C0696B02A /* zh-Hant */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		8728F3BD98D51B1616B922EE /* Debug */ = {

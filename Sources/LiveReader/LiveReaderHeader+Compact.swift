@@ -1,3 +1,4 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -101,10 +102,7 @@ extension LiveReaderHeader {
             microphonePicker
         } label: {
             InlineMenuLabel(
-                title: MicrophoneControlPresentation.title(
-                    selectedInputName: selectedInputName,
-                    expanded: false
-                ),
+                title: microphoneControlTitle(expanded: false),
                 systemImage: "mic"
             )
             .frame(minHeight: 44)
@@ -115,8 +113,14 @@ extension LiveReaderHeader {
         .fixedSize(horizontal: true, vertical: false)
         .foregroundStyle(ChurchTheme.ink)
         .disabled(viewModel.sessionControlsLocked)
-        .accessibilityLabel(MicrophoneControlPresentation.settingsTitle)
-        .accessibilityValue(selectedInputName)
+        .accessibilityLabel(
+            Text(
+                verbatim: displayLanguage.interfaceText(
+                    MicrophoneControlPresentation.settingsTitle
+                )
+            )
+        )
+        .accessibilityValue(Text(verbatim: selectedInputName))
         .help(selectedInputName)
     }
 }

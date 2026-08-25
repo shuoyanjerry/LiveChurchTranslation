@@ -1,16 +1,18 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct PrivacyView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("隐私与数据")
+                Text(displayLanguage.interfaceText("隐私与数据"))
                     .font(.title2.weight(.semibold))
                 Spacer()
-                Button("完成") { dismiss() }
+                Button(displayLanguage.interfaceText("完成")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
             .padding(24)
@@ -33,7 +35,7 @@ struct PrivacyView: View {
                         "录音",
                         "开始前请告知现场人员。"
                     )
-                    Text("隐私联系：jerryyanshuo@outlook.com")
+                    Text(displayLanguage.interfaceText("隐私联系：jerryyanshuo@outlook.com"))
                         .font(.caption)
                         .foregroundStyle(ChurchTheme.muted)
                 }
@@ -46,8 +48,8 @@ struct PrivacyView: View {
 
     private func section(_ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(.headline)
-            Text(text)
+            Text(displayLanguage.interfaceText(title)).font(.headline)
+            Text(displayLanguage.interfaceText(text))
                 .font(.body)
                 .foregroundStyle(ChurchTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)

@@ -1,9 +1,11 @@
 import GlossaryAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct GlossaryEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
     @State private var entries: [GlossaryEntry]
     @State private var isWorking = false
     @State private var operationFailed = false
@@ -23,15 +25,15 @@ struct GlossaryEditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("属灵术语表").font(.title2.bold())
+                Text(displayLanguage.interfaceText("属灵术语表")).font(.title2.bold())
                 Spacer()
-                Button("恢复默认") {
+                Button(displayLanguage.interfaceText("恢复默认")) {
                     restoreDefaults()
                 }
                 Button {
                     entries.append(GlossaryEntry(source: "", target: ""))
                 } label: {
-                    Label("添加", systemImage: "plus")
+                    Label(displayLanguage.interfaceText("添加"), systemImage: "plus")
                 }
             }
             .padding()
@@ -46,14 +48,14 @@ struct GlossaryEditorView: View {
             Divider()
             HStack {
                 if operationFailed {
-                    Text("请检查词条后重试。")
+                    Text(displayLanguage.interfaceText("请检查词条后重试。"))
                         .font(.caption)
                         .foregroundStyle(ChurchTheme.danger)
                 }
                 Spacer()
-                Button("取消") { dismiss() }
+                Button(displayLanguage.interfaceText("取消")) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("保存") {
+                Button(displayLanguage.interfaceText("保存")) {
                     save()
                 }
                 .keyboardShortcut(.defaultAction)

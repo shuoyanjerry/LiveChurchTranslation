@@ -144,7 +144,11 @@ extension LiveReaderViewModel {
             }
             let phase = DesignQAPreviewFixture.phase
             let captureStartedAt = DesignQAPreviewFixture.captureStartedAt(for: phase)
-            settings = AppSettings(readerFontSize: 30, showSourceText: false)
+            settings = AppSettings(
+                displayLanguage: DesignQAPreviewFixture.displayLanguage,
+                readerFontSize: 30,
+                showSourceText: false
+            )
             snapshot = LiveSessionSnapshot(
                 sessionID: DesignQAPreviewFixture.sessionID(for: phase),
                 phase: phase,

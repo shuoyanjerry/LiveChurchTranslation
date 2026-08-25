@@ -1,8 +1,11 @@
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct LocalSharingPopover: View {
+    @Environment(\.interfaceDisplayLanguage) var displayLanguage
+
     let state: LocalSharingViewState
     let onIntent: LocalSharingIntentHandler
 
@@ -23,7 +26,7 @@ struct LocalSharingPopover: View {
                 Text("听众共享")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(ChurchTheme.ink)
-                Text(LocalSharingPresentation.subtitle)
+                Text(displayLanguage.interfaceText(LocalSharingPresentation.subtitle))
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
             }
@@ -54,8 +57,12 @@ struct LocalSharingPopover: View {
                 Text("正在开启共享…")
             }
         case .localNetworkPermissionDenied:
-            Text(LocalSharingPresentation.localNetworkPermissionMessage)
-                .foregroundStyle(ChurchTheme.muted)
+            Text(
+                displayLanguage.interfaceText(
+                    LocalSharingPresentation.localNetworkPermissionMessage
+                )
+            )
+            .foregroundStyle(ChurchTheme.muted)
             Button {
                 openLocalNetworkSettings()
             } label: {
@@ -84,8 +91,14 @@ struct LocalSharingPopover: View {
         _ peers: [LocalSharingPeer]
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(connectionCount == 0 ? "等待听众连接" : "\(connectionCount) 台设备正在查看")
-                .font(.callout.weight(.medium))
+            Text(
+                displayLanguage.interfaceText(
+                    connectionCount == 0
+                        ? "等待听众连接"
+                        : "\(connectionCount) 台设备正在查看"
+                )
+            )
+            .font(.callout.weight(.medium))
             if let invitation = LocalSharingPresentation.visibleInvitation(invitation) {
                 invitationView(invitation)
             } else {

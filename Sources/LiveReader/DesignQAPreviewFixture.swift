@@ -1,6 +1,7 @@
 #if DEBUG
     import Foundation
     import SessionManagementAPI
+    import SettingsAPI
     import TranscriptAPI
 
     enum DesignQAPreviewFixture {
@@ -24,6 +25,13 @@
                 forKey: "LiveChurchTranslationDesignPreviewRecordingSeconds"
             )
             return elapsed > 0 ? Date().addingTimeInterval(-elapsed) : nil
+        }
+
+        static var displayLanguage: DisplayLanguage {
+            let identifier = UserDefaults.standard.string(
+                forKey: "LiveChurchTranslationDesignPreviewDisplayLanguage"
+            )
+            return identifier.flatMap(DisplayLanguage.init(rawValue:)) ?? .simplifiedChinese
         }
 
         static func sessionID(for phase: LiveSessionPhase) -> UUID? {

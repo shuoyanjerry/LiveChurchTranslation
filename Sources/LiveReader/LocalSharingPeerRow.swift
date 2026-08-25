@@ -1,8 +1,11 @@
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct LocalSharingPeerRow: View {
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
+
     let peer: LocalSharingPeer
     let onIntent: LocalSharingIntentHandler
 
@@ -12,10 +15,10 @@ struct LocalSharingPeerRow: View {
                 .foregroundStyle(ChurchTheme.olive)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(peer.name)
+                Text(verbatim: peer.name)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(ChurchTheme.ink)
-                Text(peer.role.displayName)
+                Text(displayLanguage.interfaceText(peer.role.displayName))
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.muted)
             }
@@ -29,7 +32,9 @@ struct LocalSharingPeerRow: View {
                     .frame(width: 28, height: 28)
             }
             .menuStyle(.borderlessButton)
-            .accessibilityLabel("\(peer.name) 的操作")
+            .accessibilityLabel(
+                Text(verbatim: "\(peer.name) \(displayLanguage.interfaceText("的操作"))")
+            )
         }
         .accessibilityElement(children: .contain)
     }

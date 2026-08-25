@@ -6,6 +6,10 @@ Renders user intent and immutable presentation state for the focused workflow: a
 direction selection, recognition and translation progress, continuous reading, transcript controls,
 glossary, settings, and optional local sharing.
 
+The native interface can mechanically present its Simplified Chinese source copy as Traditional Chinese.
+This display preference does not add a translation direction or rewrite transcripts, translations, titles,
+device names, listener names, or glossary content. The listener webpage remains target-language driven.
+
 The feature contains no audio processing, inference, translation, persistence, or network implementation.
 
 ## Public API
@@ -54,6 +58,6 @@ appears only after the capture provider has actually started.
 ## Tests
 
 `LiveReaderTests` verifies live-follow intent, unseen counts, phase/status presentation, timestamp
-preference compatibility and persistence, transcript formatting, QR-code round trips, and the immutable
-sharing presentation contract. Native visual, accessibility, and clean-Mac UI qualification are tracked
-separately in `Docs/Testing.md`.
+and display-language preference compatibility and persistence, content-preserving transcript formatting,
+QR-code round trips, and the immutable sharing presentation contract. Native visual, accessibility, and
+clean-Mac UI qualification are tracked separately in `Docs/Testing.md`.

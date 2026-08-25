@@ -18,28 +18,43 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("显示") {
+                Picker("软件显示语言", selection: $draftSettings.displayLanguage) {
+                    ForEach(DisplayLanguage.allCases) { language in
+                        Text(verbatim: language.autonym).tag(language)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
             Section("翻译") {
                 Picker("语言方向", selection: $draftSettings.translationMode) {
                     ForEach(TranslationMode.allCases) { mode in
-                        Text(mode.displayName).tag(mode)
+                        Text(draftSettings.displayLanguage.interfaceText(mode.displayName)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
                 .disabled(viewModel.sessionControlsLocked)
             }
             Section("音频输入") {
-                Picker(MicrophoneControlPresentation.settingsTitle, selection: $draftInputID) {
+                Picker(
+                    draftSettings.displayLanguage.interfaceText(
+                        MicrophoneControlPresentation.settingsTitle
+                    ),
+                    selection: $draftInputID
+                ) {
                     Text("系统默认麦克风").tag(AudioInputID?.none)
                     ForEach(viewModel.devices) { device in
-                        Text(device.name).tag(Optional(device.id))
+                        Text(verbatim: device.name).tag(Optional(device.id))
                     }
                 }
                 .disabled(viewModel.sessionControlsLocked)
                 if viewModel.sessionControlsLocked {
                     Text(
-                        viewModel.isRunning
-                            ? "实时翻译中，暂时不能更改。"
-                            : "正在处理音频，暂时不能更改。"
+                        draftSettings.displayLanguage.interfaceText(
+                            viewModel.isRunning
+                                ? "实时翻译中，暂时不能更改。"
+                                : "正在处理音频，暂时不能更改。"
+                        )
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -94,7 +109,9 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
-        .frame(width: 640, height: 580)
+        .frame(width: 640, height: 640)
         .sheet(isPresented: $showsPrivacy) { PrivacyView() }
+        .environment(\.interfaceDisplayLanguage, draftSettings.displayLanguage)
+        .environment(\.locale, draftSettings.displayLanguage.locale)
     }
 }

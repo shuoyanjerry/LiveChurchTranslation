@@ -323,6 +323,11 @@ let package = Package(
             dependencies: ["ASRAPI", "TranscriptAPI", "TranscriptCore", "TranslationAPI"]
         ),
         test("PersistenceFileSystemTests", dependencies: ["PersistenceFileSystem", "TranscriptAPI"]),
+        test("SettingsAPITests", dependencies: ["SettingsAPI"]),
+        test(
+            "SettingsUserDefaultsTests",
+            dependencies: ["SettingsAPI", "SettingsUserDefaults"]
+        ),
         test("LoggingOSLogTests", dependencies: ["LoggingAPI", "LoggingOSLog"]),
         test(
             "DiagnosticsCoreTests",

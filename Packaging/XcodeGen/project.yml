@@ -48,7 +48,10 @@ targets:
         buildPhase: resources
       - path: Packaging/PrivacyInfo.xcprivacy
         buildPhase: resources
-      - path: Packaging/zh-Hans.lproj
+      - path: Packaging
+        includes:
+          - zh-Hans.lproj/**
+          - zh-Hant.lproj/**
         buildPhase: resources
       - path: PRIVACY.md
         buildPhase: resources

@@ -64,6 +64,9 @@ On each machine:
 - quit, relaunch, and repeat model preparation without a download;
 - confirm the native quiet phases, separate recording duration, and visible-by-default timestamp toggle in
   both directions;
+- switch the software display language between Simplified and Traditional Chinese; verify that native
+  interface copy changes while translation direction, transcripts, titles, device names, and glossary
+  content remain unchanged after relaunch;
 - enable sharing and open the listener page from iPhone, iPad, and another Mac on the LAN; verify localized
   Preparing/Listening/Recognizing/Translating/Finishing/Paused and connection states plus the independent
   browser timestamp toggle; and

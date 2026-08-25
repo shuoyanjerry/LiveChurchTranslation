@@ -74,7 +74,7 @@ files over 200 lines.
 | --- | --- | --- |
 | `ModelRuntimeAPI` | `ModelRuntimeCore` | Model identity, location, readiness, and actor-owned status reporting |
 | `ModelDownloadAPI` | `ModelDownloadHTTP` | Revision-pinned HTTPS installation, in-flight byte caps, byte/hash verification, cancellation, and atomic promotion |
-| `SettingsAPI` | `SettingsUserDefaults` | Immutable app settings and injected UserDefaults persistence |
+| `SettingsAPI` | `SettingsUserDefaults` | App settings, independent Simplified/Traditional interface preference, and injected UserDefaults persistence |
 | `LoggingAPI` | `LoggingOSLog` | Structured OSLog adapter with dynamic messages and metadata private by default |
 | `DiagnosticsAPI` | `DiagnosticsCore` | Bounded diagnostic event recording and export |
 | `SessionManagementAPI` | `SessionManagement` | Public state/events and the explicit live-session orchestration state machine |
@@ -98,7 +98,7 @@ files over 200 lines.
 | Module | Responsibility |
 | --- | --- |
 | `UIDesignSystem` | Original semantic colors and controls; no official Northville logo, photography, or redistributed brand asset |
-| `LiveReader` | Main-actor rendering and user-intent forwarding only; continuous reader and stable live-follow behavior |
+| `LiveReader` | Main-actor rendering and user-intent forwarding only; continuous reader, stable live-follow behavior, and mechanical Simplified-to-Traditional interface presentation without rewriting content |
 | `ChurchTranslatorApp` | Directory creation and all dependency wiring; no business service or mutable feature state |
 
 Each target README documents its public surface, dependencies, threading model, failures,

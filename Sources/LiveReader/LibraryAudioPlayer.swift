@@ -1,8 +1,10 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
 struct LibraryAudioPlayer: View {
     @ObservedObject var viewModel: AudioPlayerViewModel
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -10,9 +12,13 @@ struct LibraryAudioPlayer: View {
                 Label("完整音频", systemImage: "waveform")
                     .font(.headline)
                 Spacer()
-                Text(LibraryAudioPresentation.storageLabel)
-                    .font(.caption)
-                    .foregroundStyle(ChurchTheme.muted)
+                Text(
+                    verbatim: displayLanguage.interfaceText(
+                        LibraryAudioPresentation.storageLabel
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(ChurchTheme.muted)
             }
             HStack(spacing: 14) {
                 Button {
@@ -23,9 +29,15 @@ struct LibraryAudioPlayer: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(ChurchTheme.olive)
-                .accessibilityLabel(viewModel.isPlaying ? "暂停" : "播放")
+                .accessibilityLabel(
+                    Text(
+                        verbatim: displayLanguage.interfaceText(
+                            viewModel.isPlaying ? "暂停" : "播放"
+                        )
+                    )
+                )
 
-                Text(time(viewModel.currentTime))
+                Text(verbatim: time(viewModel.currentTime))
                     .monospacedDigit()
                     .font(.caption)
                 Slider(
@@ -35,12 +47,12 @@ struct LibraryAudioPlayer: View {
                     ),
                     in: 0...max(viewModel.duration, 0.001)
                 )
-                Text(time(viewModel.duration))
+                Text(verbatim: time(viewModel.duration))
                     .monospacedDigit()
                     .font(.caption)
             }
             if let error = viewModel.errorMessage {
-                Text(error)
+                Text(verbatim: displayLanguage.interfaceText(error))
                     .font(.caption)
                     .foregroundStyle(ChurchTheme.danger)
             }

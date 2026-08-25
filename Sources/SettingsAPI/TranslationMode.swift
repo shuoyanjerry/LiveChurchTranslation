@@ -56,8 +56,31 @@ public enum TranslationMode: String, CaseIterable, Codable, Identifiable, Sendab
             self = .mandarinToEnglish
         case ("en", "zh-hans"), ("en-us", "zh-hans"), ("en-gb", "zh-hans"):
             self = .englishToSimplifiedChinese
+        case ("en", "zh-hant"), ("en-us", "zh-hant"), ("en-gb", "zh-hant"):
+            self = .englishToSimplifiedChinese
         default:
             return nil
         }
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let storedValue = try container.decode(String.self)
+        if storedValue == "englishToTraditionalChinese" {
+            self = .englishToSimplifiedChinese
+            return
+        }
+        guard let value = Self(rawValue: storedValue) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported translation mode."
+            )
+        }
+        self = value
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 }

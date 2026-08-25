@@ -1,6 +1,7 @@
 import AudioCaptureAPI
 import RemoteSharingFeatureAPI
 import SessionManagementAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -10,8 +11,16 @@ extension LiveReaderHeader {
     }
 
     var selectedInputName: String {
-        guard let id = viewModel.selectedInputID else { return "系统默认麦克风" }
-        return viewModel.devices.first(where: { $0.id == id })?.name ?? "所选麦克风"
+        guard let id = viewModel.selectedInputID else {
+            return displayLanguage.interfaceText("系统默认麦克风")
+        }
+        return viewModel.devices.first(where: { $0.id == id })?.name
+            ?? displayLanguage.interfaceText("所选麦克风")
+    }
+
+    func microphoneControlTitle(expanded: Bool) -> String {
+        guard !expanded else { return selectedInputName }
+        return displayLanguage.interfaceText(MicrophoneControlPresentation.settingsTitle)
     }
 
     var microphoneSelection: Binding<AudioInputID?> {
@@ -22,39 +31,47 @@ extension LiveReaderHeader {
     }
 
     var microphonePicker: some View {
-        Picker(MicrophoneControlPresentation.settingsTitle, selection: microphoneSelection) {
-            Text("系统默认麦克风").tag(Optional<AudioInputID>.none)
+        Picker(
+            displayLanguage.interfaceText(MicrophoneControlPresentation.settingsTitle),
+            selection: microphoneSelection
+        ) {
+            Text(verbatim: displayLanguage.interfaceText("系统默认麦克风"))
+                .tag(Optional<AudioInputID>.none)
             ForEach(viewModel.devices) { device in
-                Text(device.name).tag(Optional(device.id))
+                Text(verbatim: device.name).tag(Optional(device.id))
             }
         }
         .pickerStyle(.inline)
     }
 
     var sharingLabel: String {
-        switch sharingState {
-        case .off:
-            return "共享"
-        case .starting:
-            return "正在开启"
-        case .on(_, let connectionCount, _, _):
-            return connectionCount > 0 ? "听众 · \(connectionCount)" : "等待听众"
-        case .localNetworkPermissionDenied, .failed:
-            return "共享未开启"
-        }
+        let label =
+            switch sharingState {
+            case .off:
+                "共享"
+            case .starting:
+                "正在开启"
+            case .on(_, let connectionCount, _, _):
+                connectionCount > 0 ? "听众 · \(connectionCount)" : "等待听众"
+            case .localNetworkPermissionDenied, .failed:
+                "共享未开启"
+            }
+        return displayLanguage.interfaceText(label)
     }
 
     var sharingAccessibilityValue: String {
-        switch sharingState {
-        case .off:
-            "已关闭"
-        case .starting:
-            "正在开启"
-        case .on(_, let connectionCount, _, _):
-            connectionCount > 0 ? "已开启，\(connectionCount) 位听众" : "已开启，等待听众"
-        case .localNetworkPermissionDenied, .failed:
-            "未开启"
-        }
+        let value =
+            switch sharingState {
+            case .off:
+                "已关闭"
+            case .starting:
+                "正在开启"
+            case .on(_, let connectionCount, _, _):
+                connectionCount > 0 ? "已开启，\(connectionCount) 位听众" : "已开启，等待听众"
+            case .localNetworkPermissionDenied, .failed:
+                "未开启"
+            }
+        return displayLanguage.interfaceText(value)
     }
 
     var compactSharingConnectionCount: Int? {
@@ -83,15 +100,20 @@ extension LiveReaderHeader {
     }
 
     var modelStatusText: String {
-        if let finalizationStatusText { return finalizationStatusText }
-        if case .idle = viewModel.snapshot.phase {
-            switch viewModel.modelPreparationSnapshot.phase {
-            case .idle, .ready: return "可以开始"
-            case .checking, .downloading, .loading, .retrying: return "准备中"
-            case .failed: return "无法开始"
-            }
+        let statusText: String
+        if let finalizationStatusText {
+            statusText = finalizationStatusText
+        } else if case .idle = viewModel.snapshot.phase {
+            statusText =
+                switch viewModel.modelPreparationSnapshot.phase {
+                case .idle, .ready: "可以开始"
+                case .checking, .downloading, .loading, .retrying: "准备中"
+                case .failed: "无法开始"
+                }
+        } else {
+            statusText = LiveSessionStatusPresentation.label(for: viewModel.snapshot.phase)
         }
-        return LiveSessionStatusPresentation.label(for: viewModel.snapshot.phase)
+        return displayLanguage.interfaceText(statusText)
     }
 
     var statusIndicatorStyle: StatusPillIndicatorStyle {
@@ -123,7 +145,7 @@ extension LiveReaderHeader {
     }
 
     var sessionButtonTitle: String {
-        viewModel.isRunning ? "停止" : "开始"
+        displayLanguage.interfaceText(viewModel.isRunning ? "停止" : "开始")
     }
 
     var sessionButtonIcon: String {

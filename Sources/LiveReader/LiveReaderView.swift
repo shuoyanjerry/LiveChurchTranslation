@@ -1,4 +1,5 @@
 import RemoteSharingFeatureAPI
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -8,6 +9,7 @@ public struct LiveReaderView: View {
     @State private var showsSettings = false
     @State private var showsSharing = false
     @State private var sharingState = LocalSharingViewState.off
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
     private let sharingFeature: any LocalSharingFeature
 
     public init(
@@ -61,7 +63,11 @@ public struct LiveReaderView: View {
         ) {
             Button("好") { viewModel.presentedError = nil }
         } message: {
-            Text(viewModel.presentedError ?? "请重试。")
+            Text(
+                verbatim: displayLanguage.interfaceText(
+                    viewModel.presentedError ?? "请重试。"
+                )
+            )
         }
         .alert("开始翻译并录音？", isPresented: $viewModel.presentsRecordingNotice) {
             Button("取消", role: .cancel) {}

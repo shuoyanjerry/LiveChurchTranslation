@@ -4,13 +4,14 @@ import UIDesignSystem
 
 struct LiveReaderEmptyState: View {
     let mode: TranslationMode
+    @Environment(\.interfaceDisplayLanguage) private var displayLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: "waveform.and.mic")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(ChurchTheme.olive)
-            Text(emptyTitle)
+            Text(verbatim: emptyTitle)
                 .font(.system(size: 28, weight: .regular, design: .serif))
                 .foregroundStyle(ChurchTheme.ink)
             Text("选择音频输入，然后开始翻译。")
@@ -23,9 +24,11 @@ struct LiveReaderEmptyState: View {
     }
 
     private var emptyTitle: String {
-        switch mode {
-        case .mandarinToEnglish: "英语翻译"
-        case .englishToSimplifiedChinese: "简体中文翻译"
-        }
+        let title =
+            switch mode {
+            case .mandarinToEnglish: "英语翻译"
+            case .englishToSimplifiedChinese: "简体中文翻译"
+            }
+        return displayLanguage.interfaceText(title)
     }
 }

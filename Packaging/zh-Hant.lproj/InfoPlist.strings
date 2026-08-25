@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "Live Church Translation";
+"CFBundleName" = "Live Church Translation";
+"NSMicrophoneUsageDescription" = "用於實時語音識別、翻譯和錄音。";
+"NSLocalNetworkUsageDescription" = "用於向同一網絡的聽眾顯示實時字幕。";

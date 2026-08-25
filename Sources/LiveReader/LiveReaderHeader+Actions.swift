@@ -1,3 +1,4 @@
+import SettingsAPI
 import SwiftUI
 import UIDesignSystem
 
@@ -11,9 +12,12 @@ extension LiveReaderHeader {
                 showsSettings = true
             }
         } label: {
-            InlineMenuLabel(title: "更多", systemImage: "ellipsis")
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+            InlineMenuLabel(
+                title: displayLanguage.interfaceText("更多"),
+                systemImage: "ellipsis"
+            )
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .menuStyle(.borderlessButton)

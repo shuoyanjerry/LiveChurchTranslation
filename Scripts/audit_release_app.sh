@@ -162,6 +162,9 @@ HELPER="$CONTENTS/MacOS/llama-server"
 MODELS="$CONTENTS/Resources/Models"
 INFO="$CONTENTS/Info.plist"
 PRIVACY="$CONTENTS/Resources/PrivacyInfo.xcprivacy"
+ZH_HANS_INFO="$CONTENTS/Resources/zh-Hans.lproj/InfoPlist.strings"
+ZH_HANT_INFO="$CONTENTS/Resources/zh-Hant.lproj/InfoPlist.strings"
+ZH_HANT_LOCALIZABLE="$CONTENTS/Resources/zh-Hant.lproj/Localizable.strings"
 ENTITLEMENTS="$(mktemp "${TMPDIR:-/tmp}/church-release-entitlements.XXXXXX")"
 trap 'rm -f "$ENTITLEMENTS"' EXIT
 
@@ -169,7 +172,22 @@ trap 'rm -f "$ENTITLEMENTS"' EXIT
 [[ -x "$HELPER" && ! -L "$HELPER" ]] || fail "llama-server is missing"
 [[ ! -e "$CONTENTS/Helpers/llama-server" ]] || fail "legacy helper path is present"
 [[ -f "$INFO" && -f "$PRIVACY" ]] || fail "required bundle metadata is missing"
-plutil -lint "$INFO" "$PRIVACY" >/dev/null || fail "bundle metadata is invalid"
+[[ -f "$ZH_HANS_INFO" && ! -L "$ZH_HANS_INFO" ]] \
+  || fail "Simplified Chinese InfoPlist localization is missing or unsafe"
+[[ -f "$ZH_HANT_INFO" && ! -L "$ZH_HANT_INFO" ]] \
+  || fail "Traditional Chinese InfoPlist localization is missing or unsafe"
+[[ -f "$ZH_HANT_LOCALIZABLE" && ! -L "$ZH_HANT_LOCALIZABLE" ]] \
+  || fail "Traditional Chinese interface localization is missing or unsafe"
+plutil -lint "$INFO" "$PRIVACY" "$ZH_HANS_INFO" "$ZH_HANT_INFO" \
+  "$ZH_HANT_LOCALIZABLE" >/dev/null || fail "bundle metadata or localization is invalid"
+[[ "$(plist_value "$ZH_HANT_INFO" "NSMicrophoneUsageDescription" || true)" \
+  == "用於實時語音識別、翻譯和錄音。" ]] \
+  || fail "Traditional Chinese microphone usage description is invalid"
+[[ "$(plist_value "$ZH_HANT_INFO" "NSLocalNetworkUsageDescription" || true)" \
+  == "用於向同一網絡的聽眾顯示實時字幕。" ]] \
+  || fail "Traditional Chinese local-network usage description is invalid"
+rg -Fq '"显示" = "顯示";' "$ZH_HANT_LOCALIZABLE" \
+  || fail "Traditional Chinese interface localization is incomplete"
 [[ "$(plist_value "$INFO" "CFBundleName" || true)" == "Live Church Translation" ]] \
   || fail "CFBundleName must be Live Church Translation"
 [[ "$(plist_value "$INFO" "CFBundleDisplayName" || true)" == "Live Church Translation" ]] \

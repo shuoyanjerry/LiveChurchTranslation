@@ -21,9 +21,9 @@ The store is an actor, serializing loads and saves through one instance.
 
 A missing value returns `AppSettings.defaults`. Invalid stored data throws a
 decoding error, and encoding failure propagates from `save(_:)`. Settings encoded before
-`showTimestamps` existed inherit its visible-by-default value when decoded.
+the timestamp or display-language fields existed inherit their documented defaults when decoded.
 
 ## Tests
 
-There is no dedicated UserDefaults adapter test target. Callers are tested with
-`SettingsStore` fakes.
+`SettingsUserDefaultsTests` verifies persistence across independent store instances. Callers also use
+`SettingsStore` fakes for feature-level behavior.
