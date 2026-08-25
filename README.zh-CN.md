@@ -25,6 +25,12 @@ Live Church Translation 是一款注重隐私的 macOS 教会现场翻译应用�
 
 分发安装包内置经过校验的模型和运行组件，使用者无需安装 Python、Node.js、Ollama 或其他推理环境。
 
+## 安装
+
+从 [GitHub Releases](https://github.com/shuoyanjerry/LiveChurchTranslation/releases) 下载 DMG，打开后将
+应用拖入“应用程序”。如果 macOS 阻止首次启动，请先核对发布说明中的 DMG SHA-256，再参照 Apple
+官方教程：[在 Mac 上安全地打开 App](https://support.apple.com/zh-cn/102445)。
+
 ## 使用
 
 1. 打开应用并允许麦克风访问。

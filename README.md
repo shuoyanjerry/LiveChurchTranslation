@@ -30,6 +30,12 @@ accuracy. Important translations require qualified bilingual review.
 Packaged releases include verified models and runtime components. Users do not need to install
 Python, Node.js, Ollama, or another inference runtime.
 
+## Install
+
+Download the DMG from [GitHub Releases](https://github.com/shuoyanjerry/LiveChurchTranslation/releases),
+open it, and drag the app into Applications. If macOS blocks the first launch, verify the DMG
+SHA-256 shown in the Release notes and follow [Apple's safe-opening guide](https://support.apple.com/en-us/102445).
+
 ## Use
 
 1. Open the app and allow microphone access.
