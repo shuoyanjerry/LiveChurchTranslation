@@ -10,6 +10,13 @@ EXPECTED_NAME="shuoyanjerry"
 EXPECTED_EMAIL="jerryyanshuo@outlook.com"
 EXPECTED_AUTHOR_LINE="- $EXPECTED_NAME <$EXPECTED_EMAIL>"
 FORBIDDEN_TOOL_NAME="co""dex"
+MAIN_REF="refs/heads/main"
+
+if ! git rev-parse --verify --quiet "${MAIN_REF}^{commit}" >/dev/null; then
+    MAIN_REF="refs/remotes/origin/main"
+fi
+git rev-parse --verify --quiet "${MAIN_REF}^{commit}" >/dev/null \
+    || { echo "The complete main branch history is unavailable." >&2; exit 1; }
 
 if git ls-files | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
     echo "A tracked path contains the forbidden tool name." >&2
@@ -32,9 +39,9 @@ while IFS= read -r revision; do
         echo "Git history contains forbidden repository text at $revision." >&2
         exit 1
     fi
-done < <(git rev-list refs/heads/main)
+done < <(git rev-list "$MAIN_REF")
 
-if git log refs/heads/main --format='%B' | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
+if git log "$MAIN_REF" --format='%B' | rg --ignore-case --fixed-strings "$FORBIDDEN_TOOL_NAME"; then
     echo "Git history contains a forbidden commit message." >&2
     exit 1
 fi
@@ -51,7 +58,7 @@ if ! rg --fixed-strings "Copyright (c) 2026 $EXPECTED_NAME" LICENSE >/dev/null; 
 fi
 
 unexpected_identity="$({
-    git log refs/heads/main --format='%an%x09%ae%n%cn%x09%ce'
+    git log "$MAIN_REF" --format='%an%x09%ae%n%cn%x09%ce'
 } | awk -F '\t' -v name="$EXPECTED_NAME" -v email="$EXPECTED_EMAIL" \
     '$1 != name || $2 != email { print }')"
 if [[ -n "$unexpected_identity" ]]; then
